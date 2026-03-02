@@ -1,0 +1,760 @@
+var dn = [];
+var cn = [];
+var formData = null;
+
+var pp = {
+	startUp: function () {
+		pp.settingUp();
+
+		formData = new FormData();
+	}, // end - startUp
+
+	showNameFile : function(elm, isLable = 1) {
+        var _label = $(elm).closest('label');
+        var _a = _label.prev('a[name=dokumen]');
+        _a.removeClass('hide');
+        var _allowtypes = $(elm).data('allowtypes').split('|');
+        var _dataName = $(elm).data('name');
+        // var _allowtypes = ['xlsx'];
+        var _type = $(elm).get(0).files[0]['name'].split('.').pop();
+        var _namafile = $(elm).val();
+        var _temp_url = URL.createObjectURL($(elm).get(0).files[0]);
+        _namafile = _namafile.substring(_namafile.lastIndexOf("\\") + 1, _namafile.length);
+
+        if (in_array(_type, _allowtypes)) {
+            if (isLable == 1) {
+                if (_a.length) {
+                    _a.attr('title', _namafile);
+                    _a.attr('href', _temp_url);
+                    if ( _dataName == 'name' ) {
+                        $(_a).text( _namafile );  
+                    }
+                }
+            } else if (isLable == 0) {
+                $(elm).closest('label').attr('title', _namafile);
+            }
+            $(elm).attr('data-filename', _namafile);
+
+            pp.compressImg($(elm), null);
+        } else {
+            $(elm).val('');
+            $(elm).closest('label').attr('title', '');
+            $(elm).attr('data-filename', '');
+            _a.addClass('hide');
+            bootbox.alert('Format file tidak sesuai. Mohon attach ulang.');
+        }
+    }, // end - showNameFile
+
+    compressImg: function(elm, key) {
+        showLoading();
+
+        var file_tmp = $(elm).get(0).files[0];
+        var _type = $(elm).get(0).files[0]['name'].split('.').pop();
+
+        var _allowtypes_compress = ['jpg', 'JPG', 'png', 'PNG', 'jpeg', 'JPEG'];
+
+        if ( in_array(_type, _allowtypes_compress) ) {
+	        ci.compress_img(file_tmp, file_tmp.name, 480, function(data) {
+	            formData.append('file', data);
+
+	            hideLoading();
+	        });
+        } else {
+        	formData.append('file', file_tmp);
+
+        	hideLoading();
+        }
+    }, // end - compressImg
+
+	settingUp: function () {
+		var div_riwayat = $('#riwayat');
+		var div_action = $('#action');
+
+		$('.date').datetimepicker({
+            locale: 'id',
+            format: 'DD MMM Y',
+            useCurrent: true, //Important! See issue #1075
+        });
+
+        $.map( $('.date'), function(div) {
+        	var tgl = $(div).find('input').attr('data-tgl');
+        	if ( !empty(tgl) ) {
+        		$(div).data('DateTimePicker').date( new Date(tgl) );
+        	}
+        });
+
+		$(div_riwayat).find('.supplier').select2({placeholder: 'Pilih Supplier'}).on("select2:select", function (e) {
+            var supplier = $(div_riwayat).find('.supplier').select2().val();
+
+            for (var i = 0; i < supplier.length; i++) {
+                if ( supplier[i] == 'all' ) {
+                    $(div_riwayat).find('.supplier').select2().val('all').trigger('change');
+
+                    i = supplier.length;
+                }
+            }
+        });
+
+        $(div_riwayat).find('.mitra').select2({placeholder: 'Pilih Plasma'}).on("select2:select", function (e) {
+            var mitra = $(div_riwayat).find('.mitra').select2().val();
+
+            for (var i = 0; i < mitra.length; i++) {
+                if ( mitra[i] == 'all' ) {
+                    $(div_riwayat).find('.mitra').select2().val('all').trigger('change');
+
+                    i = mitra.length;
+                }
+            }
+
+			$(div_riwayat).find('.unit').select2().val('').trigger('change');
+        });
+
+		$(div_riwayat).find('.unit').select2({placeholder: 'Pilih Unit'}).on("select2:select", function (e) {
+            var unit = $(div_riwayat).find('.unit').select2().val();
+
+            for (var i = 0; i < unit.length; i++) {
+                if ( unit[i] == 'all' ) {
+                    $(div_riwayat).find('.unit').select2().val('all').trigger('change');
+
+                    i = unit.length;
+                }
+            }
+
+			$(div_riwayat).find('.mitra').select2().val('').trigger('change');
+        });
+
+        $(div_action).find('.supplier').select2().on("select2:select", function (e) {
+        	var supplier = $(div_action).find('.supplier').select2().val();
+
+        	pp.getNoOrder( supplier );
+        	pp.getRekening();
+        });
+        $(div_action).find('select.no_order').select2();
+        $(div_action).find('select.bank').select2();
+
+        $('[data-tipe=integer],[data-tipe=angka],[data-tipe=decimal], [data-tipe=decimal3],[data-tipe=decimal4], [data-tipe=number]').each(function(){
+            $(this).priceFormat(Config[$(this).data('tipe')]);
+        });
+
+		pp.getRekening();
+	}, // end - settingUp
+
+	changeTabActive: function(elm) {
+		var id = $(elm).data('id');
+		var edit = $(elm).data('edit');
+		var href = $(elm).data('href');
+
+		$('a.nav-link').removeClass('active');
+		$('div.tab-pane').removeClass('active');
+		$('div.tab-pane').removeClass('show');
+
+		$('a[data-tab='+href+']').addClass('active');
+		$('div.tab-content').find('div#'+href).addClass('show');
+		$('div.tab-content').find('div#'+href).addClass('active');
+
+		pp.loadForm(id, edit, href);
+	}, // end - changeTabActive
+
+	loadForm: function(id, edit, href) {
+		var params = {
+			'id': id,
+			'edit': edit
+		};
+
+		$.ajax({
+            url: 'pembayaran/PembayaranPeralatan/loadForm',
+            data: { 'params': params },
+            type: 'GET',
+            dataType: 'HTML',
+            beforeSend: function(){ showLoading() },
+            success: function(html){
+                $('div#'+href).html( html );
+
+                formData = new FormData();
+
+                pp.settingUp();
+
+                if ( !empty(edit) ) {
+                	$('div#'+href).find('.supplier').trigger("select2:select");
+                }
+
+				cn = [];
+				dn = [];
+				if ( !empty(edit) ) {
+					var d_cn = [];
+					var d_dn = [];
+					if ( (empty(cn) || cn.length <= 0) ) {
+						var json_cn = $('div#'+href).find('span.d_cn').text();
+						var d_cn = !empty(json_cn) ? JSON.parse(json_cn) : [];
+					}
+
+					if ( (empty(dn) || dn.length <= 0) ) {
+						var json_dn = $('div#'+href).find('span.d_dn').text();
+						var d_dn = !empty(json_dn) ? JSON.parse(json_dn) : [];
+					}
+
+					if ( !empty(d_cn) && d_cn.length > 0 ) {
+						for (let i = 0; i < d_cn.length; i++) {                                
+							cn[i] = {
+								'id': parseInt(d_cn[i].id_cn),
+								'saldo': parseFloat(d_cn[i].saldo),
+								'sisa_saldo': parseFloat(d_cn[i].sisa_saldo),
+								'pakai': parseFloat(d_cn[i].pakai)
+							};
+						}
+					}
+
+					if ( !empty(d_dn) && d_dn.length > 0 ) {
+						for (let i = 0; i < d_dn.length; i++) {                                
+							dn[i] = {
+								'id': parseInt(d_dn[i].id_dn),
+								'saldo': parseFloat(d_dn[i].saldo),
+								'sisa_saldo': parseFloat(d_dn[i].sisa_saldo),
+								'pakai': parseFloat(d_dn[i].pakai)
+							};
+						}
+					}
+				}
+
+                hideLoading();
+            }
+        });
+	}, // end - loadForm
+
+	modalPilihDN: function(elm) {
+        let div = $('div#action');
+        var supplier = $(div).find('select.supplier').select2('val');
+		var id = $(div).find('input#id').val();
+
+        var params = {
+            'supplier': supplier,
+            'id': id
+        };
+
+        $.get('pembayaran/PembayaranPeralatan/modalPilihDN',{
+            'params': params
+        },function(data){
+            var _options = {
+                className : 'veryWidth',
+                message : data,
+                size : 'large',
+            };
+            bootbox.dialog(_options).bind('shown.bs.modal', function(){
+                var modal_dialog = $(this).find('.modal-dialog');
+                var modal_body = $(this).find('.modal-body');
+
+                $(modal_dialog).css({'max-width' : '60%'});
+                $(modal_dialog).css({'width' : '100%'});
+
+                var modal_header = $(this).find('.modal-header');
+                $(modal_header).css({'padding-top' : '0px'});
+
+                $(modal_body).find('[data-tipe=integer],[data-tipe=angka],[data-tipe=decimal], [data-tipe=decimal3],[data-tipe=decimal4], [data-tipe=number]').each(function(){
+                    $(this).priceFormat(Config[$(this).data('tipe')]);
+                });
+
+				if ( !empty(dn) && dn.length > 0 ) {
+                    $.map( $(modal_body).find('table tbody tr.data'), function(tr) {
+                        var id_dn = $(tr).find('input[type="checkbox"]').attr('data-id');
+
+                        for (var i = 0; i < dn.length; i++) {
+                            if ( id_dn == dn[i].id ) {
+                                $(tr).find('input[type="checkbox"]').prop('checked', true);
+                                $(tr).find('input.pakai').val(numeral.formatDec(dn[i].pakai));
+                            }
+                        }
+                    });
+                }
+            });
+        },'html');
+    }, // end - modalPilihDN
+
+    cekPakaiDN: function(elm) {
+        var tr = $(elm).closest('tr');
+
+        var saldo = numeral.unformat( $(tr).find('td.saldo').text() );
+        var pakai = numeral.unformat( $(tr).find('input.pakai').val() );
+
+        if ( pakai > saldo ) {
+            bootbox.alert('DN yang anda masukkan melebihi saldo DN, harap cek kembali.', function () {
+                $(tr).find('input.pakai').val( 0 );
+            });
+        }
+    }, // end - cekPakaiDN
+
+    pilihDN: function(elm) {
+        var div = $(elm).closest('.modal-body');
+
+        var total_dn = 0;
+        if ( $(div).find('[type=checkbox]').length > 0 ) {
+            dn = $.map( $(div).find('[type=checkbox]'), function(ipt) {
+                if ( $(ipt).is(':checked') ) {
+                    var tr = $(ipt).closest('tr');
+
+                    var saldo = numeral.unformat( $(tr).find('td.saldo').text() );
+                    var pakai = numeral.unformat( $(tr).find('input.pakai').val() );
+                    var sisa_saldo = saldo - pakai;
+
+                    var _dn = {
+                        'id': $(ipt).attr('data-id'),
+                        'saldo': saldo,
+                        'pakai': pakai,
+                        'sisa_saldo': sisa_saldo
+                    };
+
+                    total_dn += pakai;
+
+                    return _dn;
+                }
+            });
+        } else {
+            dn = [];
+        }
+
+        $('.tot_dn').val(numeral.formatDec(total_dn));
+
+        $(div).find('.btn-danger').click();
+
+        pp.hitTotalTagihan();
+    }, // end - pilihDN
+
+    modalPilihCN: function(elm) {
+        let div = $('div#action');
+        var supplier = $(div).find('select.supplier').select2().val();
+        var id = $(div).find('input#id').val();
+
+        var params = {
+            'supplier': supplier,
+            'id': id
+        };
+
+        $.get('pembayaran/PembayaranPeralatan/modalPilihCN',{
+            'params': params
+        },function(data){
+            var _options = {
+                className : 'veryWidth',
+                message : data,
+                size : 'large',
+            };
+            bootbox.dialog(_options).bind('shown.bs.modal', function(){
+                var modal_dialog = $(this).find('.modal-dialog');
+                var modal_body = $(this).find('.modal-body');
+
+                $(modal_dialog).css({'max-width' : '60%'});
+                $(modal_dialog).css({'width' : '100%'});
+
+                var modal_header = $(this).find('.modal-header');
+                $(modal_header).css({'padding-top' : '0px'});
+
+                $(modal_body).find('[data-tipe=integer],[data-tipe=angka],[data-tipe=decimal], [data-tipe=decimal3],[data-tipe=decimal4], [data-tipe=number]').each(function(){
+                    $(this).priceFormat(Config[$(this).data('tipe')]);
+                });
+
+				if ( !empty(cn) && cn.length > 0 ) {
+                    $.map( $(modal_body).find('table tbody tr.data'), function(tr) {
+                        var id_cn = $(tr).find('input[type="checkbox"]').attr('data-id');
+
+                        for (var i = 0; i < cn.length; i++) {
+                            if ( id_cn == cn[i].id ) {
+                                $(tr).find('input[type="checkbox"]').prop('checked', true);
+                                $(tr).find('input.pakai').val(numeral.formatDec(cn[i].pakai));
+                            }
+                        }
+                    });
+                }
+            });
+        },'html');
+    }, // end - modalPilihCN
+
+    cekPakaiCN: function(elm) {
+        var tr = $(elm).closest('tr');
+
+        var saldo = numeral.unformat( $(tr).find('td.saldo').text() );
+        var pakai = numeral.unformat( $(tr).find('input.pakai').val() );
+
+        if ( pakai > saldo ) {
+            bootbox.alert('CN yang anda masukkan melebihi saldo CN, harap cek kembali.', function () {
+                $(tr).find('input.pakai').val( 0 );
+            });
+        }
+    }, // end - cekPakaiCN
+
+    pilihCN: function(elm) {
+        var div = $(elm).closest('.modal-body');
+
+        var total_cn = 0;
+        if ( $(div).find('[type=checkbox]').length > 0 ) {
+            cn = $.map( $(div).find('[type=checkbox]'), function(ipt) {
+                if ( $(ipt).is(':checked') ) {
+                    var tr = $(ipt).closest('tr');
+
+                    var saldo = numeral.unformat( $(tr).find('td.saldo').text() );
+                    var pakai = numeral.unformat( $(tr).find('input.pakai').val() );
+                    var sisa_saldo = saldo - pakai;
+
+                    var _cn = {
+                        'id': $(ipt).attr('data-id'),
+                        'saldo': saldo,
+                        'pakai': pakai,
+                        'sisa_saldo': sisa_saldo
+                    };
+
+                    total_cn += pakai;
+
+                    return _cn;
+                }
+            });
+        } else {
+            cn = [];
+        }
+
+        $('.tot_cn').val(numeral.formatDec(total_cn));
+
+        $(div).find('.btn-danger').click();
+
+        pp.hitTotalTagihan();
+    }, // end - pilihCN
+
+	getLists: function () {
+		var div = $('#riwayat');
+
+		var err = 0;
+		$.map( $(div).find('[data-required=1]'), function(ipt) {
+			if ( empty($(ipt).val()) ) {
+				$(ipt).parent().addClass('has-error');
+				err++;
+			} else {
+				$(ipt).parent().removeClass('has-error');
+			}
+		});
+
+		if ( err > 0 ) {
+			bootbox.alert('Harap lengkapi data terlebih dahulu.');
+		} else {
+			var params = {
+				'startDate': dateSQL( $(div).find('#StartDate').data('DateTimePicker').date() ),
+				'endDate': dateSQL( $(div).find('#EndDate').data('DateTimePicker').date() ),
+				'supplier': $(div).find('.supplier').select2('val'),
+				'mitra': $(div).find('.mitra').select2('val'),
+				'unit': $(div).find('.unit').select2('val')
+			};
+
+			$.ajax({
+	            url: 'pembayaran/PembayaranPeralatan/getLists',
+	            data: { 'params': params },
+	            type: 'GET',
+	            dataType: 'HTML',
+	            beforeSend: function(){ showLoading() },
+	            success: function(html){
+	            	$(div).find('table tbody').html( html );
+
+	            	hideLoading();
+	            }
+	        });
+		}
+	}, // end - getLists
+
+	getNoOrder: function (supplier) {
+		var div = $('#action');
+
+		var params = {
+			'supplier': supplier
+		};
+
+		$.ajax({
+            url: 'pembayaran/PembayaranPeralatan/getNoOrder',
+            data: { 'params': params },
+            type: 'POST',
+            dataType: 'JSON',
+            beforeSend: function(){ showLoading() },
+            success: function(data){
+            	var option = '<option value="">-- Pilih No. Order --</option>';
+            	if ( data.status == 1 ) {
+            		if ( !empty( data.content ) ) {
+            			var val = $(div).find('select.no_order').attr('data-val');
+            			$(div).find('select.no_order').removeAttr('disabled');
+            			for (var i = 0; i < data.content.length; i++) {
+            				var selected = null;
+            				if ( val == data.content[i].no_order ) {
+            					selected = 'selected';
+            				}
+
+							var nama_mitra = data.content[i].nama_mitra;
+							if ( !empty( data.content[i].nama_unit ) ) {
+								nama_mitra = data.content[i].nama_unit;
+							}
+
+            				option += '<option value="'+data.content[i].no_order+'" data-namamitra="'+nama_mitra+'" data-jmltagihan="'+data.content[i].total+'"	'+selected+' >'+data.content[i].tgl_order+' | '+data.content[i].no_order+'</option>';
+            			}
+            			$(div).find('select.no_order').html(option);
+            			$(div).find('select.no_order').select2().on('select2:select', function (e) {
+            				var no_order = $(div).find('select.no_order').select2().val();
+
+            				var nama_mitra = $(div).find('select.no_order option:selected').attr('data-namamitra');
+            				var jml_tagihan = $(div).find('select.no_order option:selected').attr('data-jmltagihan');
+
+            				$(div).find('.mitra').val( nama_mitra );
+            				$(div).find('.jumlah_tagihan').val( numeral.formatDec(jml_tagihan) );
+            				$(div).find('.saldo').val(0);
+
+            				pp.getDetailOrder( no_order );
+            				pp.hitTotalTagihan();
+            			});
+            		} else {
+            			$(div).find('select.no_order').html(option);
+            			$(div).find('select.no_order').attr('disabled', 'disabled');
+            		}
+            		hideLoading();
+            	} else {
+            		$(div).find('select.no_order').html(option);
+            		$(div).find('select.no_order').attr('disabled', 'disabled');
+
+            		hideLoading();
+            		bootbox.alert(data.message);
+            	}
+            }
+        });
+	}, // end - getNoOrder
+
+	getRekening: function () {
+		var supplier = $('#action').find('.supplier').select2().val();
+
+		$('.rekening').find('option[data-supl="'+supplier+'"]').removeAttr('disabled');
+		if ( !empty(supplier) ) {
+			$('.rekening').find('option:not([data-supl="'+supplier+'"])').attr('disabled', 'disabled');
+		}
+
+		$('.rekening').select2();
+		var rek = $('.rekening').attr('data-val');
+		if ( !empty(rek) ) {
+			$('.rekening').select2().val(rek).trigger('change');
+		} else {
+			$('.rekening').select2().val('').trigger('change');
+		}
+	}, // end - getRekening
+
+	getDetailOrder: function (no_order) {
+		var div = $('#action');
+
+		var params = {
+			'no_order': no_order
+		};
+
+		$.ajax({
+            url: 'pembayaran/PembayaranPeralatan/getDetailOrder',
+            data: { 'params': params },
+            type: 'GET',
+            dataType: 'HTML',
+            beforeSend: function(){ showLoading() },
+            success: function(html){
+            	$(div).find('table tbody').html( html );
+
+            	hideLoading();
+            }
+        });
+	}, // end - getDetailOrder
+
+	hitTotalTagihan: function() {
+		var div = $('#action');
+
+		var jumlah_tagihan = numeral.unformat( $(div).find('.jumlah_tagihan').val() );
+		var cn = numeral.unformat( $(div).find('.tot_cn').val() );
+		var dn = numeral.unformat( $(div).find('.tot_dn').val() );
+
+		var tot_tagihan = (jumlah_tagihan + dn) - cn;
+
+		$(div).find('.tot_tagihan').val( numeral.formatDec( tot_tagihan ) );
+	}, // end - hitTotalTagihan
+
+	hitTotalBayar: function() {
+		var div = $('#action');
+
+		var saldo = numeral.unformat( $(div).find('.saldo').val() );
+		var jml_bayar = numeral.unformat( $(div).find('.jumlah_bayar').val() );
+
+		var tot_bayar = saldo + jml_bayar;
+
+		$(div).find('.total_bayar').val( numeral.formatDec( tot_bayar ) );
+	}, // end - hitTotalBayar
+
+	save: function() {
+		var div = $('#action');
+
+		var err = 0;
+		$.map( $(div).find('[data-required=1]'), function(ipt) {
+			if ( empty($(ipt).val()) ) {
+				$(ipt).parent().addClass('has-error');
+				err++;
+			} else {
+				$(ipt).parent().removeClass('has-error');
+			}
+		});
+
+		if ( err > 0 ) {
+			bootbox.alert('Harap lengkapi data terlebih dahulu.');
+		} else {
+			var tot_tagihan = numeral.unformat($(div).find('.tot_tagihan').val());
+			var tot_bayar = numeral.unformat($(div).find('.total_bayar').val());
+
+			var ket = '';
+			if ( tot_tagihan <= tot_bayar ) {
+				ket = 'Apakah anda yakin ingin menyimpan data pembayaran ?';
+			} else {
+				ket = 'Total bayar kurang dari jumlah tagihan, apakah anda yakin ingin tetep menyimpan data pembayaran?';
+			}
+
+			bootbox.confirm(ket, function(result) {
+				if ( result ) {
+					var params = {
+						'no_order': $(div).find('.no_order').select2('val'),
+						'tgl_bayar': dateSQL($(div).find('#TglBayar').data('DateTimePicker').date()),
+						'jml_tagihan': numeral.unformat($(div).find('.jumlah_tagihan').val()),
+						'tot_dn': numeral.unformat($(div).find('.tot_dn').val()),
+						'tot_cn': numeral.unformat($(div).find('.tot_cn').val()),
+						'tot_tagihan': numeral.unformat($(div).find('.tot_tagihan').val()),
+						'saldo': numeral.unformat($(div).find('.saldo').val()),
+						'jml_bayar':  numeral.unformat($(div).find('.jumlah_bayar').val()),
+						'tot_bayar': tot_bayar,
+						'no_faktur': $(div).find('.no_faktur').val(),
+						'coa_bank': $(div).find('.bank').val(),
+						'nama_bank': $(div).find('.bank option:selected').attr('data-nama'),
+						'rekening': $(div).find('.rekening').val(),
+						'dn': !empty(dn) ? dn : null,
+            			'cn': !empty(cn) ? cn : null,
+					};
+
+					formData.append('data', JSON.stringify( params ));
+
+					$.ajax({
+			            url: 'pembayaran/PembayaranPeralatan/save',
+			            data: formData,
+			            type: 'POST',
+			            dataType: 'JSON',
+			            beforeSend: function(){ showLoading() },
+			            success: function(data){
+			            	hideLoading();
+
+			            	if ( data.status == 1 ) {
+			            		bootbox.alert(data.message, function() {
+			            			pp.loadForm(data.content.id, null, 'action');
+			            			// location.reload();
+			            		});
+			            	} else {
+			            		bootbox.alert(data.message);
+			            	}
+			            },
+			            contentType : false,
+			            processData : false,
+			        });
+				}
+			});
+		}
+	}, // end - save
+
+	edit: function(elm) {
+		var div = $('#action');
+
+		var err = 0;
+		$.map( $(div).find('[data-required=1]'), function(ipt) {
+			if ( empty($(ipt).val()) ) {
+				$(ipt).parent().addClass('has-error');
+				err++;
+			} else {
+				$(ipt).parent().removeClass('has-error');
+			}
+		});
+
+		if ( err > 0 ) {
+			bootbox.alert('Harap lengkapi data terlebih dahulu.');
+		} else {
+			var tot_tagihan = numeral.unformat($(div).find('.tot_tagihan').val());
+			var tot_bayar = numeral.unformat($(div).find('.total_bayar').val());
+
+			var ket = '';
+			if ( tot_tagihan <= tot_bayar ) {
+				ket = 'Apakah anda yakin ingin menyimpan data pembayaran ?';
+			} else {
+				ket = 'Total bayar kurang dari jumlah tagihan, apakah anda yakin ingin tetep menyimpan data pembayaran?';
+			}
+
+			bootbox.confirm(ket, function(result) {
+				if ( result ) {
+					var params = {
+						'id': $(elm).attr('data-id'),
+						'no_order': $(div).find('.no_order').select2('val'),
+						'tgl_bayar': dateSQL($(div).find('#TglBayar').data('DateTimePicker').date()),
+						'jml_tagihan': numeral.unformat($(div).find('.jumlah_tagihan').val()),
+						'tot_dn': numeral.unformat($(div).find('.tot_dn').val()),
+						'tot_cn': numeral.unformat($(div).find('.tot_cn').val()),
+						'tot_tagihan': numeral.unformat($(div).find('.tot_tagihan').val()),
+						'saldo': numeral.unformat($(div).find('.saldo').val()),
+						'jml_bayar':  numeral.unformat($(div).find('.jumlah_bayar').val()),
+						'tot_bayar': tot_bayar,
+						'no_faktur': $(div).find('.no_faktur').val(),
+						'coa_bank': $(div).find('.bank').val(),
+						'nama_bank': $(div).find('.bank option:selected').attr('data-nama'),
+						'rekening': $(div).find('.rekening').val(),
+						'dn': !empty(dn) ? dn : null,
+            			'cn': !empty(cn) ? cn : null,
+					};
+
+					formData.append('data', JSON.stringify( params ));
+
+					$.ajax({
+			            url: 'pembayaran/PembayaranPeralatan/edit',
+			            data: formData,
+			            type: 'POST',
+			            dataType: 'JSON',
+			            beforeSend: function(){ showLoading() },
+			            success: function(data){
+			            	hideLoading();
+
+			            	if ( data.status == 1 ) {
+			            		bootbox.alert(data.message, function() {
+			            			pp.loadForm(data.content.id, null, 'action');
+			            			// location.reload();
+			            		});
+			            	} else {
+			            		bootbox.alert(data.message);
+			            	}
+			            },
+			            contentType : false,
+			            processData : false,
+			        });
+				}
+			});
+		}
+	}, // end - edit
+
+	delete: function(elm) {
+		bootbox.confirm('Apakah anda yakin ingin meng-hapus data pembayaran ?', function(result) {
+			if ( result ) {
+				var params = {
+					'id': $(elm).attr('data-id')
+				};
+
+				$.ajax({
+		            url: 'pembayaran/PembayaranPeralatan/delete',
+		            data: {'params': params},
+		            type: 'POST',
+		            dataType: 'JSON',
+		            beforeSend: function(){ showLoading() },
+		            success: function(data){
+		            	hideLoading();
+
+		            	if ( data.status == 1 ) {
+		            		bootbox.alert(data.message, function() {
+		            			pp.loadForm(null, null, 'action');
+		            			// location.reload();
+		            		});
+		            	} else {
+		            		bootbox.alert(data.message);
+		            	}
+		            }
+		        });
+			}
+		});
+	}, // end - delete
+};
+
+pp.startUp();
