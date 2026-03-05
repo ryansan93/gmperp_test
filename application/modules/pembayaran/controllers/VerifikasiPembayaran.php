@@ -354,7 +354,9 @@ class VerifikasiPembayaran extends Public_Controller
             order by
                 lt.waktu asc
         ";
+        
         // cetak_r( $sql, 1 );
+
         $d_conf = $m_conf->hydrateRaw( $sql );
 
         $data = null;
@@ -899,6 +901,12 @@ class VerifikasiPembayaran extends Public_Controller
 
         $data = $this->getData($id, 2, null, null, null, null, $tbl_name)[0];
 
+        $content['attachment'] = \Model\Storage\AttachmentRealisasiPembayaran_model::showAll($data['id']);
+
+        // echo "<pre>";
+        // print_r($content);
+        // die;
+
         $content['data'] = $data;
         $html = $this->load->view('pembayaran/verifikasi_pembayaran/form_realisasi_bayar_detail', $content, true);
 
@@ -923,16 +931,66 @@ class VerifikasiPembayaran extends Public_Controller
         $data = json_decode($this->input->post('data'),TRUE);
         $files = isset($_FILES['files']) ? $_FILES['files'] : [];
 
-        try {
-            $file_name = $path_name = null;
-            $isMoved = 0;
-            if (!empty($files)) {
-                $moved = uploadFile($files);
-                $isMoved = $moved['status'];
 
-                $file_name = $moved['name'];
-                $path_name = $moved['path'];
+        // tambahan hafidz
+
+        $groupedFiles = [];
+
+        foreach ($_FILES['files']['name'] as $index => $filename) {
+            $groupedFiles[$index] = [
+                'name'      => $_FILES['files']['name'][$index],
+                'type'      => $_FILES['files']['type'][$index],
+                'tmp_name'  => $_FILES['files']['tmp_name'][$index],
+                'size'      => $_FILES['files']['size'][$index],
+                'error'     => $_FILES['files']['error'][$index],
+            ];
+        }
+
+        $uploadDir = FCPATH . "uploads/"; 
+
+        if (!is_dir($uploadDir)) {
+            mkdir($uploadDir, 0777, true);
+            echo "Folder dibuat: $uploadDir<br>";
+        } 
+   
+        foreach ($groupedFiles as $file) {
+            if ($file['error'] === 0) {
+                $ext            = pathinfo($file['name'], PATHINFO_EXTENSION);
+                $encryptedName  = md5(uniqid() . $file['name'] . time()) . '.' . $ext;
+                $targetFile     = $uploadDir . $encryptedName;
+
+                if (move_uploaded_file($file['tmp_name'], $targetFile)) {
+
+                    $m_attach       = new \Model\Storage\AttachmentRealisasiPembayaran_model();
+                    $m_attach->insert([
+                        'realisasi_id' => $data['id'],
+                        'file_name'    => $encryptedName,
+                        'path'         => $targetFile,
+                        'created_at'   => date("Y-m-d H:i:s"),
+                        'name_file_old'=> $file['name'],
+                    ]);
+                   
+                } else {
+                    echo "Gagal upload file '{$file['name']}'<br>";
+                }
+            } else {
+                echo "File '{$file['name']}' memiliki error saat upload<br>";
             }
+        }
+
+        // end tambahan hafidz
+      
+
+        try {
+            // $file_name = $path_name = null;
+            // $isMoved = 0;
+            // if (!empty($files)) {
+            //     $moved = uploadFile($files);
+            //     $isMoved = $moved['status'];
+
+            //     $file_name = $moved['name'];
+            //     $path_name = $moved['path'];
+            // }
 
             if ( $data['tbl_name'] == 'realisasi_pembayaran' ) {
                 $m_rp = new \Model\Storage\RealisasiPembayaran_model();
@@ -954,7 +1012,7 @@ class VerifikasiPembayaran extends Public_Controller
                     array(
                         'no_bukti' => $no_kk,
                         'tgl_realisasi' => $data['tgl_bayar'],
-                        'lampiran_realisasi' => $path_name,
+                        'lampiran_realisasi' => $data['id'],
                         'ket_realisasi' => $data['ket_bayar'],
                         'status' => 2
                     )

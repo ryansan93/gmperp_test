@@ -351,6 +351,7 @@ var vp = {
             $(elm).attr('disabled', 'disabled')
             bootbox.confirm('Apakah anda yakin ingin menyimpan data pembayaran ?', function(result) {
                 if ( result ) {
+
                     var data = {
                         'id': $(elm).attr('data-id'),
                         'tbl_name': $(elm).attr('data-table'),
@@ -361,9 +362,19 @@ var vp = {
         
                     var formData = new FormData();
         
-                    var _file = $('.file_lampiran').get(0).files[0];
-                    formData.append('files', _file);
+                    // var _file = $('.file_lampiran').get(0).files[0];
+                    // formData.append('files', _file);
+                    
+                    $('.file_lampiran').each(function () {
+                        
+                        if (this.files.length > 0) {
+                            formData.append('files[]', this.files[0]);
+                        }
+                        
+                    });
                     formData.append('data', JSON.stringify(data));
+
+                    
         
                     $.ajax({
                         url : 'pembayaran/VerifikasiPembayaran/save',
@@ -498,6 +509,41 @@ var vp = {
 
         window.open('pembayaran/VerifikasiPembayaran/printPreview/'+id, 'blank');
     }, // end - printPreview
+
+
+    // Tambahan Hafidz
+
+    addRowLampiran: (elm, e) => {
+        e.preventDefault();
+
+        let form = elm.closest(".file-form");
+        let clone = form.cloneNode(true);
+
+        clone.querySelectorAll("a").forEach(a => a.remove());
+
+        let input = clone.querySelector("input[type='file']");
+        if (input) input.value = "";
+
+        let cloneBtn = clone.querySelector("button");
+        if (cloneBtn) {
+            cloneBtn.setAttribute("onclick", "vp.removeRowLampiran(this, event)");
+            cloneBtn.classList.remove("btn-warning");
+            cloneBtn.classList.add("btn-danger");
+
+            let icon = cloneBtn.querySelector("i");
+            icon.classList.remove("fa-plus");
+            icon.classList.add("fa-trash");
+        }
+
+        form.parentElement.append(clone);
+    },
+
+    removeRowLampiran: (elm, e) => {
+        e.preventDefault();
+        elm.closest(".file-form").remove();
+    }
+
+    // end Tambahan Hafidz
 };
 
 vp.startUp();

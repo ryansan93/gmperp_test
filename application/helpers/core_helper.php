@@ -689,7 +689,7 @@ if (! function_exists ( 'selisihTanggal' )) {
 
 
 if (! function_exists ( 'send_email' )) {
-	function send_email($subject, $d_email = array(), $msg){
+	function send_email($subject, $d_email = array(), $msg = ''){
 		$CI =& get_instance();
 		//$CI->load->model("employee/m_employee");
 
