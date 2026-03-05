@@ -10,7 +10,7 @@ class AdjustmentInDoc extends Public_Controller {
     {
         parent::__construct();
         $this->url = $this->current_base_uri;
-        $this->akses = hakAkses($this->url);
+        $this->akses = hakAkses($this->url);    
     }
 
     /**************************************************************************************
