@@ -27,5 +27,52 @@ class AttachmentRealisasiPembayaran_model extends Conf
         }
         return $query->get()->toArray();
     }
+
+    public static function deleteNotInOldFile($realisasi_id, $old_file = [])
+    {
+        $ids = [];
+
+        if (!empty($old_file)) {
+            foreach ($old_file as $row) {
+                if (!empty($row['id_file'])) {
+                    $ids[] = $row['id_file'];
+                }
+            }
+        }
+
+        $query = self::where('realisasi_id', $realisasi_id);
+
+        if (!empty($ids)) {
+            $query->whereNotIn('id', $ids);
+        }
+
+        $files = $query->get();
+
+        foreach ($files as $file) {
+            if (!empty($file->path) && file_exists($file->path)) {
+                unlink($file->path);
+            }
+        }
+
+        return $query->delete();
+    }
+
+    public static function deleteByRealisasiId($realisasi_id)
+    {
+      
+        $files = self::where('realisasi_id', $realisasi_id)->get();
+
+        if ($files->count() > 0) {
+
+            foreach ($files as $file) {
+                if (!empty($file->path) && file_exists($file->path)) {
+                    unlink($file->path);
+                }
+            }
+            self::where('realisasi_id', $realisasi_id)->delete();
+        }
+    }
+
+
 }
 

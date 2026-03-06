@@ -16,10 +16,11 @@ var vp = {
         });
 
         $("#startDate").on("dp.change", function (e) {
-            $("#startDate").data("DateTimePicker").minDate(e.date);
+            $("#endDate").data("DateTimePicker").minDate(e.date);
         });
+
         $("#endDate").on("dp.change", function (e) {
-            $('#endDate').data("DateTimePicker").maxDate(e.date);
+            $("#startDate").data("DateTimePicker").maxDate(e.date);
         });
 
         $('select.jenis_transaksi').select2({placeholder: 'Pilih Jenis Transaksi'}).on("select2:select", function (e) {
@@ -432,18 +433,38 @@ var vp = {
             $(elm).attr('disabled', 'disabled')
             bootbox.confirm('Apakah anda yakin ingin meng-ubah data pembayaran ?', function(result) {
                 if ( result ) {
+
+                    let temp_attach = [];
+
+                    $(".file-form").each(function () {
+                        let id_file = $(this).attr("id_file");
+                        if (id_file) {
+                            temp_attach.push({
+                                id_file: id_file
+                            });
+                        }
+                    });
+
                     var data = {
                         'id': $(elm).attr('data-id'),
                         'tbl_name': $(elm).attr('data-table'),
                         'tgl_bayar': dateSQL($(modal_body).find('#tglBayar').data('DateTimePicker').date()),
                         'no_bukti': $(modal_body).find('.no_bukti').val(),
-                        'ket_bayar': $(modal_body).find('.ket_bayar').val()
+                        'ket_bayar': $(modal_body).find('.ket_bayar').val(),
+                        'old_file' : temp_attach,
                     };
         
                     var formData = new FormData();
         
-                    var _file = $('.file_lampiran').get(0).files[0];
-                    formData.append('files', _file);
+                    // var _file = $('.file_lampiran').get(0).files[0];
+                    // formData.append('files', _file);
+                    // formData.append('data', JSON.stringify(data));
+                    $('.file_lampiran').each(function () {
+                        if (this.files.length > 0) {
+                            formData.append('files[]', this.files[0]);
+                        }
+                        
+                    });
                     formData.append('data', JSON.stringify(data));
         
                     $.ajax({
@@ -540,7 +561,66 @@ var vp = {
 
     removeRowLampiran: (elm, e) => {
         e.preventDefault();
-        elm.closest(".file-form").remove();
+
+        let rows = $(".file-form");
+
+        if (rows.length <= 1) {
+            alert("minimal harus ada 1 baris");
+            return;
+        }
+
+        $(elm).closest(".file-form").remove();
+
+        let new_length = $(".file-form").length;
+
+        // vp.first_row(new_length);
+    },
+
+    // first_row: (length) => {
+
+    //     if (length == 1) {
+    //         $(".file-form:first .btn-remove").html("<i class='fa fa-plus'></i>");
+    //         $(".file-form:first .btn-remove").attr("onclick", "vp.addRowLampiran_edit(this, event)");
+    //         $(".file-form:first .btn-remove").removeClass("btn-danger").addClass("btn-success");
+    //     }
+
+    //     console.log(length);
+    // },
+
+    edit_lampiran: (elm, e) => {
+        let input = $(elm).closest(".file-form").find(".file_lampiran")[0];
+        input.click(); 
+        $(elm).closest(".file-form").removeAttr("id_file");
+    },
+
+    get_lampiran: (elm, e) =>{
+        let file = $(elm)[0].files[0];
+
+        let html = `<button type="button" class="flex items-center justify-center border border-gray-300 rounded p-1 hover:bg-gray-100" style="width:auto;">
+                `+ file.name +`
+            </button>`;
+        $(elm).closest(".file-form").find("a").html(html);
+    },
+
+    addRowLampiran_edit:() =>{
+        let html =  `<div class="file-form" style="display:flex; flex-direction:row; gap:5px">
+                        <a style="text-decoration:none;" href="<?php echo base_url() . 'uploads/'. $file['file_name']; ?>" target="_blank">
+                            <button type="button" class="flex items-center justify-center border border-gray-300 rounded p-1 hover:bg-gray-100" style="width:auto;">
+                                Nama File
+                            </button>
+                        </a>
+
+                        <input type="file" class="file_lampiran"  onchange="vp.get_lampiran(this, event)" style="display:none;">
+                        <button type="button" class="btn btn-sm btn-warning" onclick="vp.edit_lampiran(this, event)">
+                            <i class="glyphicon glyphicon-paperclip cursor-p"></i>
+                        </button>
+
+                        <button type="button" onclick="vp.removeRowLampiran(this, event)" class="btn btn-remove btn-sm btn-danger">
+                            <i class="fa fa-trash"></i>
+                        </button>
+                    </div>`;
+
+        $(".attachment-area").append(html);
     }
 
     // end Tambahan Hafidz
