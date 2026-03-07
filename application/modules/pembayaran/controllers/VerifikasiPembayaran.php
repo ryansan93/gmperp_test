@@ -950,14 +950,8 @@ class VerifikasiPembayaran extends Public_Controller
                 $existing_names[] = strtolower($file['name_file_old']);
             }
 
-            foreach ($groupedFiles as $files) {
-                if (in_array(strtolower($files['name']), $existing_names)) {
-                    $this->result['status'] = 0;
-                    $this->result['message'] = 'File '.$files['name'].' sudah pernah diupload.';
-                    display_json($this->result);
-                    exit;
-                }
-            }
+            $name_exits = false;
+        
 
         // end check nama file
 
@@ -972,7 +966,7 @@ class VerifikasiPembayaran extends Public_Controller
             if ($file['error'] === 0) {
                 $ext            = pathinfo($file['name'], PATHINFO_EXTENSION);
                 // $encryptedName  = md5(uniqid() . $file['name'] . time()) . '.' . $ext;
-                $targetFile     = $uploadDir . $file['name'];
+                $targetFile     = $uploadDir . ubahNama($file['name']);
 
                 if (move_uploaded_file($file['tmp_name'], $targetFile)) {
 
@@ -1397,7 +1391,7 @@ class VerifikasiPembayaran extends Public_Controller
                 $ext            = pathinfo($file['name'], PATHINFO_EXTENSION);
                 // $encryptedName  = md5(uniqid() . $file['name'] . time()) . '.' . $ext;
                 // $targetFile     = $uploadDir . $encryptedName;
-                $targetFile     = $uploadDir . $file['name'];
+                $targetFile     = $uploadDir . ubahNama($file['name']);
 
                 if (move_uploaded_file($file['tmp_name'], $targetFile)) {
                     if (in_array(strtolower($file['name']), $existing_names)) {
