@@ -901,8 +901,7 @@ class VerifikasiPembayaran extends Public_Controller
 
         $data = $this->getData($id, 2, null, null, null, null, $tbl_name)[0];
 
-        $content['attachment']  = \Model\Storage\AttachmentRealisasiPembayaran_model::showAll($data['id']);        
-
+        $content['attachment']  = \Model\Storage\AttachmentRealisasiPembayaran_model::showLastData($data['id']);        
         $content['data']        = $data;
         $html = $this->load->view('pembayaran/verifikasi_pembayaran/form_realisasi_bayar_detail', $content, true);
 
@@ -916,11 +915,9 @@ class VerifikasiPembayaran extends Public_Controller
         $tbl_name = $params['tbl_name'];
 
         $data = $this->getData($id, 2, null, null, null, null, $tbl_name)[0];
-        $content['attachment'] = \Model\Storage\AttachmentRealisasiPembayaran_model::showAll($data['id']);   
+        $content['attachment'] = \Model\Storage\AttachmentRealisasiPembayaran_model::showLastData($data['id']);   
         $content['data'] = $data;
-        // echo "<pre>";
-        // print_r($content);
-        // die;
+       
         $html = $this->load->view('pembayaran/verifikasi_pembayaran/form_realisasi_bayar_edit', $content, true);
 
         echo $html;
@@ -945,9 +942,24 @@ class VerifikasiPembayaran extends Public_Controller
             ];
         }
 
-        // echo "<pre>";
-        // print_r($groupedFiles);
-        // die;
+        // check nama file
+            $existing_files = \Model\Storage\AttachmentRealisasiPembayaran_model::showAll();
+
+            $existing_names = [];
+            foreach ($existing_files as $file) {
+                $existing_names[] = strtolower($file['name_file_old']);
+            }
+
+            foreach ($groupedFiles as $files) {
+                if (in_array(strtolower($files['name']), $existing_names)) {
+                    $this->result['status'] = 0;
+                    $this->result['message'] = 'File '.$files['name'].' sudah pernah diupload.';
+                    display_json($this->result);
+                    exit;
+                }
+            }
+
+        // end check nama file
 
         $uploadDir = FCPATH . "uploads/"; 
 
@@ -1367,6 +1379,25 @@ class VerifikasiPembayaran extends Public_Controller
             mkdir($uploadDir, 0777, true);
             echo "Folder dibuat: $uploadDir<br>";
         } 
+
+
+        // check nama file
+            $existing_files = \Model\Storage\AttachmentRealisasiPembayaran_model::showAll();
+
+            $existing_names = [];
+            foreach ($existing_files as $file) {
+                $existing_names[] = strtolower($file['name_file_old']);
+            }
+
+            foreach ($groupedFiles as $files) {
+                if (in_array(strtolower($files['name']), $existing_names)) {
+                    $this->result['status'] = 0;
+                    $this->result['message'] = 'File '.$files['name'].' sudah pernah diupload.';
+                    display_json($this->result);
+                    exit;
+                }
+            }
+        // end check nama file
    
         foreach ($groupedFiles as $file) {
             if ($file['error'] === 0) {

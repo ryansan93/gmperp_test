@@ -28,6 +28,25 @@ class AttachmentRealisasiPembayaran_model extends Conf
         return $query->get()->toArray();
     }
 
+
+    public static function showLastData($realisasi_id = null)
+    {
+        $query = self::query();
+
+        if ($realisasi_id !== null) {
+            $query->where('realisasi_id', $realisasi_id)
+                ->whereRaw("
+                        CAST(created_at AS DATE) = (
+                            SELECT MAX(CAST(created_at AS DATE))
+                            FROM attachment_realisasi_pembayaran
+                            WHERE realisasi_id = ?
+                        )
+                ", [$realisasi_id]);
+        }
+
+        return $query->get()->toArray();
+    }
+
     public static function deleteNotInOldFile($realisasi_id, $old_file = [])
     {
         $ids = [];

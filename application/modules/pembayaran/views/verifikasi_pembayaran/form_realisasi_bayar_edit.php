@@ -75,7 +75,7 @@
 
 						<div class="attachment-area" style="display:flex; flex-direction:column; gap:5px; margin-top:10px;">
 							
-							<?php if (count($$attachment) > 0) {?>
+							<?php if (count($attachment) > 0) {?>
 								<?php foreach($attachment as $file){?>
 									<div class="file-form" id_file="<?php echo $file["id"] ?>" style="display:flex; flex-direction:row; gap:5px">
 										<a style="text-decoration:none;" href="<?php echo base_url() . 'uploads/'. $file['file_name']; ?>" target="_blank">

@@ -483,6 +483,14 @@ var vp = {
                             } else {
                                 bootbox.alert(data.message);
                             }
+
+                            if (data.status == 0) {
+                                $(".file-form").each(function () {
+                                    if (!$(this).attr("id_file")) {
+                                        $(this).remove(".file-form");
+                                    }
+                                });
+                            }
                         },
                         contentType : false,
                         processData : false,
