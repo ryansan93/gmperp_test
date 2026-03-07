@@ -1377,12 +1377,10 @@ class VerifikasiPembayaran extends Public_Controller
 
         // check nama file
             $existing_files = \Model\Storage\AttachmentRealisasiPembayaran_model::showAll();
-
             $existing_names = [];
             foreach ($existing_files as $file) {
                 $existing_names[] = strtolower($file['name_file_old']);
             }
-
             $name_exits = false;
         // end check nama file
    
@@ -1400,7 +1398,7 @@ class VerifikasiPembayaran extends Public_Controller
                     $m_attach       = new \Model\Storage\AttachmentRealisasiPembayaran_model();
                     $m_attach->insert([
                         'realisasi_id' => $data['id'],
-                        'file_name'    => $file['name'],
+                        'file_name'    => ubahNama($file['name']),
                         'path'         => $targetFile,
                         'created_at'   => date("Y-m-d H:i:s"),
                         'name_file_old'=> $name_exits ? ubahNama($file['name']) : $file['name'],

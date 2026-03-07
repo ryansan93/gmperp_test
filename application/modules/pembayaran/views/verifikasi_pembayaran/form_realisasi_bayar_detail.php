@@ -66,7 +66,7 @@
 							<div class="flex flex-row gap-2">
 								<span>:</span>							
 								<?php foreach($attachment as $file){ ?>
-									<a style="text-decoration:none;" href="<?php echo base_url() . 'uploads/'. $file['file_name']; ?>" target="_blank">
+									<a style="text-decoration:none;" href="<?php echo base_url() . 'uploads/'. $file['name_file_old']; ?>" target="_blank">
 										<button type="button" class="flex items-center justify-center border border-gray-300 rounded p-1 hover:bg-gray-100" style="width:auto;">
 											<?php echo strtoupper(htmlspecialchars($file['name_file_old'])); ?>
 										</button>
