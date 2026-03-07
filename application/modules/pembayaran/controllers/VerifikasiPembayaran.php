@@ -971,15 +971,15 @@ class VerifikasiPembayaran extends Public_Controller
         foreach ($groupedFiles as $file) {
             if ($file['error'] === 0) {
                 $ext            = pathinfo($file['name'], PATHINFO_EXTENSION);
-                $encryptedName  = md5(uniqid() . $file['name'] . time()) . '.' . $ext;
-                $targetFile     = $uploadDir . $encryptedName;
+                // $encryptedName  = md5(uniqid() . $file['name'] . time()) . '.' . $ext;
+                $targetFile     = $uploadDir . $file['name'];
 
                 if (move_uploaded_file($file['tmp_name'], $targetFile)) {
 
                     $m_attach       = new \Model\Storage\AttachmentRealisasiPembayaran_model();
                     $m_attach->insert([
                         'realisasi_id' => $data['id'],
-                        'file_name'    => $encryptedName,
+                        'file_name'    => $file['name'],
                         'path'         => $targetFile,
                         'created_at'   => date("Y-m-d H:i:s"),
                         'name_file_old'=> $file['name'],
@@ -1389,31 +1389,27 @@ class VerifikasiPembayaran extends Public_Controller
                 $existing_names[] = strtolower($file['name_file_old']);
             }
 
-            foreach ($groupedFiles as $files) {
-                if (in_array(strtolower($files['name']), $existing_names)) {
-                    $this->result['status'] = 0;
-                    $this->result['message'] = 'File '.$files['name'].' sudah pernah diupload.';
-                    display_json($this->result);
-                    exit;
-                }
-            }
+            $name_exits = false;
         // end check nama file
    
         foreach ($groupedFiles as $file) {
             if ($file['error'] === 0) {
                 $ext            = pathinfo($file['name'], PATHINFO_EXTENSION);
-                $encryptedName  = md5(uniqid() . $file['name'] . time()) . '.' . $ext;
-                $targetFile     = $uploadDir . $encryptedName;
+                // $encryptedName  = md5(uniqid() . $file['name'] . time()) . '.' . $ext;
+                // $targetFile     = $uploadDir . $encryptedName;
+                $targetFile     = $uploadDir . $file['name'];
 
                 if (move_uploaded_file($file['tmp_name'], $targetFile)) {
-
+                    if (in_array(strtolower($file['name']), $existing_names)) {
+                        $name_exits = true;
+                    }
                     $m_attach       = new \Model\Storage\AttachmentRealisasiPembayaran_model();
                     $m_attach->insert([
                         'realisasi_id' => $data['id'],
-                        'file_name'    => $encryptedName,
+                        'file_name'    => $file['name'],
                         'path'         => $targetFile,
                         'created_at'   => date("Y-m-d H:i:s"),
-                        'name_file_old'=> $file['name'],
+                        'name_file_old'=> $name_exits ? ubahNama($file['name']) : $file['name'],
                     ]);
                    
                 } else {
