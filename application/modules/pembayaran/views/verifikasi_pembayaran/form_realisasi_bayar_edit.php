@@ -75,10 +75,8 @@
 
 						<div class="attachment-area" style="display:flex; flex-direction:column; gap:5px; margin-top:10px;">
 							
-						
-							
+							<?php if (count($$attachment) > 0) {?>
 								<?php foreach($attachment as $file){?>
-
 									<div class="file-form" id_file="<?php echo $file["id"] ?>" style="display:flex; flex-direction:row; gap:5px">
 										<a style="text-decoration:none;" href="<?php echo base_url() . 'uploads/'. $file['file_name']; ?>" target="_blank">
 											<button type="button" class="flex items-center justify-center border border-gray-300 rounded p-1 hover:bg-gray-100" style="width:auto;">
@@ -86,7 +84,6 @@
 											</button>
 										</a>
 
-										<!-- <input type="file" class="file_lampiran"  onchange="vp.get_lampiran(this, event)" style="display:none;"> -->
 										<input type="file" class="file_lampiran" data-old-file="<?php echo $file['file_name']; ?>" data-old-name="<?php echo htmlspecialchars($file['name_file_old']); ?>" onchange="vp.get_lampiran(this, event)" style="display:none;">
 										<button type="button" class="btn btn-sm btn-warning" onclick="vp.edit_lampiran(this, event)">
 											<i class="glyphicon glyphicon-paperclip cursor-p"></i>
@@ -96,13 +93,11 @@
 											<i class="fa fa-trash"></i>
 										</button>
 									</div>
-
 								<?php } ?>							
 							
+							<?php } else { ?>							
 							
-					
 								<div class="row file-form" style="margin-left:2px;">
-
 									<?php if ( !empty($data['lampiran_realisasi']) ) { ?>
 										<a href="uploads/<?php echo $data['lampiran_realisasi']; ?>" target="_blank"><?php echo $data['lampiran_realisasi']; ?></a>
 									<?php } ?>
@@ -113,8 +108,9 @@
 										<i class="glyphicon glyphicon-paperclip cursor-p"></i>
 									</label>
 									<?php } ?>
-
 								</div>
+
+							<?php } ?>							
 							
 
 						</div>

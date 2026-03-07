@@ -67,4 +67,13 @@ class RealisasiPembayaran_model extends Conf{
 	{
 		return $this->hasMany('\Model\Storage\LogTables_model', 'tbl_id', 'id')->where('tbl_name', $this->table);
 	}
+
+	public static function showAll($id = null)
+    {
+        $query = self::query();
+        if ($id !== null) {
+            $query->where('id', $id);
+        }
+        return $query->get()->toArray();
+    }
 }

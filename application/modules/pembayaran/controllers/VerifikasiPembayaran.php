@@ -901,8 +901,9 @@ class VerifikasiPembayaran extends Public_Controller
 
         $data = $this->getData($id, 2, null, null, null, null, $tbl_name)[0];
 
-        $content['attachment'] = \Model\Storage\AttachmentRealisasiPembayaran_model::showAll($data['id']);
-        $content['data'] = $data;
+        $content['attachment']  = \Model\Storage\AttachmentRealisasiPembayaran_model::showAll($data['id']);        
+
+        $content['data']        = $data;
         $html = $this->load->view('pembayaran/verifikasi_pembayaran/form_realisasi_bayar_detail', $content, true);
 
         echo $html;
