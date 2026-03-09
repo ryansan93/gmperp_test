@@ -572,14 +572,14 @@ var vp = {
 
         let rows = $(".file-form");
 
-        if (rows.length <= 1) {
-            alert("minimal harus ada 1 baris");
-            return;
-        }
+        // if (rows.length <= 1) {
+        //     alert("minimal harus ada 1 baris");
+        //     return;
+        // }
 
         $(elm).closest(".file-form").remove();
 
-        let new_length = $(".file-form").length;
+        // let new_length = $(".file-form").length;
 
         // vp.first_row(new_length);
     },
