@@ -927,22 +927,22 @@ class VerifikasiPembayaran extends Public_Controller
         $data = json_decode($this->input->post('data'),TRUE);
         $files = isset($_FILES['files']) ? $_FILES['files'] : [];
 
+       // tambahan hafidz
 
-        // tambahan hafidz
+        if (isset($_FILES['files']) && !empty($_FILES['files']['name'])) {
+            $groupedFiles = [];
 
-        $groupedFiles = [];
+            foreach ($_FILES['files']['name'] as $index => $filename) {
+                $groupedFiles[$index] = [
+                    'name'      => $_FILES['files']['name'][$index],
+                    'type'      => $_FILES['files']['type'][$index],
+                    'tmp_name'  => $_FILES['files']['tmp_name'][$index],
+                    'size'      => $_FILES['files']['size'][$index],
+                    'error'     => $_FILES['files']['error'][$index],
+                ];
+            }
 
-        foreach ($_FILES['files']['name'] as $index => $filename) {
-            $groupedFiles[$index] = [
-                'name'      => $_FILES['files']['name'][$index],
-                'type'      => $_FILES['files']['type'][$index],
-                'tmp_name'  => $_FILES['files']['tmp_name'][$index],
-                'size'      => $_FILES['files']['size'][$index],
-                'error'     => $_FILES['files']['error'][$index],
-            ];
-        }
-
-        // check nama file
+            // check nama file
             $existing_files = \Model\Storage\AttachmentRealisasiPembayaran_model::showAll();
 
             $existing_names = [];
@@ -951,40 +951,39 @@ class VerifikasiPembayaran extends Public_Controller
             }
 
             $name_exits = false;
-        
 
-        // end check nama file
+            // end check nama file
 
-        $uploadDir = FCPATH . "uploads/"; 
+            $uploadDir = FCPATH . "uploads/";
 
-        if (!is_dir($uploadDir)) {
-            mkdir($uploadDir, 0777, true);
-            echo "Folder dibuat: $uploadDir<br>";
-        } 
-   
-        foreach ($groupedFiles as $file) {
-            if ($file['error'] === 0) {
-                $ext            = pathinfo($file['name'], PATHINFO_EXTENSION);
-                // $encryptedName  = md5(uniqid() . $file['name'] . time()) . '.' . $ext;
-                $targetFile     = $uploadDir . ubahNama($file['name']);
+            if (!is_dir($uploadDir)) {
+                mkdir($uploadDir, 0777, true);
+                echo "Folder dibuat: $uploadDir<br>";
+            }
 
-                if (move_uploaded_file($file['tmp_name'], $targetFile)) {
+            foreach ($groupedFiles as $file) {
+                if ($file['error'] === 0) {
+                    $ext        = pathinfo($file['name'], PATHINFO_EXTENSION);
+                    $targetFile = $uploadDir . ubahNama($file['name']);
 
-                    $m_attach       = new \Model\Storage\AttachmentRealisasiPembayaran_model();
-                    $m_attach->insert([
-                        'realisasi_id' => $data['id'],
-                        'file_name'    => $file['name'],
-                        'path'         => $targetFile,
-                        'created_at'   => date("Y-m-d H:i:s"),
-                        'name_file_old'=> $file['name'],
-                        'tbl_name'     => $data['tbl_name']
-                    ]);
-                   
+                    if (move_uploaded_file($file['tmp_name'], $targetFile)) {
+
+                        $m_attach = new \Model\Storage\AttachmentRealisasiPembayaran_model();
+                        $m_attach->insert([
+                            'realisasi_id' => $data['id'],
+                            'file_name'    => $file['name'],
+                            'path'         => $targetFile,
+                            'created_at'   => date("Y-m-d H:i:s"),
+                            'name_file_old'=> $file['name'],
+                            'tbl_name'     => $data['tbl_name']
+                        ]);
+
+                    } else {
+                        echo "Gagal upload file '{$file['name']}'<br>";
+                    }
                 } else {
-                    echo "Gagal upload file '{$file['name']}'<br>";
+                    echo "File '{$file['name']}' memiliki error saat upload<br>";
                 }
-            } else {
-                echo "File '{$file['name']}' memiliki error saat upload<br>";
             }
         }
 
