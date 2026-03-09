@@ -901,7 +901,7 @@ class VerifikasiPembayaran extends Public_Controller
 
         $data = $this->getData($id, 2, null, null, null, null, $tbl_name)[0];
 
-        $content['attachment']  = \Model\Storage\AttachmentRealisasiPembayaran_model::showLastData($data['id']);        
+        $content['attachment']  = \Model\Storage\AttachmentRealisasiPembayaran_model::showLastData($data['id'], $tbl_name);        
         $content['data']        = $data;
         $html = $this->load->view('pembayaran/verifikasi_pembayaran/form_realisasi_bayar_detail', $content, true);
 
@@ -915,7 +915,7 @@ class VerifikasiPembayaran extends Public_Controller
         $tbl_name = $params['tbl_name'];
 
         $data = $this->getData($id, 2, null, null, null, null, $tbl_name)[0];
-        $content['attachment'] = \Model\Storage\AttachmentRealisasiPembayaran_model::showLastData($data['id']);   
+        $content['attachment'] = \Model\Storage\AttachmentRealisasiPembayaran_model::showLastData($data['id'], $tbl_name);   
         $content['data'] = $data;
        
         $html = $this->load->view('pembayaran/verifikasi_pembayaran/form_realisasi_bayar_edit', $content, true);
@@ -977,6 +977,7 @@ class VerifikasiPembayaran extends Public_Controller
                         'path'         => $targetFile,
                         'created_at'   => date("Y-m-d H:i:s"),
                         'name_file_old'=> $file['name'],
+                        'tbl_name'     => $data['tbl_name']
                     ]);
                    
                 } else {
@@ -1023,8 +1024,7 @@ class VerifikasiPembayaran extends Public_Controller
                         'tgl_realisasi' => $data['tgl_bayar'],
                         // 'lampiran_realisasi' => $data['id'],
                         'ket_realisasi' => $data['ket_bayar'],
-                        'status' => 2,
-                        'attachment_id' => $data['id'],
+                        'status' => 2
                     )
                 );
 
@@ -1057,8 +1057,7 @@ class VerifikasiPembayaran extends Public_Controller
                         'tgl_realisasi' => $data['tgl_bayar'],
                         // 'lampiran_realisasi' => $data['id'],
                         'ket_realisasi' => $data['ket_bayar'],
-                        'status' => 2,
-                        'attachment_id' => $data['id'],
+                        'status' => 2
                     )
                 );
 
@@ -1115,7 +1114,6 @@ class VerifikasiPembayaran extends Public_Controller
         $data = json_decode($this->input->post('data'),TRUE);
         $files = isset($_FILES['files']) ? $_FILES['files'] : [];
 
-
         try {
             // cetak_r( $data, 1 );
 
@@ -1158,8 +1156,7 @@ class VerifikasiPembayaran extends Public_Controller
                         'tgl_realisasi' => $data['tgl_bayar'],
                         // 'lampiran_realisasi' => $path_name,
                         'ket_realisasi' => $data['ket_bayar'],
-                        'status' => 2,
-                        'attachment_id' => $data['id'],
+                        'status' => 2
                     )
                 );
 
@@ -1206,8 +1203,7 @@ class VerifikasiPembayaran extends Public_Controller
                         'tgl_realisasi' => $data['tgl_bayar'],
                         // 'lampiran_realisasi' => $path_name,
                         'ket_realisasi' => $data['ket_bayar'],
-                        'mstatus' => 2,
-                        'attachment_id' => $data['id'],
+                        'mstatus' => 2
 
                     )
                 );
@@ -1236,17 +1232,10 @@ class VerifikasiPembayaran extends Public_Controller
     public function delete() {
         $params = $this->input->post('params');
 
-        // echo "<pre>";
-        // print_r($params);
-        // die;
-        \Model\Storage\AttachmentRealisasiPembayaran_model::deleteByRealisasiId($params['id'] ?? []);
+        \Model\Storage\AttachmentRealisasiPembayaran_model::deleteByRealisasiId($params['id'] ?? [], $params['tbl_name']);
 
         try {
             if ( $params['tbl_name'] == 'realisasi_pembayaran' ) {
-
-
-
-
                 $m_rp = new \Model\Storage\RealisasiPembayaran_model();
                 $d_rp = $m_rp->where('id', $params['id'])->first();
     
@@ -1346,14 +1335,9 @@ class VerifikasiPembayaran extends Public_Controller
         echo $res_view_html;
     }
 
-    public function tes() {
-        Modules::run( 'base/InsertJurnal/exec', $this->url, 1142, 1142, 2, 'realisasi_pembayaran', '2026-01-05');
-    }
-
     public function exec_editAttachment($data, $files)
-    {
-        
-        \Model\Storage\AttachmentRealisasiPembayaran_model::deleteNotInOldFile($data['id'],$data['old_file'] ?? []);
+    {   
+        \Model\Storage\AttachmentRealisasiPembayaran_model::deleteNotInOldFile($data['id'], $data['old_file'] ?? [], $data['tbl_name']);
 
         $groupedFiles = [];
 
@@ -1373,7 +1357,6 @@ class VerifikasiPembayaran extends Public_Controller
             mkdir($uploadDir, 0777, true);
             echo "Folder dibuat: $uploadDir<br>";
         } 
-
 
         // check nama file
             $existing_files = \Model\Storage\AttachmentRealisasiPembayaran_model::showAll();
@@ -1402,6 +1385,7 @@ class VerifikasiPembayaran extends Public_Controller
                         'path'         => $targetFile,
                         'created_at'   => date("Y-m-d H:i:s"),
                         'name_file_old'=> $name_exits ? ubahNama($file['name']) : $file['name'],
+                        'tbl_name' => $data['tbl_name'],
                     ]);
                    
                 } else {
@@ -1411,5 +1395,9 @@ class VerifikasiPembayaran extends Public_Controller
                 echo "File '{$file['name']}' memiliki error saat upload<br>";
             }
         }
+    }
+
+    public function tes() {
+        Modules::run( 'base/InsertJurnal/exec', $this->url, 1142, 1142, 2, 'realisasi_pembayaran', '2026-01-05');
     }
 }

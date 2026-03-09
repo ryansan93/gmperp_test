@@ -15,7 +15,8 @@ class AttachmentRealisasiPembayaran_model extends Conf
         'file_name',
         'path',
         'created_at',
-        'name_file_old'
+        'name_file_old',
+        'tbl_name'
     ];
 
 
@@ -29,25 +30,26 @@ class AttachmentRealisasiPembayaran_model extends Conf
     }
 
 
-    public static function showLastData($realisasi_id = null)
+    public static function showLastData($realisasi_id = null, $tbl_name = null)
     {
         $query = self::query();
 
         if ($realisasi_id !== null) {
             $query->where('realisasi_id', $realisasi_id)
+                ->where('tbl_name', $tbl_name)
                 ->whereRaw("
                         CAST(created_at AS DATE) = (
                             SELECT MAX(CAST(created_at AS DATE))
                             FROM attachment_realisasi_pembayaran
-                            WHERE realisasi_id = ?
+                            WHERE realisasi_id = ? AND tbl_name = ?
                         )
-                ", [$realisasi_id]);
+                ", [$realisasi_id, $tbl_name]);
         }
 
         return $query->get()->toArray();
     }
 
-    public static function deleteNotInOldFile($realisasi_id, $old_file = [])
+    public static function deleteNotInOldFile($realisasi_id, $old_file = [], $tbl_name)
     {
         $ids = [];
 
@@ -59,7 +61,7 @@ class AttachmentRealisasiPembayaran_model extends Conf
             }
         }
 
-        $query = self::where('realisasi_id', $realisasi_id);
+        $query = self::where('realisasi_id', $realisasi_id)->where('tbl_name', $tbl_name);
 
         if (!empty($ids)) {
             $query->whereNotIn('id', $ids);
@@ -76,10 +78,10 @@ class AttachmentRealisasiPembayaran_model extends Conf
         return $query->delete();
     }
 
-    public static function deleteByRealisasiId($realisasi_id)
+    public static function deleteByRealisasiId($realisasi_id, $tbl_name)
     {
       
-        $files = self::where('realisasi_id', $realisasi_id)->get();
+        $files = self::where('realisasi_id', $realisasi_id)->where('tbl_name', $tbl_name)->get();
 
         if ($files->count() > 0) {
 
