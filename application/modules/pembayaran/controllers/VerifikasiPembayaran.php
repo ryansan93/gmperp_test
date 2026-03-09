@@ -384,8 +384,24 @@ class VerifikasiPembayaran extends Public_Controller
         $end_date = $params['end_date'];
         $jenis_transaksi = $params['jenis'];
         $bank = $params['bank'];
+        $tbl_name = $params['tbl_name'];
 
         $data = $this->getData(null, 2, $start_date, $end_date, $jenis_transaksi, $bank);
+
+        $files = \Model\Storage\AttachmentRealisasiPembayaran_model::showLastData($data['id'], $data['tbl_name']);
+
+        $temp_file =[];
+        foreach($files as $f){
+            if($f['tbl_name']){
+                $temp_file[$f['realisasi_id']][] = $f;
+            }
+        }
+      
+        $content['attachment'] =  $temp_file;
+        // echo "<pre>";
+        // print_r($temp_file);
+        // die;
+
 
         $content['data'] = $data;
         $content['akses'] = $this->hakAkses;
