@@ -768,15 +768,10 @@ class GeneralLedgerExternal extends Public_Controller {
 
         $data    = $this->getData( $start_date, $end_date, $kode_gabung_perusahaan, $unit );
 
-       $result = array_filter($data, function ($row) {
+        $result = array_filter($data, function ($row) {
             $first = substr($row['no_coa'], 0, 1);
             return $first === '5' || $first === '6';
         });
-
-
-        // echo "<pre>";
-        // print_r($result);
-        // die;
 
         $content['data']    = $result;
         $content['periode'] = $start_date;
@@ -958,8 +953,13 @@ class GeneralLedgerExternal extends Public_Controller {
         $end_date = date("Y-m-t", strtotime($date));
 
         $data = $this->getData( $start_date, $end_date, $kode_gabung_perusahaan, $unit );
+
+        $result = array_filter($data, function ($row) {
+            $first = substr($row['no_coa'], 0, 1);
+            return $first === '5' || $first === '6';
+        });
             
-        $filename = 'GL_PERIODE_'.$tahun.$bulan.'_'.strtoupper($unit);
+        $filename = 'GL_EKSTERNAL_PERIODE_'.$tahun.$bulan.'_'.strtoupper($unit);
 
         $arr_header = array('No. COA', 'Unit', 'Nama COA', 'Saldo Awal', 'Debet', 'Kredit', 'Saldo Akhir');
         $arr_column = null;
@@ -971,7 +971,7 @@ class GeneralLedgerExternal extends Public_Controller {
             $tot_kredit = 0;
             $tot_saldo_akhir = 0;
 
-            foreach ($data as $key => $value) {
+            foreach ($result as $key => $value) {
                 $arr_column[ $idx ] = array(
                     'No. COA' => array('value' => strtoupper($value['no_coa']), 'data_type' => 'nik'),
                     'Unit' => array('value' => strtoupper($value['unit']), 'data_type' => 'string'),

@@ -14,7 +14,7 @@
         ?>
         <tr class="cursor-p data" onclick="gl.formDetail(this)" data-periode="<?php echo $periode; ?>" title="Klik untuk melihat detail" >
             <td class="text-left no_coa"><?php echo strtoupper($value['no_coa']); ?></td>
-            <td class="text-left unit"><?php echo strtoupper($value['unit']); ?></td>
+            <td class="text-left unit_tr"><?php echo strtoupper($value['unit']); ?></td>
             <td class="text-left nama_coa"><?php echo strtoupper($value['nama_coa']); ?></td>
 
            
