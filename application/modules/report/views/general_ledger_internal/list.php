@@ -6,12 +6,18 @@
         $tot_saldo_akhir = 0;
     ?>
     <?php foreach ($data as $key => $value) { ?>
+        <?php 
+            $key = $value['no_coa'].'-'.$value['unit'];
+            if (empty($mitra[$key]['noreg'])) {
+                continue;
+            }
+        ?>
         <tr class="cursor-p data" onclick="gl.formDetail(this)" data-periode="<?php echo $periode; ?>" title="Klik untuk melihat detail" >
             <td class="text-left no_coa"><?php echo strtoupper($value['no_coa']); ?></td>
             <td class="text-left unit"><?php echo strtoupper($value['unit']); ?></td>
             <td class="text-left nama_coa"><?php echo strtoupper($value['nama_coa']); ?></td>
 
-            <?php $key = $value['no_coa'].'-'.$value['unit']; ?>
+           
             <td class="text-center">
                 <?php echo !empty($mitra[$key]['noreg'])  ? $mitra[$key]['noreg'] : '-' ?>
             </td>
