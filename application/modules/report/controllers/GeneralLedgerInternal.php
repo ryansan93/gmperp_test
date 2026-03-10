@@ -766,7 +766,13 @@ class GeneralLedgerInternal extends Public_Controller {
         $start_date     = date("Y-m-d", strtotime($date));
         $end_date       = date("Y-m-t", strtotime($date));
 
+
+        
         $data    = $this->getData( $start_date, $end_date, $kode_gabung_perusahaan, $unit );
+
+        // echo "<pre>";
+        // print_r($data);
+        // die;
 
         $result  = array_filter($data, function ($row) {
             return substr($row['no_coa'], 0, 1) === '5';
@@ -780,9 +786,7 @@ class GeneralLedgerInternal extends Public_Controller {
             $temp[$cm['coa_tujuan'].'-'.$cm['unit']] = $cm;
         }
 
-        // echo "<pre>";
-        // print_r($temp);
-        // die;
+       
     
         $content['mitra']   = $temp;
         $content['data']    = $result;
@@ -948,6 +952,7 @@ class GeneralLedgerInternal extends Public_Controller {
     {
         $params = json_decode( exDecrypt($params_encrypt), true );
 
+    
         $start_date = null;
         $end_date = null;
 
@@ -965,12 +970,23 @@ class GeneralLedgerInternal extends Public_Controller {
         $end_date = date("Y-m-t", strtotime($date));
 
         $data = $this->getData( $start_date, $end_date, $kode_gabung_perusahaan, $unit );
-            
-        $filename = 'GL_PERIODE_'.$tahun.$bulan.'_'.strtoupper($unit);
 
-        $arr_header = array('No. COA', 'Unit', 'Nama COA', 'Saldo Awal', 'Debet', 'Kredit', 'Saldo Akhir');
+        $result  = array_filter($data, function ($row) {
+            return substr($row['no_coa'], 0, 1) === '5';
+        });
+
+        $data_mitra = $this->check_mitra($start_date, $end_date);
+
+        $mitra = [];
+        foreach($data_mitra as $cm){
+            $mitra[$cm['coa_tujuan'].'-'.$cm['unit']] = $cm;
+        }
+    
+        $filename = 'GL_INTERNAL_PERIODE_'.$tahun.$bulan.'_'.strtoupper($unit);
+
+        $arr_header = array('No. COA', 'Unit', 'Nama COA', 'No. Reg' , 'Plasma' , 'Saldo Awal', 'Debet', 'Kredit', 'Saldo Akhir');
         $arr_column = null;
-        if ( !empty($data) ) {
+        if (!empty($result) ) {
             $idx = 0;
 
             $tot_saldo_awal = 0;
@@ -978,11 +994,21 @@ class GeneralLedgerInternal extends Public_Controller {
             $tot_kredit = 0;
             $tot_saldo_akhir = 0;
 
-            foreach ($data as $key => $value) {
+            foreach ($result as $value) {
+                
+                $keymitra = $value['no_coa'].'-'.$value['unit'];
+                if (empty($mitra[$keymitra]['noreg'])) {
+                    continue;
+                }
+               
                 $arr_column[ $idx ] = array(
                     'No. COA' => array('value' => strtoupper($value['no_coa']), 'data_type' => 'nik'),
                     'Unit' => array('value' => strtoupper($value['unit']), 'data_type' => 'string'),
                     'Nama COA' => array('value' => strtoupper($value['nama_coa']), 'data_type' => 'string'),
+
+                    'No. Reg' => array('value' => strtoupper($mitra[$keymitra]['noreg']), 'data_type' => 'string'),
+                    'Plasma' => array('value' => strtoupper($mitra[$keymitra]['nama']), 'data_type' => 'string'),
+
                     'Saldo Awal' => array('value' => $value['saldo_awal'], 'data_type' => 'decimal2'),
                     'Debet' => array('value' => $value['debet'], 'data_type' => 'decimal2'),
                     'Kredit' => array('value' => $value['kredit'], 'data_type' => 'decimal2'),
@@ -998,13 +1024,15 @@ class GeneralLedgerInternal extends Public_Controller {
             }
 
             $arr_column[] = array(
-                'Nama COA' => array('value' => 'Total', 'data_type' => 'string', 'colspan' => array('A','C'), 'align' => 'right', 'text_style' => 'bold'),
+                'Nama COA' => array('value' => 'Total', 'data_type' => 'string', 'colspan' => array('A','E'), 'align' => 'right', 'text_style' => 'bold'),
                 'Saldo Awal' => array('value' => $tot_saldo_awal, 'data_type' => 'decimal2', 'text_style' => 'bold'),
                 'Debet' => array('value' => $tot_debet, 'data_type' => 'decimal2', 'text_style' => 'bold'),
                 'Kredit' => array('value' => $tot_kredit, 'data_type' => 'decimal2', 'text_style' => 'bold'),
                 'Saldo Akhir' => array('value' => $tot_saldo_akhir, 'data_type' => 'decimal2', 'text_style' => 'bold'),
             );
         }
+
+      
 
         // $this->exportExcelUsingSpreadSheet( $filename, $arr_header, $arr_column );
 

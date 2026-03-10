@@ -97,7 +97,9 @@ var gl = {
 		},'html');
 	}, // end - formDetail
 
-    encryptParams: function() {
+    encryptParams: function(elm ,e) {
+
+		e.preventDefault();
 		var err = 0;
 		
 		$.map( $('[data-required=1]'), function (ipt) {
@@ -129,7 +131,7 @@ var gl = {
 	            beforeSend: function() { showLoading(); },
 	            success: function(data) {
 	                hideLoading();
-
+					// console.log(data)
 	                if ( data.status == 1 ) {
 		                gl.exportExcel(data.content);
 	                } else {

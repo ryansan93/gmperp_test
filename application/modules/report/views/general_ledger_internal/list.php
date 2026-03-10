@@ -23,7 +23,7 @@
             </td>
 
             <td class="text-center">
-                <?php echo !empty($mitra[$key]['nama']) ? $mitra[$value['no_coa'].'-'.$value['unit']]['nama'] : '-' ?>
+                <?php echo !empty($mitra[$key]['nama']) ? $mitra[$key]['nama'] : '-' ?>
             </td>
 
             <td class="text-right"><?php echo ($value['saldo_awal'] >= 0) ? angkaDecimal($value['saldo_awal']) : '('.angkaDecimal(abs($value['saldo_awal'])).')'; ?></td>
