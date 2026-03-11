@@ -766,7 +766,7 @@ class GeneralLedgerExternal extends Public_Controller {
         $start_date     = date("Y-m-d", strtotime($date));
         $end_date       = date("Y-m-t", strtotime($date));
 
-       $config_mitra = $this->check_mitra($start_date, $end_date);
+        $config_mitra = $this->check_mitra($start_date, $end_date);
 
         $temp = [];
         foreach ($config_mitra as $cm) {
@@ -1036,32 +1036,39 @@ class GeneralLedgerExternal extends Public_Controller {
     {
 
         $sql = " select 
-                    sum(dj.nominal) as total,
-                    dj.unit,
-                    dj.coa_tujuan,
-                    mitra.jenis
-                from det_jurnal dj
-                left join rdim_submit rs on rs.noreg = dj.noreg
-                left join (
-                    select 
-                        mm.nim,
-                        min(m.nama) as nama,
-                        max(m.jenis) as jenis
-                    from mitra_mapping mm
-                    left join mitra m on m.nomor = mm.nomor
-                    where m.jenis = 'ME'
-                    group by mm.nim
-                ) mitra on mitra.nim = rs.nim
-                where dj.tanggal between '".$startdate."' and '".$enddate."'
-                and (
-                    dj.coa_tujuan like '5%' 
-                    or dj.coa_tujuan like '6%'
-                )
-                group by 
-                    dj.unit, 
-                    dj.coa_tujuan,
-                    mitra.jenis
-                order by dj.unit asc ";
+                sum(dj.nominal) as total,
+                dj.unit,
+                dj.coa_tujuan,
+                min(dj.noreg) as noreg,
+                mitra.jenis
+            from det_jurnal dj
+            left join rdim_submit rs on rs.noreg = dj.noreg
+            left join (
+                select 
+                    mm.nim,
+                    min(m.nama) as nama,
+                    max(m.jenis) as jenis
+                from mitra_mapping mm
+                left join mitra m on m.nomor = mm.nomor
+                where m.jenis = 'ME'
+                group by mm.nim
+            ) mitra on mitra.nim = rs.nim
+
+            where dj.tanggal between '".$startdate."' and '".$enddate."'
+            and (
+                dj.coa_tujuan like '5%' 
+                or dj.coa_tujuan like '6%'
+            )
+            and (
+                mitra.jenis = 'ME'
+                or dj.noreg is null
+            )
+            group by 
+                dj.unit, 
+                dj.coa_tujuan,
+                mitra.jenis
+
+            order by dj.unit asc ";
 
         // echo "<pre>";
         // print_r($sql);
