@@ -768,7 +768,7 @@ class GeneralLedgerExternal extends Public_Controller {
 
    
 
-        $data_gl    = $this->check_mitra($start_date, $end_date);
+        $data_gl    = $this->check_mitra($start_date, $end_date, $unit);
         $socoa      = $this->check_socoa($start_date);
         $saldo_awal = $this->check_saldo_awal();
 
@@ -972,18 +972,31 @@ class GeneralLedgerExternal extends Public_Controller {
         $start_date = date("Y-m-d", strtotime($date));
         $end_date = date("Y-m-t", strtotime($date));
 
-        $data = $this->getData( $start_date, $end_date, $kode_gabung_perusahaan, $unit );
+        $data_gl    = $this->check_mitra($start_date, $end_date, $unit);
+        $socoa      = $this->check_socoa($start_date);
+        $saldo_awal = $this->check_saldo_awal();
 
-        $result = array_filter($data, function ($row) {
-            $first = substr($row['no_coa'], 0, 1);
-            return $first === '5' || $first === '6';
-        });
+
+        $sa = [];
+        foreach ($saldo_awal as $s) {
+            $key = $s['no_coa'].'_'.$s['unit'];
+            $sa[$key] = !empty($s['saldo_awal']) ? $s['saldo_awal'] : 0;
+        }
+
+        foreach ($data_gl as &$gl) {
+
+            $key                = $gl['no_coa'].'_'.$gl['unit'];
+            $gl['kredit']       = isset($sc[$gl['no_coa']]) ? $sc[$gl['no_coa']] : 0;
+            $gl['saldo_awal']   = isset($sa[$key]) ? $sa[$key] : 0;
+            $gl['saldo_akhir']  = $gl['saldo_awal'] + $gl['debet'] + $gl['kredit'];
+        }
+        unset($gl);
             
         $filename = 'GL_EKSTERNAL_PERIODE_'.$tahun.$bulan.'_'.strtoupper($unit);
 
         $arr_header = array('No. COA', 'Unit', 'Nama COA', 'Saldo Awal', 'Debet', 'Kredit', 'Saldo Akhir');
         $arr_column = null;
-        if ( !empty($data) ) {
+        if ( !empty($data_gl) ) {
             $idx = 0;
 
             $tot_saldo_awal = 0;
@@ -991,7 +1004,7 @@ class GeneralLedgerExternal extends Public_Controller {
             $tot_kredit = 0;
             $tot_saldo_akhir = 0;
 
-            foreach ($result as $key => $value) {
+            foreach ($data_gl as $key => $value) {
                 $arr_column[ $idx ] = array(
                     'No. COA' => array('value' => strtoupper($value['no_coa']), 'data_type' => 'nik'),
                     'Unit' => array('value' => strtoupper($value['unit']), 'data_type' => 'string'),
@@ -1028,7 +1041,7 @@ class GeneralLedgerExternal extends Public_Controller {
     }
 
 
-    public function check_mitra($startdate, $enddate)
+    public function check_mitra($startdate, $enddate, $unit)
     {
 
         $sql = " select 
@@ -1068,9 +1081,13 @@ class GeneralLedgerExternal extends Public_Controller {
                 and (
                     mitra.jenis = 'ME'
                     or dj.noreg is null
-                )
+                ) ";
 
-                group by 
+                 if($unit){
+                    $sql .=" and dj.unit = '".$unit."' ";
+                }
+
+                $sql .= "group by 
                     dj.unit, 
                     dj.coa_tujuan, 
                     c.nama_coa,

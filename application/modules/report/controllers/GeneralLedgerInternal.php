@@ -349,7 +349,7 @@ class GeneralLedgerInternal extends Public_Controller {
         $end_date       = date("Y-m-t", strtotime($date));
 
 
-        $data_gl    = $this->check_mitra($start_date, $end_date);
+        $data_gl    = $this->check_mitra($start_date, $end_date, $unit);
         $socoa      = $this->check_socoa($start_date);
         $saldo_awal = $this->check_saldo_awal();
 
@@ -553,7 +553,7 @@ class GeneralLedgerInternal extends Public_Controller {
         $start_date = date("Y-m-d", strtotime($date));
         $end_date = date("Y-m-t", strtotime($date));
 
-        $data_gl    = $this->check_mitra($start_date, $end_date);
+        $data_gl    = $this->check_mitra($start_date, $end_date, $unit);
         $socoa      = $this->check_socoa($start_date);
         $saldo_awal = $this->check_saldo_awal();
 
@@ -634,7 +634,7 @@ class GeneralLedgerInternal extends Public_Controller {
     }
 
 
-    public function check_mitra($startdate, $enddate)
+    public function check_mitra($startdate, $enddate, $unit)
     {
 
         $sql = "select 
@@ -656,8 +656,13 @@ class GeneralLedgerInternal extends Public_Controller {
                     group by mm.nim
                 ) mitra on mitra.nim = rs.nim
                 where dj.tanggal between '".$startdate."' and '".$enddate."'
-                and dj.coa_tujuan like '5%'
-                group by 
+                and dj.coa_tujuan like '5%' ";
+
+                if($unit){
+                    $sql .=" and dj.unit = '".$unit."' ";
+                }
+
+                $sql .= "group by 
                     dj.unit, 
                     dj.coa_tujuan, 
                     c.nama_coa,
