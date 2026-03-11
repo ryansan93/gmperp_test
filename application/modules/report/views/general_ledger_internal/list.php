@@ -7,24 +7,19 @@
     ?>
     <?php foreach ($data as $key => $value) { ?>
         <?php 
-            $key = $value['no_coa'].'-'.$value['unit'];
-            if (empty($mitra[$key]['noreg'])) {
+            // $key = $value['no_coa'].'-'.$value['unit'];
+            if (empty($value['noreg'])) {
                 continue;
             }
         ?>
         <tr class="cursor-p data" onclick="gl.formDetail(this)" data-periode="<?php echo $periode; ?>" title="Klik untuk melihat detail" >
-            <td class="text-left no_coa"><?php echo strtoupper($value['no_coa']); ?></td>
+            <td class="text-center no_coa"><?php echo strtoupper($value['no_coa']); ?></td>
             <td class="text-left unit_tr"><?php echo strtoupper($value['unit']); ?></td>
             <td class="text-left nama_coa"><?php echo strtoupper($value['nama_coa']); ?></td>
 
-           
-            <td class="text-center">
-                <?php echo !empty($mitra[$key]['noreg'])  ? $mitra[$key]['noreg'] : '-' ?>
-            </td>
-
-            <td class="text-center">
-                <?php echo !empty($mitra[$key]['nama']) ? $mitra[$key]['nama'] : '-' ?>
-            </td>
+           <td class="text-center nama_coa"><?php echo strtoupper($value['noreg']); ?></td>
+           <td class="text-center nama_coa"><?php echo strtoupper($value['nama']); ?></td>
+            
 
             <td class="text-right"><?php echo ($value['saldo_awal'] >= 0) ? angkaDecimal($value['saldo_awal']) : '('.angkaDecimal(abs($value['saldo_awal'])).')'; ?></td>
             <td class="text-right"><?php echo ($value['debet'] >= 0) ? angkaDecimal($value['debet']) : '('.angkaDecimal(abs($value['debet'])).')'; ?></td>
