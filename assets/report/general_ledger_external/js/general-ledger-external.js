@@ -60,7 +60,7 @@ var gl = {
 
 		var periode = $(tr).attr('data-periode');
 		var no_coa = $(tr).find('td.no_coa').text();
-		var unit = $(tr).find('td.unit').text();
+		var unit = $(tr).find('td.unit_tr').text();
 		var nama_coa = $(tr).find('td.nama_coa').text();
 
 		var params = {

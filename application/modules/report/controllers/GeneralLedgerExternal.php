@@ -766,14 +766,34 @@ class GeneralLedgerExternal extends Public_Controller {
         $start_date     = date("Y-m-d", strtotime($date));
         $end_date       = date("Y-m-t", strtotime($date));
 
-        $data    = $this->getData( $start_date, $end_date, $kode_gabung_perusahaan, $unit );
+       $config_mitra = $this->check_mitra($start_date, $end_date);
+
+        $temp = [];
+        foreach ($config_mitra as $cm) {
+            $temp[$cm['coa_tujuan'] . '-' . $cm['unit']] = $cm;
+        }
+
+        $data = $this->getData($start_date, $end_date, $kode_gabung_perusahaan, $unit);
 
         $result = array_filter($data, function ($row) {
             $first = substr($row['no_coa'], 0, 1);
             return $first === '5' || $first === '6';
         });
 
-        $content['data']    = $result;
+        $data_external = [];
+        foreach ($result as $r) {
+            $key = $r['no_coa'] . '-' . $r['unit'];
+
+            if (isset($temp[$key]) && $temp[$key]['jenis'] === 'ME') {
+                $data_external[] = $r;
+            }
+        }
+
+        // echo "<pre>";
+        // print_r($data_external);
+        // die;
+
+        $content['data']    = $data_external;
         $content['periode'] = $start_date;
         $html               = $this->load->view($this->pathView.'list', $content, TRUE);
 
@@ -785,6 +805,10 @@ class GeneralLedgerExternal extends Public_Controller {
         $params = $this->input->get('params');
 
         $detail = $this->getDetail( $params['periode'], $params['unit'], $params['no_coa'] );
+
+        // echo "<pre>";
+        // print_r($detail);
+        // die;
 
         $content['data'] = $params;
         $content['detail'] = $detail;
@@ -1005,6 +1029,53 @@ class GeneralLedgerExternal extends Public_Controller {
 
         $this->load->helper('download');
         force_download('export_excel/'.$filename.'.xlsx', NULL);
+    }
+
+
+    public function check_mitra($startdate, $enddate)
+    {
+
+        $sql = " select 
+                    sum(dj.nominal) as total,
+                    dj.unit,
+                    dj.coa_tujuan,
+                    mitra.jenis
+                from det_jurnal dj
+                left join rdim_submit rs on rs.noreg = dj.noreg
+                left join (
+                    select 
+                        mm.nim,
+                        min(m.nama) as nama,
+                        max(m.jenis) as jenis
+                    from mitra_mapping mm
+                    left join mitra m on m.nomor = mm.nomor
+                    where m.jenis = 'ME'
+                    group by mm.nim
+                ) mitra on mitra.nim = rs.nim
+                where dj.tanggal between '".$startdate."' and '".$enddate."'
+                and (
+                    dj.coa_tujuan like '5%' 
+                    or dj.coa_tujuan like '6%'
+                )
+                group by 
+                    dj.unit, 
+                    dj.coa_tujuan,
+                    mitra.jenis
+                order by dj.unit asc ";
+
+        // echo "<pre>";
+        // print_r($sql);
+        // die;
+
+        $m_conf = new \Model\Storage\Conf();
+        $d_conf = $m_conf->hydrateRaw($sql);
+
+        $data = null;
+        if ($d_conf->count() > 0) {
+            $data = $d_conf->toArray();
+        }
+
+        return $data;
     }
 
 
