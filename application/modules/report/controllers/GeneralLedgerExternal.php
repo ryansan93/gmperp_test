@@ -766,34 +766,30 @@ class GeneralLedgerExternal extends Public_Controller {
         $start_date     = date("Y-m-d", strtotime($date));
         $end_date       = date("Y-m-t", strtotime($date));
 
-        $config_mitra = $this->check_mitra($start_date, $end_date);
+   
 
-        $temp = [];
-        foreach ($config_mitra as $cm) {
-            $temp[$cm['coa_tujuan'] . '-' . $cm['unit']] = $cm;
+        $data_gl    = $this->check_mitra($start_date, $end_date);
+        $socoa      = $this->check_socoa($start_date);
+        $saldo_awal = $this->check_saldo_awal();
+
+
+        $sa = [];
+        foreach ($saldo_awal as $s) {
+            $key = $s['no_coa'].'_'.$s['unit'];
+            $sa[$key] = !empty($s['saldo_awal']) ? $s['saldo_awal'] : 0;
         }
 
-        $data = $this->getData($start_date, $end_date, $kode_gabung_perusahaan, $unit);
+        foreach ($data_gl as &$gl) {
 
-        $result = array_filter($data, function ($row) {
-            $first = substr($row['no_coa'], 0, 1);
-            return $first === '5' || $first === '6';
-        });
-
-        $data_external = [];
-        foreach ($result as $r) {
-            $key = $r['no_coa'] . '-' . $r['unit'];
-
-            if (isset($temp[$key]) && $temp[$key]['jenis'] === 'ME') {
-                $data_external[] = $r;
-            }
+            $key                = $gl['no_coa'].'_'.$gl['unit'];
+            $gl['kredit']       = isset($sc[$gl['no_coa']]) ? $sc[$gl['no_coa']] : 0;
+            $gl['saldo_awal']   = isset($sa[$key]) ? $sa[$key] : 0;
+            $gl['saldo_akhir']  = $gl['saldo_awal'] + $gl['debet'] + $gl['kredit'];
         }
+        unset($gl);
+       
 
-        // echo "<pre>";
-        // print_r($data_external);
-        // die;
-
-        $content['data']    = $data_external;
+        $content['data']    = $data_gl;
         $content['periode'] = $start_date;
         $html               = $this->load->view($this->pathView.'list', $content, TRUE);
 
@@ -1036,43 +1032,142 @@ class GeneralLedgerExternal extends Public_Controller {
     {
 
         $sql = " select 
-                sum(dj.nominal) as total,
-                dj.unit,
-                dj.coa_tujuan,
-                min(dj.noreg) as noreg,
-                mitra.jenis
-            from det_jurnal dj
-            left join rdim_submit rs on rs.noreg = dj.noreg
-            left join (
-                select 
-                    mm.nim,
-                    min(m.nama) as nama,
-                    max(m.jenis) as jenis
-                from mitra_mapping mm
-                left join mitra m on m.nomor = mm.nomor
-                where m.jenis = 'ME'
-                group by mm.nim
-            ) mitra on mitra.nim = rs.nim
+                    sum(dj.nominal) as debet,
+                    dj.unit,
+                    dj.coa_tujuan as no_coa,
+                    c.nama_coa,
+                    dj.noreg,
+                    mitra.nama
+                from det_jurnal dj
 
-            where dj.tanggal between '".$startdate."' and '".$enddate."'
-            and (
-                dj.coa_tujuan like '5%' 
-                or dj.coa_tujuan like '6%'
-            )
-            and (
-                mitra.jenis = 'ME'
-                or dj.noreg is null
-            )
-            group by 
-                dj.unit, 
-                dj.coa_tujuan,
-                mitra.jenis
+                inner join coa c 
+                    on c.coa = dj.coa_tujuan 
 
-            order by dj.unit asc ";
+                left join rdim_submit rs 
+                    on rs.noreg = dj.noreg
+
+                left join (
+                    select 
+                        mm.nim,
+                        min(m.nama) as nama,
+                        max(m.jenis) as jenis
+                    from mitra_mapping mm
+                    left join mitra m 
+                        on m.nomor = mm.nomor
+                    group by mm.nim
+                ) mitra 
+                    on mitra.nim = rs.nim
+
+                where dj.tanggal between '".$startdate."' and '".$enddate."'
+
+                and (
+                    dj.coa_tujuan like '5%' 
+                    or dj.coa_tujuan like '6%'
+                )
+
+                and (
+                    mitra.jenis = 'ME'
+                    or dj.noreg is null
+                )
+
+                group by 
+                    dj.unit, 
+                    dj.coa_tujuan, 
+                    c.nama_coa,
+                    dj.noreg,
+                    mitra.nama
+
+                order by dj.unit asc ";
 
         // echo "<pre>";
         // print_r($sql);
         // die;
+
+        $m_conf = new \Model\Storage\Conf();
+        $d_conf = $m_conf->hydrateRaw($sql);
+
+        $data = null;
+        if ($d_conf->count() > 0) {
+            $data = $d_conf->toArray();
+        }
+
+        return $data;
+    }
+
+      public function check_socoa($startdate)
+    {
+        $sql = "select * from sacoa where periode = '".substr($startdate, 0, 7)."' and debet <> 0";
+
+        $m_conf = new \Model\Storage\Conf();
+        $d_conf = $m_conf->hydrateRaw($sql);
+
+        $data = null;
+        if ($d_conf->count() > 0) {
+            $data = $d_conf->toArray();
+        }
+
+        return $data;
+    }
+
+    public function check_saldo_awal()
+    {
+        $sql = "select
+                sb.no_coa as no_coa,
+                sb.unit,
+                c.nama_coa,
+                case
+                    when sb.debet2 <> 0 then
+                        -- sb.debet2
+                        0
+                    else
+                        sb.debet1
+                end as saldo_awal,
+                -- sb.saldo_awal,
+                0 as kredit,
+                0 as debet
+            from (
+                select
+                    sa.no_coa,
+                    sa.unit,
+                    sum(sa.debet1) as debet1,
+                    sum(sa.kredit1) as kredit1,
+                    sum(sa.debet2) as debet2,
+                    sum(sa.kredit2) as kredit2
+                from
+                (
+                    select
+                        sb.coa as no_coa,
+                        sb.unit,
+                        isnull(sb.saldo_awal, 0) as debet1,
+                        0 as kredit1,
+                        0 as debet2,
+                        0 as kredit2
+                    from saldo_bulanan sb 
+                    where 
+                        sb.tanggal between '2026-01-01' and '2026-01-31' and
+                        isnull(sb.saldo_awal, 0) <> 0
+
+                    union all
+
+                    select
+                        sc.no_coa,
+                        sc.unit,
+                        0 as debet1,
+                        0 as kredit1,
+                        isnull(sc.debet, 0) as debet2,
+                        0 as kredit2
+                    from sacoa sc
+                    where
+                        sc.periode = '2026-01' and
+                        sc.debet <> 0
+                ) sa
+                group by
+                    sa.no_coa,
+                    sa.unit
+            ) sb 
+            left join coa c on sb.no_coa = c.coa"
+        ;
+
 
         $m_conf = new \Model\Storage\Conf();
         $d_conf = $m_conf->hydrateRaw($sql);
