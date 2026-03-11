@@ -350,6 +350,7 @@ class GeneralLedgerInternal extends Public_Controller {
 
 
         $data_gl    = $this->check_mitra($start_date, $end_date, $unit);
+      
         $socoa      = $this->check_socoa($start_date);
         $saldo_awal = $this->check_saldo_awal();
 
@@ -361,7 +362,6 @@ class GeneralLedgerInternal extends Public_Controller {
         }
 
         foreach ($data_gl as &$gl) {
-
             $key                = $gl['no_coa'].'_'.$gl['unit'];
             $gl['kredit']       = isset($sc[$gl['no_coa']]) ? $sc[$gl['no_coa']] : 0;
             $gl['saldo_awal']   = isset($sa[$key]) ? $sa[$key] : 0;
@@ -369,9 +369,33 @@ class GeneralLedgerInternal extends Public_Controller {
         }
         unset($gl);
 
+        $data = [];
+
+        foreach ($data_gl as $row) {
+            $key = $row['no_coa'].'_'.$row['unit'].'_'.$row['noreg'];
+            if (!isset($data[$key])) {
+
+                $data[$key] = [
+                    'no_coa'      => $row['no_coa'],
+                    'unit'        => $row['unit'],
+                    'nama_coa'    => $row['nama_coa'],
+                    'saldo_awal'  => 0,
+                    'debet'       => 0,
+                    'kredit'      => 0,
+                    'saldo_akhir' => 0,
+                ];
+            }
+
+            $data[$key]['saldo_awal']  += $row['saldo_awal'];
+            $data[$key]['debet']       += $row['debet'];
+            $data[$key]['kredit']      += $row['kredit'];
+            $data[$key]['saldo_akhir'] += $row['saldo_akhir'];
+        }
+        $data = array_values($data);
         // echo "<pre>";
-        // print_r($data_gl);
+        // print_r($data);
         // die;
+
 
         $content['data']    = $data_gl;
         $content['periode'] = $start_date;
@@ -658,7 +682,7 @@ class GeneralLedgerInternal extends Public_Controller {
                 where dj.tanggal between '".$startdate."' and '".$enddate."'
                 and dj.coa_tujuan like '5%' ";
 
-                if($unit){
+                if($unit != 'all' ){
                     $sql .=" and dj.unit = '".$unit."' ";
                 }
 

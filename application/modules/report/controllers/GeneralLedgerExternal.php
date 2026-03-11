@@ -787,9 +787,32 @@ class GeneralLedgerExternal extends Public_Controller {
             $gl['saldo_akhir']  = $gl['saldo_awal'] + $gl['debet'] + $gl['kredit'];
         }
         unset($gl);
-       
 
-        $content['data']    = $data_gl;
+        $data = [];
+
+        foreach ($data_gl as $row) {
+            $key = $row['no_coa'].'_'.$row['unit'];
+            if (!isset($data[$key])) {
+
+                $data[$key] = [
+                    'no_coa'      => $row['no_coa'],
+                    'unit'        => $row['unit'],
+                    'nama_coa'    => $row['nama_coa'],
+                    'saldo_awal'  => 0,
+                    'debet'       => 0,
+                    'kredit'      => 0,
+                    'saldo_akhir' => 0,
+                ];
+            }
+
+            $data[$key]['saldo_awal']  += $row['saldo_awal'];
+            $data[$key]['debet']       += $row['debet'];
+            $data[$key]['kredit']      += $row['kredit'];
+            $data[$key]['saldo_akhir'] += $row['saldo_akhir'];
+        }
+        $data = array_values($data);
+
+        $content['data']    = $data;
         $content['periode'] = $start_date;
         $html               = $this->load->view($this->pathView.'list', $content, TRUE);
 
@@ -1083,7 +1106,7 @@ class GeneralLedgerExternal extends Public_Controller {
                     or dj.noreg is null
                 ) ";
 
-                 if($unit){
+                if($unit != 'all' ){
                     $sql .=" and dj.unit = '".$unit."' ";
                 }
 
