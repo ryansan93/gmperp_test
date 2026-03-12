@@ -6,31 +6,25 @@
         $tot_saldo_akhir = 0;
     ?>
     <?php foreach ($data as $key => $value) { ?>
-        <?php 
-            // $key = $value['no_coa'].'-'.$value['unit'];
-            if (empty($value['noreg'])) {
-                continue;
-            }
-        ?>
         <tr class="cursor-p data" onclick="gl.formDetail(this)" data-periode="<?php echo $periode; ?>" title="Klik untuk melihat detail" >
-            <td class="text-center no_coa"><?php echo strtoupper($value['no_coa']); ?></td>
+            <td class="text-left no_coa"><?php echo strtoupper($value['no_coa']); ?></td>
             <td class="text-left unit_tr"><?php echo strtoupper($value['unit']); ?></td>
             <td class="text-left nama_coa"><?php echo strtoupper($value['nama_coa']); ?></td>
-
-           <td class="text-center nama_coa"><?php echo strtoupper($value['noreg']); ?></td>
-           <td class="text-center nama_coa"><?php echo strtoupper($value['nama']); ?></td>
-            
-
-            <td class="text-right"><?php echo ($value['saldo_awal'] >= 0) ? angkaDecimal($value['saldo_awal']) : '('.angkaDecimal(abs($value['saldo_awal'])).')'; ?></td>
+            <td class="text-center nama_coa"><?php echo strtoupper($value['noreg']); ?></td>
+            <td class="text-center nama_coa"><?php echo strtoupper($value['nama_mitra']); ?></td>
+            <td class="text-right"style="width:10%;"><?php echo ($value['saldo_awal'] >= 0) ? angkaDecimal($value['saldo_awal']) : '('.angkaDecimal(abs($value['saldo_awal'])).')'; ?></td>
             <td class="text-right"><?php echo ($value['debet'] >= 0) ? angkaDecimal($value['debet']) : '('.angkaDecimal(abs($value['debet'])).')'; ?></td>
             <td class="text-right"><?php echo ($value['kredit'] >= 0) ? angkaDecimal($value['kredit']) : '('.angkaDecimal(abs($value['kredit'])).')'; ?></td>
-            <td class="text-right"><?php echo ($value['saldo_akhir'] >= 0) ? angkaDecimal($value['saldo_akhir']) : '('.angkaDecimal(abs($value['saldo_akhir'])).')'; ?></td>
+            <?php 
+                $saldo_akhir = $value['saldo_awal'] + $value['debet'] + $value['kredit'];
+            ?>
+            <td class="text-right"><?php echo angkaDecimal($saldo_akhir) ?></td>
         </tr>
         <?php
             $tot_saldo_awal += $value['saldo_awal'];
             $tot_debet += $value['debet'];
             $tot_kredit += $value['kredit'];
-            $tot_saldo_akhir += $value['saldo_akhir'];
+            $tot_saldo_akhir += $saldo_akhir;
         ?>
     <?php } ?>
     <tr class="">
@@ -42,6 +36,6 @@
     </tr>
 <?php } else { ?>
     <tr>
-        <td colspan="14">Data tidak ditemukan.</td>
+        <td colspan="7">Data tidak ditemukan.</td>
     </tr>
 <?php } ?>

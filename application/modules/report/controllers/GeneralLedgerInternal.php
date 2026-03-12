@@ -84,7 +84,110 @@ class GeneralLedgerInternal extends Public_Controller {
         return $data;
     }
 
-    
+    public function getData($start_date, $end_date, $kode_gabung_perusahaan, $unit) {
+        $sql = "select
+                    data.no_coa,
+                    data.unit,
+                    data.nama_coa,
+                    data.noreg,
+                    data.nama_mitra,
+                    sum(data.debet) as debet,
+                    sum(data.kredit) as kredit
+                from
+                (
+                    select
+                        case
+                            when SUBSTRING(data.coa_asal, 1, 1) in (5, 6) then
+                                data.coa_asal
+                            else
+                                data.coa_tujuan
+                        end as no_coa,
+                        case
+                            when SUBSTRING(data.coa_asal, 1, 1) in (5, 6) then
+                                data.unit
+                            else
+                                isnull(data.unit_tujuan, data.unit)
+                        end as unit,
+                        case
+                            when SUBSTRING(data.coa_asal, 1, 1) in (5, 6) then
+                                data.asal
+                            else
+                                data.tujuan
+                        end as nama_coa,
+                        data.noreg,
+                        data.nama_mitra,
+                        case
+                            when SUBSTRING(data.coa_asal, 1, 1) in (5, 6) then
+                                0
+                            else
+                                data.nominal
+                        end as debet,
+                        case
+                            when SUBSTRING(data.coa_asal, 1, 1) in (5, 6) then
+                                data.nominal
+                            else
+                                0
+                        end as kredit
+                    from
+                    (
+                        select dj.*, m.nama as nama_mitra from det_jurnal dj
+                        left join
+                            rdim_submit rs
+                            on
+                                dj.noreg = rs.noreg
+                        left join
+                            (
+                                select mm1.* from mitra_mapping mm1
+                                right join
+                                    (select max(id) as id, nim from mitra_mapping group by nim) mm2
+                                    on
+                                        mm1.id = mm2.id
+                            ) mm
+                            on
+                                rs.nim = mm.nim
+                        left join
+                            mitra m
+                            on
+                                m.id = mm.mitra
+                        left join
+                            jenis j
+                            on
+                                m.jenis = j.kode
+                        where
+                            dj.tanggal between '".$start_date."' and '".$end_date."' and
+                            (SUBSTRING(dj.coa_asal, 1, 1) in (5, 6) or SUBSTRING(dj.coa_tujuan, 1, 1) in (5, 6)) and
+                            dj.noreg is not null and
+                            j.kode = 'MI'
+                    ) data
+                ) data ";
+
+                if($unit != 'all' ){
+                    $sql .=" where data.unit = '".$unit."' ";
+                } 
+
+                $sql .= "group by
+                    data.no_coa,
+                    data.unit,
+                    data.nama_coa,
+                    data.noreg,
+                    data.nama_mitra
+                order by
+                    data.no_coa asc,
+                    data.unit asc,
+                    data.nama_mitra asc ";
+
+        $m_conf = new \Model\Storage\Conf();
+        $d_conf = $m_conf->hydrateRaw( $sql );
+
+        $data = null;
+        if ( $d_conf->count() > 0 ) {
+            $data = $d_conf->toArray();
+        }
+        
+        return $data;
+    }
+
+
     public function getDetail($periode, $unit, $no_coa) {
         $start_date = $periode;
         $end_date = date("Y-m-t", strtotime($start_date));
@@ -331,75 +434,32 @@ class GeneralLedgerInternal extends Public_Controller {
     }
 
     public function getLists() {
-        $params         = $this->input->get('params');
+        $params = $this->input->get('params');
 
-        $start_date     = null;
-        $end_date       = null;
+        $start_date = null;
+        $end_date = null;
 
-        $bulan                  = $params['bulan'];
-        $tahun                  = substr($params['tahun'], 0, 4);
+        $bulan = $params['bulan'];
+        $tahun = substr($params['tahun'], 0, 4);
         $kode_gabung_perusahaan = $params['perusahaan'];
-        $unit                   = $params['unit'];
+        $unit = $params['unit'];
 
         $i = $bulan-1;
 
-        $angka_bulan    = (strlen($i+1) == 1) ? '0'.($i+1) : $i+1;
-        $date           = $tahun.'-'.$angka_bulan.'-01';
-        $start_date     = date("Y-m-d", strtotime($date));
-        $end_date       = date("Y-m-t", strtotime($date));
+        $angka_bulan = (strlen($i+1) == 1) ? '0'.($i+1) : $i+1;
 
+        $date = $tahun.'-'.$angka_bulan.'-01';
+        $start_date = date("Y-m-d", strtotime($date));
+        $end_date = date("Y-m-t", strtotime($date));
 
-        $data_gl    = $this->check_mitra($start_date, $end_date, $unit);
-      
-        $socoa      = $this->check_socoa($start_date);
-        $saldo_awal = $this->check_saldo_awal();
-
-
-        $sa = [];
-        foreach ($saldo_awal as $s) {
-            $key = $s['no_coa'].'_'.$s['unit'];
-            $sa[$key] = !empty($s['saldo_awal']) ? $s['saldo_awal'] : 0;
-        }
-
-        foreach ($data_gl as &$gl) {
-            $key                = $gl['no_coa'].'_'.$gl['unit'];
-            $gl['kredit']       = isset($sc[$gl['no_coa']]) ? $sc[$gl['no_coa']] : 0;
-            $gl['saldo_awal']   = isset($sa[$key]) ? $sa[$key] : 0;
-            $gl['saldo_akhir']  = $gl['saldo_awal'] + $gl['debet'] + $gl['kredit'];
-        }
-        unset($gl);
-
-        $data = [];
-
-        foreach ($data_gl as $row) {
-            $key = $row['no_coa'].'_'.$row['unit'].'_'.$row['noreg'];
-            if (!isset($data[$key])) {
-
-                $data[$key] = [
-                    'no_coa'      => $row['no_coa'],
-                    'unit'        => $row['unit'],
-                    'nama_coa'    => $row['nama_coa'],
-                    'saldo_awal'  => 0,
-                    'debet'       => 0,
-                    'kredit'      => 0,
-                    'saldo_akhir' => 0,
-                ];
-            }
-
-            $data[$key]['saldo_awal']  += $row['saldo_awal'];
-            $data[$key]['debet']       += $row['debet'];
-            $data[$key]['kredit']      += $row['kredit'];
-            $data[$key]['saldo_akhir'] += $row['saldo_akhir'];
-        }
-        $data = array_values($data);
+        $data = $this->getData( $start_date, $end_date, $kode_gabung_perusahaan, $unit );
         // echo "<pre>";
         // print_r($data);
         // die;
 
-
-        $content['data']    = $data_gl;
+        $content['data'] = $data;
         $content['periode'] = $start_date;
-        $html               = $this->load->view($this->pathView.'list', $content, TRUE);
+        $html = $this->load->view($this->pathView.'list', $content, TRUE);
 
         echo $html;
     }
@@ -560,7 +620,6 @@ class GeneralLedgerInternal extends Public_Controller {
     {
         $params = json_decode( exDecrypt($params_encrypt), true );
 
-    
         $start_date = null;
         $end_date = null;
 
@@ -577,35 +636,13 @@ class GeneralLedgerInternal extends Public_Controller {
         $start_date = date("Y-m-d", strtotime($date));
         $end_date = date("Y-m-t", strtotime($date));
 
-        $data_gl    = $this->check_mitra($start_date, $end_date, $unit);
-        $socoa      = $this->check_socoa($start_date);
-        $saldo_awal = $this->check_saldo_awal();
-
-
-        $sa = [];
-        foreach ($saldo_awal as $s) {
-            $key = $s['no_coa'].'_'.$s['unit'];
-            $sa[$key] = !empty($s['saldo_awal']) ? $s['saldo_awal'] : 0;
-        }
-
-        foreach ($data_gl as &$gl) {
-
-            $key                = $gl['no_coa'].'_'.$gl['unit'];
-            $gl['kredit']       = isset($sc[$gl['no_coa']]) ? $sc[$gl['no_coa']] : 0;
-            $gl['saldo_awal']   = isset($sa[$key]) ? $sa[$key] : 0;
-            $gl['saldo_akhir']  = $gl['saldo_awal'] + $gl['debet'] + $gl['kredit'];
-        }
-        unset($gl);
-
-        // echo "<pre>";
-        // print_r($data_gl);
-        // die;
-    
+        $data = $this->getData( $start_date, $end_date, $kode_gabung_perusahaan, $unit );
+            
         $filename = 'GL_INTERNAL_PERIODE_'.$tahun.$bulan.'_'.strtoupper($unit);
 
-        $arr_header = array('No. COA', 'Unit', 'Nama COA', 'No. Reg' , 'Plasma' , 'Saldo Awal', 'Debet', 'Kredit', 'Saldo Akhir');
+        $arr_header = array('No. COA', 'Unit', 'Nama COA', 'No. Reg' , 'Plasma' ,'Saldo Awal', 'Debet', 'Kredit', 'Saldo Akhir');
         $arr_column = null;
-        if (!empty($data_gl) ) {
+        if ( !empty($data) ) {
             $idx = 0;
 
             $tot_saldo_awal = 0;
@@ -613,27 +650,26 @@ class GeneralLedgerInternal extends Public_Controller {
             $tot_kredit = 0;
             $tot_saldo_akhir = 0;
 
-            foreach ($data_gl as $value) {
+            foreach ($data as $key => $value) {
                 
-               
+                $saldo_akhir = $value['saldo_awal'] + $value['debet'] + $value['kredit'];
+            
                 $arr_column[ $idx ] = array(
                     'No. COA' => array('value' => strtoupper($value['no_coa']), 'data_type' => 'nik'),
                     'Unit' => array('value' => strtoupper($value['unit']), 'data_type' => 'string'),
                     'Nama COA' => array('value' => strtoupper($value['nama_coa']), 'data_type' => 'string'),
-
-                    'No. Reg' => array('value' => strtoupper($value['noreg']), 'data_type' => 'string'),
-                    'Plasma' => array('value' => strtoupper($value['nama']), 'data_type' => 'string'),
-
+                    'No. Reg' => array('value' => $value['noreg'], 'data_type' => 'string'),
+                    'Plasma' => array('value' => strtoupper($value['nama_mitra']), 'data_type' => 'string'),
                     'Saldo Awal' => array('value' => $value['saldo_awal'], 'data_type' => 'decimal2'),
                     'Debet' => array('value' => $value['debet'], 'data_type' => 'decimal2'),
                     'Kredit' => array('value' => $value['kredit'], 'data_type' => 'decimal2'),
-                    'Saldo Akhir' => array('value' => $value['saldo_akhir'], 'data_type' => 'decimal2'),
+                    'Saldo Akhir' => array('value' => $saldo_akhir, 'data_type' => 'decimal2'),
                 );
 
                 $tot_saldo_awal += $value['saldo_awal'];
                 $tot_debet += $value['debet'];
                 $tot_kredit += $value['kredit'];
-                $tot_saldo_akhir += $value['saldo_akhir'];
+                $tot_saldo_akhir += $saldo_akhir;
 
                 $idx++;
             }
@@ -647,150 +683,11 @@ class GeneralLedgerInternal extends Public_Controller {
             );
         }
 
-      
-
         // $this->exportExcelUsingSpreadSheet( $filename, $arr_header, $arr_column );
 
         Modules::run( 'base/ExportExcel/exportExcelUsingSpreadSheet', $filename, $arr_header, $arr_column );
 
         $this->load->helper('download');
         force_download('export_excel/'.$filename.'.xlsx', NULL);
-    }
-
-
-    public function check_mitra($startdate, $enddate, $unit)
-    {
-
-        $sql = "select 
-                    sum(dj.nominal) as debet,
-                    dj.unit,
-                    dj.coa_tujuan as no_coa,
-                    c.nama_coa,
-                    dj.noreg,
-                    mitra.nama
-                from det_jurnal dj
-                inner join coa c on c.coa = dj.coa_tujuan 
-                left join rdim_submit rs on rs.noreg = dj.noreg
-                left join (
-                    select 
-                        mm.nim,
-                        min(m.nama) as nama
-                    from mitra_mapping mm
-                    left join mitra m on m.nomor = mm.nomor
-                    group by mm.nim
-                ) mitra on mitra.nim = rs.nim
-                where dj.tanggal between '".$startdate."' and '".$enddate."'
-                and dj.coa_tujuan like '5%' ";
-
-                if($unit != 'all' ){
-                    $sql .=" and dj.unit = '".$unit."' ";
-                }
-
-                $sql .= "group by 
-                    dj.unit, 
-                    dj.coa_tujuan, 
-                    c.nama_coa,
-                    dj.noreg,
-                    mitra.nama
-                order by dj.unit asc";
-        // echo "<pre>";
-        // print_r($sql);
-        // die;
-
-        $m_conf = new \Model\Storage\Conf();
-        $d_conf = $m_conf->hydrateRaw($sql);
-
-        $data = null;
-        if ($d_conf->count() > 0) {
-            $data = $d_conf->toArray();
-        }
-
-        return $data;
-    }
-
-
-    public function check_socoa($startdate)
-    {
-        $sql = "select * from sacoa where periode = '".substr($startdate, 0, 7)."' and debet <> 0";
-
-        $m_conf = new \Model\Storage\Conf();
-        $d_conf = $m_conf->hydrateRaw($sql);
-
-        $data = null;
-        if ($d_conf->count() > 0) {
-            $data = $d_conf->toArray();
-        }
-
-        return $data;
-    }
-
-    public function check_saldo_awal()
-    {
-        $sql = "select
-                    sb.no_coa as no_coa,
-                    sb.unit,
-                    c.nama_coa,
-                    case
-                        when sb.debet2 <> 0 then
-                            -- sb.debet2
-                            0
-                        else
-                            sb.debet1
-                    end as saldo_awal,
-                    -- sb.saldo_awal,
-                    0 as kredit,
-                    0 as debet
-                from (
-                    select
-                        sa.no_coa,
-                        sa.unit,
-                        sum(sa.debet1) as debet1,
-                        sum(sa.kredit1) as kredit1,
-                        sum(sa.debet2) as debet2,
-                        sum(sa.kredit2) as kredit2
-                    from
-                    (
-                        select
-                            sb.coa as no_coa,
-                            sb.unit,
-                            isnull(sb.saldo_awal, 0) as debet1,
-                            0 as kredit1,
-                            0 as debet2,
-                            0 as kredit2
-                        from saldo_bulanan sb 
-                        where 
-                            sb.tanggal between '2026-01-01' and '2026-01-31' and
-                            isnull(sb.saldo_awal, 0) <> 0
-
-                        union all
-
-                        select
-                            sc.no_coa,
-                            sc.unit,
-                            0 as debet1,
-                            0 as kredit1,
-                            isnull(sc.debet, 0) as debet2,
-                            0 as kredit2
-                        from sacoa sc
-                        where
-                            sc.periode = '2026-01' and
-                            sc.debet <> 0
-                    ) sa
-                    group by
-                        sa.no_coa,
-                        sa.unit
-                ) sb 
-                left join coa c on sb.no_coa = c.coa";
-
-
-                $m_conf = new \Model\Storage\Conf();
-                $d_conf = $m_conf->hydrateRaw($sql);
-
-                $data = null;
-                if ($d_conf->count() > 0) {
-                    $data = $d_conf->toArray();
-                }
-
-                return $data;
     }
 }

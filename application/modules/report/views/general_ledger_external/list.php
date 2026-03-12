@@ -13,13 +13,16 @@
             <td class="text-right"style="width:10%;"><?php echo ($value['saldo_awal'] >= 0) ? angkaDecimal($value['saldo_awal']) : '('.angkaDecimal(abs($value['saldo_awal'])).')'; ?></td>
             <td class="text-right"><?php echo ($value['debet'] >= 0) ? angkaDecimal($value['debet']) : '('.angkaDecimal(abs($value['debet'])).')'; ?></td>
             <td class="text-right"><?php echo ($value['kredit'] >= 0) ? angkaDecimal($value['kredit']) : '('.angkaDecimal(abs($value['kredit'])).')'; ?></td>
-            <td class="text-right"><?php echo ($value['saldo_akhir'] >= 0) ? angkaDecimal($value['saldo_akhir']) : '('.angkaDecimal(abs($value['saldo_akhir'])).')'; ?></td>
+            <?php 
+                $saldo_akhir = $value['saldo_awal'] + $value['debet'] + $value['kredit'];
+            ?>
+            <td class="text-right"><?php echo angkaDecimal($saldo_akhir) ?></td>
         </tr>
         <?php
             $tot_saldo_awal += $value['saldo_awal'];
             $tot_debet += $value['debet'];
             $tot_kredit += $value['kredit'];
-            $tot_saldo_akhir += $value['saldo_akhir'];
+            $tot_saldo_akhir += $saldo_akhir;
         ?>
     <?php } ?>
     <tr class="">
