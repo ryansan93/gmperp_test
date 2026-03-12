@@ -89,8 +89,8 @@ class GeneralLedgerExternal extends Public_Controller {
                         data.no_coa,
                         data.unit,
                         data.nama_coa,
-                        sum(data.debet) as debet,
-                        sum(data.kredit) as kredit
+                        sum(isnull(data.debet, 0)) as debet,
+                        -sum(isnull(data.kredit, 0)) as kredit
                     from
                     (
                         select
@@ -170,6 +170,7 @@ class GeneralLedgerExternal extends Public_Controller {
                     order by
                         data.no_coa asc,
                         data.unit asc ";
+                        
 
             $m_conf = new \Model\Storage\Conf();
             $d_conf = $m_conf->hydrateRaw( $sql );
@@ -545,7 +546,7 @@ class GeneralLedgerExternal extends Public_Controller {
 
             foreach ($data as $key => $value) {
 
-                $saldo_akhir = $value['saldo_awal'] + $value['debet'] - $value['kredit'];
+                $saldo_akhir = $value['saldo_awal'] + $value['debet'] + $value['kredit'];
 
                 $arr_column[ $idx ] = array(
                     'No. COA' => array('value' => strtoupper($value['no_coa']), 'data_type' => 'nik'),

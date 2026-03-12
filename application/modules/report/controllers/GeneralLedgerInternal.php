@@ -91,8 +91,8 @@ class GeneralLedgerInternal extends Public_Controller {
                     data.nama_coa,
                     data.noreg,
                     data.nama_mitra,
-                    sum(data.debet) as debet,
-                    sum(data.kredit) as kredit
+                    sum(isnull(data.debet, 0)) as debet,
+                    -sum(isnull(data.kredit, 0)) as kredit
                 from
                 (
                     select
@@ -563,7 +563,7 @@ class GeneralLedgerInternal extends Public_Controller {
                         $debet = $value['debet'];
                         $kredit = $value['kredit'];
 
-                        $saldo_akhir = $saldo_awal + $debet - $kredit;
+                        $saldo_akhir = $saldo_awal + $debet + $kredit;
 
                         $arr_column[$idx] = array(
                             'No. COA' => array('value' => strtoupper($value['no_coa']), 'data_type' => 'string'),

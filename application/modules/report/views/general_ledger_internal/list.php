@@ -36,7 +36,7 @@ $tot_saldo_akhir = 0;
                 <?php echo ($value['kredit'] >= 0) ? angkaDecimal($value['kredit']) : '('.angkaDecimal(abs($value['kredit'])).')'; ?>
             </td>
 
-            <?php $saldo_akhir = $value['saldo_awal'] + $value['debet'] - $value['kredit']; ?>
+            <?php $saldo_akhir = $value['saldo_awal'] + $value['debet'] + $value['kredit']; ?>
 
             <td class="text-right"><?php echo angkaDecimal($saldo_akhir) ?></td>
 
