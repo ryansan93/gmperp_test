@@ -339,7 +339,7 @@ class GeneralLedgerInternal extends Public_Controller {
             $noreg = $row['noreg'];
             $coa   = $row['no_coa'];
 
-            $grouped[$noreg][$coa][] = $row;
+            $grouped[$coa][$noreg][] = $row;
         }
         // echo "<pre>";
         // print_r($grouped);
@@ -529,11 +529,10 @@ class GeneralLedgerInternal extends Public_Controller {
         $grouped = [];
 
         foreach ($data as $row) {
-
             $noreg = $row['noreg'];
             $coa   = $row['no_coa'];
 
-            $grouped[$noreg][$coa][] = $row;
+            $grouped[$coa][$noreg][] = $row;
         }
 
         // echo "<pre>";
@@ -553,16 +552,13 @@ class GeneralLedgerInternal extends Public_Controller {
             $tot_kredit = 0;
             $tot_saldo_akhir = 0;
 
-            foreach ($grouped as $noreg => $coas) {
-
-                foreach ($coas as $coa => $rows) {
-
+            foreach ($grouped as $coa => $noregs) {
+                foreach ($noregs as $noreg => $rows) {
                     foreach ($rows as $value) {
 
-                        $saldo_awal = isset($value['saldo_awal']) ? $value['saldo_awal'] : 0;
-                        $debet = $value['debet'];
-                        $kredit = $value['kredit'];
-
+                        $saldo_awal = isset($value['saldo_awal']) ? (float)$value['saldo_awal'] : 0;
+                        $debet = isset($value['debet']) ? (float)$value['debet'] : 0;
+                        $kredit = isset($value['kredit']) ? (float)$value['kredit'] : 0;
                         $saldo_akhir = $saldo_awal + $debet + $kredit;
 
                         $arr_column[$idx] = array(

@@ -546,19 +546,22 @@ class GeneralLedgerExternal extends Public_Controller {
 
             foreach ($data as $key => $value) {
 
-                $saldo_akhir = $value['saldo_awal'] + $value['debet'] + $value['kredit'];
+                $saldo_awal = isset($value['saldo_awal']) ? (float)$value['saldo_awal'] : 0;
+                $debet = isset($value['debet']) ? (float)$value['debet'] : 0;
+                $kredit = isset($value['kredit']) ? (float)$value['kredit'] : 0;
+                $saldo_akhir = $saldo_awal + $debet + $kredit;
 
                 $arr_column[ $idx ] = array(
-                    'No. COA' => array('value' => strtoupper($value['no_coa']), 'data_type' => 'nik'),
+                    'No. COA' => array('value' => strtoupper($value['no_coa']), 'data_type' => 'string'),
                     'Unit' => array('value' => strtoupper($value['unit']), 'data_type' => 'string'),
                     'Nama COA' => array('value' => strtoupper($value['nama_coa']), 'data_type' => 'string'),
-                    'Saldo Awal' => array('value' => $value['saldo_awal'], 'data_type' => 'decimal2'),
-                    'Debet' => array('value' => $value['debet'], 'data_type' => 'decimal2'),
-                    'Kredit' => array('value' => $value['kredit'], 'data_type' => 'decimal2'),
+                    'Saldo Awal' => array('value' => $saldo_awal, 'data_type' => 'decimal2'), // gunakan $saldo_awal
+                    'Debet' => array('value' => $debet, 'data_type' => 'decimal2'),
+                    'Kredit' => array('value' => $kredit, 'data_type' => 'decimal2'),
                     'Saldo Akhir' => array('value' => $saldo_akhir, 'data_type' => 'decimal2'),
                 );
 
-                $tot_saldo_awal += $value['saldo_awal'];
+                $tot_saldo_awal += $saldo_awal;
                 $tot_debet += $value['debet'];
                 $tot_kredit += $value['kredit'];
                 $tot_saldo_akhir += $saldo_akhir;
