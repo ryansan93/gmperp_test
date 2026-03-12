@@ -62,12 +62,15 @@ var gl = {
 		var no_coa = $(tr).find('td.no_coa').text();
 		var unit = $(tr).find('td.unit_tr').text();
 		var nama_coa = $(tr).find('td.nama_coa').text();
+		var noreg = $(tr).find('td.noreg').text();
 
 		var params = {
 			'periode': periode,
 			'no_coa': no_coa,
 			'unit': unit,
 			'nama_coa': nama_coa,
+			'noreg': noreg,
+
 		};
 		
 		$.get('report/GeneralLedgerInternal/formDetail',{
