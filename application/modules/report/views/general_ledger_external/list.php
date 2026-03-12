@@ -62,15 +62,16 @@ $tot_saldo_akhir += $saldo_akhir;
     </td>
 
     <td class="text-right">
-        <b><?php echo angkaDecimal($tot_debet); ?></b>
+        <?php echo ($tot_debet >= 0) ? angkaDecimal($tot_debet) : '('.angkaDecimal(abs($tot_debet)).')'; ?>
+        
     </td>
 
     <td class="text-right">
-        <b><?php echo angkaDecimal($tot_kredit); ?></b>
+        <?php echo ($tot_kredit >= 0) ? angkaDecimal($tot_kredit) : '('.angkaDecimal(abs($tot_kredit)).')'; ?>
     </td>
 
     <td class="text-right">
-        <b><?php echo angkaDecimal($tot_saldo_akhir); ?></b>
+         <?php echo ($tot_saldo_akhir >= 0) ? angkaDecimal($tot_saldo_akhir) : '('.angkaDecimal(abs($tot_saldo_akhir)).')'; ?>
     </td>
 </tr>
 
