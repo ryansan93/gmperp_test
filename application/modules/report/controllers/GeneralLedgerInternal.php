@@ -539,7 +539,13 @@ class GeneralLedgerInternal extends Public_Controller {
         // print_r($grouped);
         // die;
             
-        $filename = 'GL_INTERNAL_PERIODE_'.$tahun.$bulan.'_'.strtoupper($unit);
+        $if_unit = '';
+        if ($unit !== 'all') {
+            $if_unit = '_'.strtoupper($params['unit']);
+        }
+
+
+        $filename = 'GL_INTERNAL_PERIODE_'.$tahun.$bulan. $if_unit;
 
         $arr_header = array('No. COA', 'Unit', 'Nama COA', 'No. Reg' , 'Plasma' ,'Saldo Awal', 'Debet', 'Kredit', 'Saldo Akhir');
         $arr_column = null;
@@ -562,7 +568,7 @@ class GeneralLedgerInternal extends Public_Controller {
                         $saldo_akhir = $saldo_awal + $debet + $kredit;
 
                         $arr_column[$idx] = array(
-                            'No. COA' => array('value' => strtoupper($value['no_coa']), 'data_type' => 'string'),
+                            'No. COA' => array('value' => strtoupper($value['no_coa']), 'data_type' => 'nik'),
                             'Unit' => array('value' => strtoupper($value['unit']), 'data_type' => 'string'),
                             'Nama COA' => array('value' => strtoupper($value['nama_coa']), 'data_type' => 'string'),
                             'No. Reg' => array('value' => $value['noreg'], 'data_type' => 'string'),

@@ -25,15 +25,15 @@ $tot_saldo_akhir = 0;
             ?>
             
             <tr>
-                <td><?php echo $value['no_coa'] ?? ''; ?></td>
-                <td><?php echo $value['unit'] ?? ''; ?></td>
-                <td><?php echo $value['nama_coa'] ?? ''; ?></td>
-                <td><?php echo $value['noreg'] ?? ''; ?></td>
-                <td><?php echo $value['nama_mitra'] ?? ''; ?></td>
-                <td><?php echo angkaDecimal($saldo_awal); ?></td>
-                <td><?php echo angkaDecimal($debet); ?></td>
-                <td><?php echo angkaDecimal($kredit); ?></td>
-                <td><?php echo angkaDecimal($saldo_akhir); ?></td>
+                <td class="text-left"><?php echo $value['no_coa'] ?? ''; ?></td>
+                <td class="text-left"><?php echo $value['unit'] ?? ''; ?></td>
+                <td class="text-left"><?php echo $value['nama_coa'] ?? ''; ?></td>
+                <td class="text-right"><?php echo $value['noreg'] ?? ''; ?></td>
+                <td class="text-center"><?php echo $value['nama_mitra'] ?? ''; ?></td>
+                <td class="text-right"><?php echo angkaDecimal($saldo_awal); ?></td>
+                <td class="text-right"><?php echo angkaDecimal($debet); ?></td>
+                <td class="text-right"><?php echo angkaDecimal($kredit); ?></td>
+                <td class="text-right"><?php echo angkaDecimal($saldo_akhir); ?></td>
             </tr>
 
         <?php endforeach; ?>
