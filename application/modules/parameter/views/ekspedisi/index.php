@@ -1,6 +1,6 @@
-<div class="row content-panel detailed" id="index">
-	<!-- <h4 class="mb">Master Peternak</h4> -->
-	<div class="col-lg-12 no-padding detailed">
+<div class="row content-panel detailed">
+	<!-- <h4 class="mb">Master Ekspedisi</h4> -->
+	<div class="col-lg-12 detailed">
 		<form role="form" class="form-horizontal">
 			<div class="panel-heading">
 				<ul class="nav nav-tabs nav-justified">
@@ -8,11 +8,10 @@
 						<a class="nav-link active" data-toggle="tab" href="#history" data-tab="history">Daftar Ekspedisi</a>
 					</li>
 					<li class="nav-item">
-						<a class="nav-link" data-toggle="tab" href="#action" data-tab="action">Ekspedisi</a>
+						<a class="nav-link" data-toggle="tab" href="#action" data-tab="action">Master Ekspedisi</a>
 					</li>
 				</ul>
 			</div>
-
 			<div class="panel-body">
 				<div class="tab-content">
 					<div id="history" class="tab-pane fade show active">
@@ -64,7 +63,7 @@
 						<?php if ( $akses['a_submit'] == 1 ): ?>
 							<?php echo $add_form; ?>
 						<?php else: ?>
-							<h3>Data Kosong.</h3>
+							<h3>Master Ekspedisi.</h3>
 						<?php endif ?>
 					</div>
 				</div>
