@@ -72,7 +72,7 @@
 <div class="col-xs-12 no-padding">
     <div class="col-xs-12 no-padding" style="overflow-x: auto;">
         <small>
-            <table class="table table-bordered tbl_detail" style="margin-bottom: 0px; max-width: 100%; width: 100%; font-size:10px;">
+            <table class="table table-bordered tbl_detail" style="margin-bottom: 0px; max-width: 100%; width: 100%; font-size:12px;">
                 <thead>
                     <tr>
                         <th class="col-xs-1">Unit</th>
@@ -109,8 +109,8 @@
                             <td><?php echo isset($plasma_map[$dt['mitra_plasma']]) ? $plasma_map[$dt['mitra_plasma']] : ''; ?></td>
                             <td><?php echo $dt['noreg'] ?></td>
                             <td><?php echo $dt['umur_lhk'] ?></td>
-                            <td style="white-space: nowrap;"><?php echo $dt['coa_tujuan_nama'] ? $dt['noreg'] . ' - ' . $dt['coa_tujuan_nama'] : ' - ' ?></td>
-                            <td style="white-space: nowrap;"><?php echo $dt['coa_asal_nama']  ?  $dt['noreg'] . ' - ' . $dt['coa_asal_nama'] : ' - '?></td>
+                            <td style="white-space: nowrap;"><?php echo $dt['coa_tujuan_nama'] ? $dt['coa_tujuan_nama'] : ' - ' ?></td>
+                            <td style="white-space: nowrap;"><?php echo $dt['coa_asal_nama']  ?  $dt['coa_asal_nama'] : ' - '?></td>
                             <td><?php echo $dt['keterangan'] ? $dt['keterangan'] : '-' ?></td>
                             <td class="text-right"><?php echo angkaDecimal($dt['nilai']) ?></td>
                         </tr>

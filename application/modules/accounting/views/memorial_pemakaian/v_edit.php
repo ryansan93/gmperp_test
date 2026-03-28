@@ -72,18 +72,18 @@
 <div class="col-xs-12 no-padding">
     <div class="col-xs-12 no-padding" style="overflow-x: auto;">
         <small>
-            <table class="table table-bordered tbl_detail" style="margin-bottom: 0px; max-width: 100%; width: 100%; font-size:10px;">
+            <table class="table table-bordered tbl_detail" style="margin-bottom: 0px;  width: 100%; font-size:10px; table-layout: fixed;"">
                 <thead>
                     <tr>
-                        <th class="col-xs-1">Unit</th>
-                        <th class="col-xs-2">Plasma</th>
-                        <th class="col-xs-2">No. Reg</th>
-                        <th class="col-xs-1">Umur LHK</th>
-                        <th class="col-xs-1">Debet</th>
-                        <th class="col-xs-1">Kredit</th>
-                        <th class="col-xs-2">Keterangan</th>
-                        <th class="col-xs-1">Nilai</th>
-                        <th class="col-xs-1">Action</th>
+                        <th style="width:150px;">Unit</th>
+                        <th style="width:150px;">Plasma</th>
+                        <th style="width:100px;">No. Reg</th>
+                        <th style="width:100px;">Umur LHK</th>
+                        <th style="width:150px;">Debet</th>
+                        <th style="width:150px;">Kredit</th>
+                        <th style="width:250px;">Keterangan</th>
+                        <th style="width:150px;">Nilai</th>
+                        <th style="width:150px; text-align:center;">Action</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -138,21 +138,16 @@
                                     <?php endif ?>
                                 </select></td>
                             <td>
-                                <input type="text" class="form-default keterangan uppercase" placeholder="Keterangan" value="<?php echo $dd['keterangan'] ?> " maxlength="50">
+                                <textarea type="text" style="width:230px;" class="form-default keterangan uppercase" placeholder="Keterangan"  maxlength="50"> <?php echo $dd['keterangan'] ?></textarea>
                             </td>
                     
                             <td>
-                                <input type="text" class="form-default text-right nilai" placeholder="Nilai"  value="<?php echo angkaDecimal($dd['nilai']) ?>"  data-tipe="decimal" maxlength="19" data-required="1" onblur="mm.hitGrandTotal(this)">
+                                <input type="text"  style="width:130px;"class="form-default text-right nilai" placeholder="Nilai"  value="<?php echo angkaDecimal($dd['nilai']) ?>"  data-tipe="decimal" maxlength="19" data-required="1" onblur="mm.hitGrandTotal(this)">
                             </td>
-                            <td>
-                                <div class="col-xs-12 no-padding">
-                                    <div class="col-xs-6 no-padding" style="padding-right: 3px;">
-                                        <button type="button" class=" btn btn-sm btn-danger" onclick="mm.removeRow(this)"><i class="fa fa-times"></i></button>
-                                    </div>
-                                    <div class="col-xs-6 no-padding" style="padding-left: 3px;">
-                                        <button type="button" class=" btn btn-sm btn-primary" onclick="mm.addRow(this)"><i class="fa fa-plus"></i></button>
-                                    </div>
-                                </div>
+                            <td style="text-align:center">                                
+                                <button type="button" class=" btn btn-sm btn-danger" onclick="mm.removeRow(this)"><i class="fa fa-times"></i></button>                            
+                                <button type="button" class=" btn btn-sm btn-primary" onclick="mm.addRow(this)"><i class="fa fa-plus"></i></button>                                    
+                             
                             </td>
                         </tr>
 

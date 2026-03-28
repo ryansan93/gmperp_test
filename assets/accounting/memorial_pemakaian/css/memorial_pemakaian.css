@@ -5,7 +5,9 @@
 .form-default{
 	border-radius: 5px;
 	border: 1px solid rgb(183, 182, 182);
-	height: 25px;
+	height: 30px;
+	width: auto;
+	padding:5px;
 }
 
 .select2-dropdown{
@@ -15,3 +17,15 @@
 .tbl_riwayat tbody tr:hover{
 	background-color: rgb(211, 255, 225) !important;
 }
+
+.select2-container .select2-selection--single {
+	height: 30px !important;
+}
+
+/* .select2-container .select2-selection__rendered {
+    line-height: 40px;
+}
+
+.select2-container .select2-selection__arrow {
+    height: 40px;
+} */
