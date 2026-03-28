@@ -60,7 +60,7 @@ class MemorialPemakaian extends Public_Controller {
     }
 
 
-    public function getListData()
+    public function getListData($start_date, $end_date)
     {
         $m_conf = new \Model\Storage\Conf();
         $sql    = " SELECT 
@@ -82,8 +82,14 @@ class MemorialPemakaian extends Public_Controller {
                             END) AS total_kredit
                         FROM mmpem_item
                         GROUP BY no_mmpem
-                    ) x ON mp.no_mmpem = x.no_mmpem
-                    ORDER BY mp.id DESC ";
+                    ) x ON mp.no_mmpem = x.no_mmpem ";
+                    
+                    if($start_date){
+                         $sql .= " where mp.tgl_memo between '".$start_date."' and '".$end_date."' ";
+                    }
+
+
+                    $sql .= " ORDER BY mp.id DESC ";
         $d_conf = $m_conf->hydrateRaw($sql);
         
         $data = null;
@@ -193,6 +199,8 @@ class MemorialPemakaian extends Public_Controller {
             $m_mm->periode      = substr($params['tgl_mm'], 0, 7);
             $m_mm->keterangan   = $params['keterangan'];
             $m_mm->nilai        = $params['nilai'];
+            $m_mm->tgl_memo     = $params['tgl_mm'];
+  
   
             $m_mm->save();
 
@@ -251,6 +259,7 @@ class MemorialPemakaian extends Public_Controller {
             $m_mm->periode     = substr($params['tgl_mm'], 0, 7);
             $m_mm->keterangan  = $params['keterangan'];
             $m_mm->nilai       = $params['nilai'];
+            $m_mm->tgl_memo    = $params['tgl_mm'];
 
             $m_mm->save();
 

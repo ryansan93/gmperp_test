@@ -236,7 +236,7 @@ var mm = {
 
 	changeTabActive: function(elm) {
         var vhref = $(elm).data('href');
-        var edit = $(elm).data('edit');
+        // var edit = $(elm).data('edit');
         // change tab-menu
         $('.nav-tabs').find('a').removeClass('active');
         $('.nav-tabs').find('a').removeClass('show');
@@ -249,11 +249,11 @@ var mm = {
         $('div#'+vhref).addClass('show');
         $('div#'+vhref).addClass('active');
 
-        if ( vhref == 'action' ) {
-            var v_id = $(elm).attr('data-kode');
+        // if ( vhref == 'action' ) {
+        //     var v_id = $(elm).attr('data-kode');
 
-            mm.loadForm(v_id, edit);
-        };
+        //     mm.loadForm(v_id, edit);
+        // };
     }, // end - changeTabActive
 
     loadForm: function(v_id = null, resubmit = null) {
