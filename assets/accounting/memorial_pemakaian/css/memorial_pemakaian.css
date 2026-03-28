@@ -1,0 +1,17 @@
+.form-horizontal .control-label {
+	padding-top: 0px;
+}
+
+.form-default{
+	border-radius: 5px;
+	border: 1px solid rgb(183, 182, 182);
+	height: 25px;
+}
+
+.select2-dropdown{
+	width: 250px !important;
+}
+
+.tbl_riwayat tbody tr:hover{
+	background-color: rgb(211, 255, 225) !important;
+}
