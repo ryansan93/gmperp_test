@@ -72,7 +72,7 @@
 <div class="col-xs-12 no-padding">
     <div class="col-xs-12 no-padding" style="overflow-x: auto;">
         <small>
-            <table class="table table-bordered tbl_detail" style="margin-bottom: 0px;  width: 100%; font-size:10px; table-layout: fixed;"">
+            <table class="table table-bordered tbl_detail" style="margin-bottom: 0px;  width: 100%; table-layout: fixed;">
                 <thead>
                     <tr>
                         <th style="width:150px;">Unit</th>
@@ -138,11 +138,11 @@
                                     <?php endif ?>
                                 </select></td>
                             <td>
-                                <textarea type="text" style="width:230px;" class="form-default keterangan uppercase" placeholder="Keterangan"  maxlength="50"> <?php echo $dd['keterangan'] ?></textarea>
+                                <textarea type="text" s style="width:100%;" class="form-default keterangan uppercase" placeholder="Keterangan"  maxlength="50"> <?php echo $dd['keterangan'] ?></textarea>
                             </td>
                     
                             <td>
-                                <input type="text"  style="width:130px;"class="form-default text-right nilai" placeholder="Nilai"  value="<?php echo angkaDecimal($dd['nilai']) ?>"  data-tipe="decimal" maxlength="19" data-required="1" onblur="mm.hitGrandTotal(this)">
+                                <input type="text"   style="width:100%;" class="form-default text-right nilai" placeholder="Nilai"  value="<?php echo angkaDecimal($dd['nilai']) ?>"  data-tipe="decimal" maxlength="19" data-required="1" onblur="mm.hitGrandTotal(this)">
                             </td>
                             <td style="text-align:center">                                
                                 <button type="button" class=" btn btn-sm btn-danger" onclick="mm.removeRow(this)"><i class="fa fa-times"></i></button>                            

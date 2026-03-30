@@ -57,7 +57,7 @@
     <div class="col-xs-12 no-padding">
         <div class="col-xs-12 no-padding" style="overflow-x: auto;">
             <small>
-                <table class="table table-bordered tbl_detail" style="margin-bottom: 0px;  width: 100%; font-size:12px; table-layout: fixed;">
+                <table class="table table-bordered tbl_detail" style="margin-bottom: 0px;  width: 100%; table-layout: fixed;">
                     <thead>
                         <tr>
                             <th style="width:150px;">Unit</th>
@@ -118,7 +118,7 @@
                                     <?php endif ?>
                                 </select></td>
                             <td>
-                                <textarea type="text" style="width:230px;" class="form-default keterangan uppercase" placeholder="Keterangan" maxlength="50"></textarea>
+                                <textarea type="text" style="width:100%;" class="form-default keterangan uppercase" placeholder="Keterangan" maxlength="50"></textarea>
                             </td>
                     
                             <td>

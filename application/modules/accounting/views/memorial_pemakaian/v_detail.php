@@ -72,7 +72,7 @@
 <div class="col-xs-12 no-padding">
     <div class="col-xs-12 no-padding" style="overflow-x: auto;">
         <small>
-            <table class="table table-bordered tbl_detail" style="margin-bottom: 0px; max-width: 100%; width: 100%; font-size:12px;">
+            <table class="table table-bordered tbl_detail" style="margin-bottom: 0px; max-width: 100%; width: 100%; ">
                 <thead>
                     <tr>
                         <th class="col-xs-1">Unit</th>

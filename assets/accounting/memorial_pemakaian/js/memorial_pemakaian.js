@@ -134,66 +134,7 @@ var mm = {
             $(tr).find('select.tujuan').removeAttr('disabled', 'disabled');
         }
     }, // end - getTujuanCoa
-
-    getNamaPelanggan: function() {
-        var no_pelanggan = $('select.no_pelanggan').select2().val();
-
-        $('input.pelanggan').removeAttr('disabled', 'disabled');
-        if ( !empty(no_pelanggan) ) {
-            var nama_pelanggan = $('select.no_pelanggan').find('option:selected').attr('data-nama');
-
-            $('input.pelanggan').val( nama_pelanggan.toUpperCase() );
-            $('input.pelanggan').attr('disabled', 'disabled');
-        } else {
-            // $('input.pelanggan').val(null);
-        }
-
-        mm.cekPelangganSupplier();
-    }, // end - getNamaPelanggan
-
-    getNamaSupplier: function() {
-        var no_supplier = $('select.no_supplier').select2().val();
-
-        $('input.supplier').removeAttr('disabled', 'disabled');
-        if ( !empty(no_supplier) ) {
-            var nama_pelanggan = $('select.no_supplier').find('option:selected').attr('data-nama');
-
-            $('input.supplier').val( nama_pelanggan.toUpperCase() );
-            $('input.supplier').attr('disabled', 'disabled');
-        } else {
-            // $('input.supplier').val(null);
-        }
-
-        mm.cekPelangganSupplier();
-    }, // end - getNamaSupplier
-
-    cekPelangganSupplier: function() {
-        var supplier = $('input.supplier').val();
-        var pelanggan = $('input.pelanggan').val();
-
-        $('select.no_pelanggan').removeAttr('disabled', 'disabled');
-        // $('input.pelanggan').val(null);
-        $('input.pelanggan').removeAttr('disabled', 'disabled');
-        $('input.pelanggan').attr('data-required', 1);
-        $('select.no_supplier').removeAttr('disabled', 'disabled');
-        // $('input.supplier').val(null);
-        $('input.supplier').removeAttr('disabled', 'disabled');
-        $('input.supplier').attr('data-required', 1);
-
-        if ( !empty(supplier) ) {
-            $('select.no_pelanggan').attr('disabled', 'disabled');
-
-            $('input.pelanggan').val(null);
-            $('input.pelanggan').attr('disabled', 'disabled');
-            $('input.pelanggan').attr('data-required', 0);
-        } else if ( !empty(pelanggan) ) {
-            $('select.no_supplier').attr('disabled', 'disabled');
-
-            $('input.supplier').val(null);
-            $('input.supplier').attr('disabled', 'disabled');
-            $('input.supplier').attr('data-required', 0);
-        }
-    }, // end - cekPelangganSupplier
+   
  
     addRow: function (elm) {
         var tr = $(elm).closest('tr');
