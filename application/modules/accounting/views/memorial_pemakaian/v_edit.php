@@ -163,7 +163,7 @@
 
 <div class="col-xs-12 no-padding text-right" style="margin-top:10px;">
     <button type="button" class="btn btn-danger btn-batal" onclick="mm.backDetail(this, event)"><i class="fa fa-close"></i> Batal</button>
-    <button type="button" class="btn btn-primary" onclick="mm.edit()"><i class="fa fa-save"></i> Update</button>
+    <button type="button" class="btn btn-primary btn-edit" onclick="mm.edit()"><i class="fa fa-save"></i> Update</button>
 </div>
 
 

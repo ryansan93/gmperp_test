@@ -18,7 +18,7 @@
 
 							<?php if ( $akses['a_submit'] == 1 ) { ?>
                                 <div class="col-xs-12 no-padding" style="margin-bottom: 5px;">
-                                    <button type="button" class="col-xs-12 btn btn-success pull-right" onclick="mm.changeTabActive(this)" data-href="action" data-edit=""><i class="fa fa-plus"></i> ADD</button>
+                                    <button type="button" class="col-xs-12 btn btn-success pull-right" onclick="mm.add_data(this)" data-href="action" data-edit=""><i class="fa fa-plus"></i> ADD</button>
                                 </div>
 
                                 <div class="col-xs-12 no-padding"><hr></div>
@@ -83,7 +83,7 @@
 
 						<div id="action" class="tab-pane fade tab-detail" role="tabpanel" style="padding-top: 10px;">
 							
-                        <!-- < ?php if ( $akses['a_submit'] == 1 ) { ?> -->
+                        <?php if ( $akses['a_submit'] == 1 ) { ?>
                             <div class="col-xs-7 no-padding" style="padding-right: 5px;">
                                 <div class="col-xs-12 no-padding" style="margin-bottom: 5px;">
                                     <div class="col-xs-3 no-padding"><label class="control-label">No. Memo</label></div>
@@ -225,9 +225,9 @@
                             <div class="col-xs-12 no-padding">
                                 <button type="button" class="btn btn-primary pull-right" onclick="mm.save()"><i class="fa fa-save"></i> Simpan</button>
                             </div>
-                        <!-- < ?php } else { ?>
-                            <h4>MEMORIAL</h4>
-                        < ?php } ?> -->
+                        <?php } else { ?>
+                            <h4>MEMORIAL PEMAKAIAN</h4>
+                        <?php } ?>
 
 
 						</div>

@@ -132,7 +132,7 @@
 
 
 <div class="col-xs-12 no-padding text-right" style="margin-top:10px;">
-    <button type="button" class="btn btn-default" no_mmpem="<?php echo $detail_data[0]['no_mmpem'] ?>" onclick="mm.edit_data(this, event)"><i class="fa fa-print"></i>Cetak</button>
+    <button type="button" class="btn btn-default" no_mmpem="<?php echo exEncrypt($detail_data[0]['no_mmpem']) ?>" onclick="mm.printPreview(this, event)"><i class="fa fa-print"></i>Cetak</button>
     <span style="border-left: 2px solid black; margin-right:7px;"></span>
     <button type="button" class="btn btn-danger" no_mmpem="<?php echo $detail_data[0]['no_mmpem'] ?>" onclick="mm.delete(this, event)"><i class="fa fa-trash"></i>Delete</button>
     <button type="button" class="btn btn-primary btn-edit" no_mmpem="<?php echo $detail_data[0]['no_mmpem'] ?>" onclick="mm.edit_data(this, event)"> <i class="fa fa-edit"></i>Edit</button>

@@ -15,20 +15,46 @@ var mm = {
 
 	setting_up: function() {
         var today = moment(new Date()).format('YYYY-MM-DD');
+        // $("#StartDate, #EndDate").datetimepicker({
+        //     locale: 'id',
+        //     format: 'DD MMM Y',
+        //     defaultDate: new Date()
+        // });
+
+        // $("#StartDate").on("dp.change", function (e) {
+        //     var minDate = dateSQL($("#StartDate").data("DateTimePicker").date())+' 00:00:00';
+        //     $("#EndDate").data("DateTimePicker").minDate(moment(new Date(minDate)));
+        // });
+        // $("#EndDate").on("dp.change", function (e) {
+        //     var maxDate = dateSQL($("#EndDate").data("DateTimePicker").date())+' 23:59:59';
+        //     if ( maxDate >= (today+' 00:00:00') ) {
+        //         $("#StartDate").data("DateTimePicker").maxDate(moment(new Date(maxDate)));
+        //     }
+        // });
+
+
         $("#StartDate, #EndDate").datetimepicker({
             locale: 'id',
-            format: 'DD MMM Y',
-            defaultDate: new Date()
+            format: 'DD MMM YYYY'
         });
 
+        let startOfMonth = moment().startOf('month');
+        let endOfMonth   = moment().endOf('month');
+
+        $("#StartDate").data("DateTimePicker").date(startOfMonth);
+        $("#EndDate").data("DateTimePicker").date(endOfMonth);
+
         $("#StartDate").on("dp.change", function (e) {
-            var minDate = dateSQL($("#StartDate").data("DateTimePicker").date())+' 00:00:00';
-            $("#EndDate").data("DateTimePicker").minDate(moment(new Date(minDate)));
+            let start = e.date ? e.date.clone().startOf('day') : false;
+            if (start) {
+                $("#EndDate").data("DateTimePicker").minDate(start);
+            }
         });
+
         $("#EndDate").on("dp.change", function (e) {
-            var maxDate = dateSQL($("#EndDate").data("DateTimePicker").date())+' 23:59:59';
-            if ( maxDate >= (today+' 00:00:00') ) {
-                $("#StartDate").data("DateTimePicker").maxDate(moment(new Date(maxDate)));
+            let end = e.date ? e.date.clone().endOf('day') : false;
+            if (end) {
+                $("#StartDate").data("DateTimePicker").maxDate(end);
             }
         });
 
@@ -234,27 +260,60 @@ var mm = {
         $('div.nilai input.tot_kredit').val( numeral.format(grand_total_kredit) );
     }, // end - hitGrandTotal
 
-	changeTabActive: function(elm) {
+	// changeTabActive: function(elm) {
+    //     var vhref = $(elm).data('href');
+    //     // var edit = $(elm).data('edit');
+    //     // change tab-menu
+    //     $('.nav-tabs').find('a').removeClass('active');
+    //     $('.nav-tabs').find('a').removeClass('show');
+    //     $('.nav-tabs').find('li a[data-tab='+vhref+']').addClass('show');
+    //     $('.nav-tabs').find('li a[data-tab='+vhref+']').addClass('active');
+
+    //     // change tab-content
+    //     $('.tab-pane').removeClass('show');
+    //     $('.tab-pane').removeClass('active');
+    //     $('div#'+vhref).addClass('show');
+    //     $('div#'+vhref).addClass('active');
+
+    //     // if ( vhref == 'action' ) {
+    //     //     var v_id = $(elm).attr('data-kode');
+
+    //     //     mm.loadForm(v_id, edit);
+    //     // };
+    // }, // end - changeTabActive
+
+    add_data : (elm) =>{
+
         var vhref = $(elm).data('href');
-        // var edit = $(elm).data('edit');
-        // change tab-menu
+        
         $('.nav-tabs').find('a').removeClass('active');
         $('.nav-tabs').find('a').removeClass('show');
         $('.nav-tabs').find('li a[data-tab='+vhref+']').addClass('show');
         $('.nav-tabs').find('li a[data-tab='+vhref+']').addClass('active');
 
-        // change tab-content
         $('.tab-pane').removeClass('show');
         $('.tab-pane').removeClass('active');
         $('div#'+vhref).addClass('show');
         $('div#'+vhref).addClass('active');
 
-        // if ( vhref == 'action' ) {
-        //     var v_id = $(elm).attr('data-kode');
+        $.ajax({
+            url: 'accounting/MemorialPemakaian/add_data',
+            dataType: 'html',
+            type: 'post',
+            beforeSend: function() {
+                showLoading('Proses load view . . .');
+            },
+            success: function(html) {
+                hideLoading();
+                let load  = $(".tab-detail").html(html);
 
-        //     mm.loadForm(v_id, edit);
-        // };
-    }, // end - changeTabActive
+                if (load){
+                    mm.start_up();
+                }
+            },
+        });
+
+    },
 
     loadForm: function(v_id = null, resubmit = null) {
         var dcontent = $('div#action');
@@ -486,7 +545,7 @@ var mm = {
                             'coa_asal_nama'     : $(tr).find('select.asal option:selected').attr('data-nama'),
                             'coa_tujuan'        : $(tr).find('select.tujuan').select2().val(),
                             'coa_tujuan_nama'   : $(tr).find('select.tujuan option:selected').attr('data-nama'),
-                            'keterangan'        : $(tr).find('input.keterangan').val().toUpperCase(),
+                            'keterangan'        : $(tr).find('textarea.keterangan').val().toUpperCase(),
 							'nilai'             : numeral.unformat($(tr).find('input.nilai').val()),
                             'unit'              : $(tr).find('select.unit').select2().val(),
                             'plasma'            : $(tr).find('select.plasma').select2().val(),
@@ -534,16 +593,20 @@ var mm = {
     edit: function(elm) {
         var dcontent = $('#action');
 
-        var cek_data = mm.cekData();
-        var status = cek_data.status;
-        var keterangan = cek_data.keterangan;
+        var cek_data    = mm.cekData();
+        var status      = cek_data.status;
+        var keterangan  = cek_data.keterangan;
+
+       
 
         if ( status == 0 ) {
 			bootbox.alert( keterangan );
 		} else {
 			bootbox.confirm( keterangan , function(result) {
+                   
+
                 if ( result ) {
-                    showLoading('Proses simpan data . . .');
+                    // showLoading('Proses simpan data . . .');
 
                     var no_urut = 1;
                      var detail = $.map( $(dcontent).find('.tbl_detail tbody tr'), function(tr) {
@@ -552,7 +615,7 @@ var mm = {
                             'coa_asal_nama'     : $(tr).find('select.asal option:selected').attr('data-nama'),
                             'coa_tujuan'        : $(tr).find('select.tujuan').select2().val(),
                             'coa_tujuan_nama'   : $(tr).find('select.tujuan option:selected').attr('data-nama'),
-                            'keterangan'        : $(tr).find('input.keterangan').val().toUpperCase(),
+                            'keterangan'        : $(tr).find('textarea.keterangan').val().toUpperCase().trim(),
 							'nilai'             : numeral.unformat($(tr).find('input.nilai').val()),
                             'unit'              : $(tr).find('select.unit').select2().val(),
                             'plasma'            : $(tr).find('select.plasma').select2().val(),
@@ -565,6 +628,7 @@ var mm = {
                         return _detail;
                     });
 
+
                     var data = {
                         'no_mmpem'      : $(".no_mmpem").val(),
                         'tgl_mm'        : dateSQL( $(dcontent).find('#TglMm').data('DateTimePicker').date() ),
@@ -573,6 +637,7 @@ var mm = {
                         'detail'        : detail
                     };
 
+               
                     $.ajax({
                         url: 'accounting/MemorialPemakaian/edit',
                         dataType: 'json',
@@ -638,9 +703,9 @@ var mm = {
     }, // end - delete
 
     printPreview: function (elm) {
-        var no_so = $(elm).attr('data-kode');
+        var no_mmpem = $(elm).attr('no_mmpem');
 
-        window.open('accounting/Memorial/printPreview/'+no_so, 'blank');
+        window.open('accounting/MemorialPemakaian/printPreview/'+no_mmpem, 'blank');
     }, // end - printPreview
 
     exportPdf : function (elm) {
@@ -868,6 +933,8 @@ var mm = {
                     $(".no_mmpem").val(params.no_mmpem)
                     $(".keterangan_hdr").val(params.keterangan)
 
+                    
+                    $(".btn-edit").attr("no_mmpem", params.no_mmpem);
                     $(".btn-batal").attr("keterangan", params.keterangan);
                     $(".btn-batal").attr("no_mmpem", params.no_mmpem);
                 }

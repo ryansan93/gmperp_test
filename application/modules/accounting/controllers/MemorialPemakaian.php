@@ -59,6 +59,21 @@ class MemorialPemakaian extends Public_Controller {
         // }
     }
 
+    public function add_data()
+    {
+        $m_wilayah  = new \Model\Storage\Wilayah_model();
+        $m_coa      = new \Model\Storage\Coa_model();
+    
+        $content['akses']       = $this->hakAkses;
+        $content['title_panel'] = 'Memorial Pemakaian';
+        $content['unit']        = $m_wilayah->getDataUnit(1, $this->userid);
+        $content['plasma']      = $this->getDataPlasma();
+        $content['coa']         = $m_coa->getDataCoa();
+
+        $html = $this->load->view($this->pathView.'v_add_data', $content, true);
+        echo $html;
+    }
+
 
     public function getListData($start_date, $end_date)
     {
@@ -246,6 +261,10 @@ class MemorialPemakaian extends Public_Controller {
     {
         $params = $this->input->post('params');
 
+        // echo "<pre>";
+        // print_r($params);
+        // die;
+
         try {
             $no_mm = $params['no_mmpem'];
 
@@ -379,23 +398,32 @@ class MemorialPemakaian extends Public_Controller {
         }
     }
 
-    public function printPreview($no_mm) {        
-        $kode = exDecrypt( $no_mm );
+    public function printPreview($no_mmpem) {        
+        $kode = exDecrypt( $no_mmpem );
 
-        $m_mm = new \Model\Storage\Mm_model();
-        $d_mm = $m_mm->getMm( $kode )[0];
+      
 
-        $m_mmi = new \Model\Storage\MmItem_model();
-        $d_mmi = $m_mmi->getMmItem( $kode );
+        $m_mm = new \Model\Storage\Mmpem_model();
+        $d_mm = $m_mm->getMmPem( $kode )[0];
+
+       
+
+        $m_mmi = new \Model\Storage\MmPemItem_model();
+        $d_mmi = $m_mmi->getMmPemItem( $kode );
+
+        //   echo "<pre>";
+        // print_r($d_mmi);
+        // die;
 
         $m_prs = new \Model\Storage\Perusahaan_model();
         $d_prs = $m_prs->orderBy('id', 'desc')->with(['d_kota'])->first();
+
 
         $content['perusahaan'] = $d_prs->toArray();
         $content['data'] = $d_mm;
         $content['detail'] = $d_mmi;
 
-        $res_view_html = $this->load->view($this->pathView.'exportPdf', $content, true);
+        $res_view_html = $this->load->view($this->pathView.'v_export_pdf', $content, true);
 
         echo $res_view_html;
     }

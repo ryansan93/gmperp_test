@@ -20,34 +20,21 @@ class MmPem_model extends Conf{
 		return $id->nextId;
 	}
 
-	public function getMm($id = null, $column = 'no_mm') {
+	public function getMmPem($id = null, $column = 'no_mmpem') {
 		$data = null;
         
         $sql_id = "";
         if ( !empty($id) ) {
-            $sql_id = "where m.".$column." = '".$id."'";
+            $sql_id = "where ".$column." = '".$id."'";
         }
 
-		$sql = "
-			select 
-				m.*,
-				jt.nama as jurnal_trans_nama
-			from mm m
-			left join
-				(
-					select jt1.* from jurnal_trans jt1
-					right join
-						(select max(id) as id, kode from jurnal_trans group by kode) jt2
-						on
-							jt1.id = jt2.id
-				) jt
-				on
-					m.jurnal_trans = jt.kode
-			".$sql_id."
+		$sql = " select * from mmpem  $sql_id 
 			order by
-				m.tgl_mm desc,
-				m.no_mm desc
+				tgl_memo desc,
+				no_mmpem desc
 		";
+
+
 		$d_mm = $this->hydrateRaw($sql);
 
         if ( !empty($d_mm) && $d_mm->count() > 0 ) {
