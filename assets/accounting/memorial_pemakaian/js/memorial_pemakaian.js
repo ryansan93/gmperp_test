@@ -492,6 +492,7 @@ var mm = {
                             'plasma'            : $(tr).find('select.plasma').select2().val(),
                             'noreg'             : $(tr).find('select.noreg').select2().val(),
                             'umur_lhk'          : $(tr).find('select.umur-lhk').select2().val(),
+                            'id_lhk'            : $(tr).find('select.umur-lhk option:selected').attr("id_lhk"),
                         };
 
                         no_urut++;
@@ -562,6 +563,7 @@ var mm = {
                             'plasma'            : $(tr).find('select.plasma').select2().val(),
                             'noreg'             : $(tr).find('select.noreg').select2().val(),
                             'umur_lhk'          : $(tr).find('select.umur-lhk').select2().val(),
+                            'id_lhk'            : $(tr).find('select.umur-lhk option:selected').attr("id_lhk"),
                         };
 
                         no_urut++;
@@ -757,7 +759,7 @@ var mm = {
                 let option = `<option disabled selected>-- Pilih Umur LHK --</option>`;
 
                 data.forEach(function(item){
-                    option += `<option value="${item.umur}">${item.umur}</option>`;
+                    option += `<option id_lhk="${item.id}" value="${item.umur}">${item.umur}</option>`;
                 });
 
          

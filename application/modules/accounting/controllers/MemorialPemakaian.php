@@ -237,6 +237,7 @@ class MemorialPemakaian extends Public_Controller {
                 $m_mmi->coa_asal_nama   = $v_det['coa_asal_nama'] ?? '';
                 $m_mmi->coa_tujuan_nama = $v_det['coa_tujuan_nama'] ?? '';
                 $m_mmi->umur_lhk        = $v_det['umur_lhk'] ?? '';
+                $m_mmi->lhk_id          = $v_det['id_lhk'] ?? '';
 
                 $m_mmi->save();
 
@@ -302,6 +303,7 @@ class MemorialPemakaian extends Public_Controller {
                 $m_mmi->coa_asal_nama   = $v_det['coa_asal_nama'] ?? '';
                 $m_mmi->coa_tujuan_nama = $v_det['coa_tujuan_nama'] ?? '';
                 $m_mmi->umur_lhk        = $v_det['umur_lhk'] ?? '';
+                $m_mmi->lhk_id          = $v_det['id_lhk'] ?? '';
 
                 $m_mmi->save();
 
@@ -503,8 +505,9 @@ class MemorialPemakaian extends Public_Controller {
     public function getDataPlasma()
     {
         $m_conf = new \Model\Storage\Conf();
-        $sql = "select distinct m.nomor, m.nama, mm.nim from mitra m
-                inner join mitra_mapping mm on m.id = mm.mitra ";
+        $sql = " select distinct m.nomor, m.nama, mm.nim from mitra m
+                inner join mitra_mapping mm on m.id = mm.mitra 
+                order by m.nama asc ";
         $d_conf = $m_conf->hydrateRaw($sql);
         
 
