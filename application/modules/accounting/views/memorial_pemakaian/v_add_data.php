@@ -122,7 +122,7 @@
                             </td>
                     
                             <td>
-                                <input type="text" style="width:130px;" class="form-default text-right nilai uppercase" placeholder="Nilai" data-tipe="decimal" maxlength="19" data-required="1" onblur="mm.hitGrandTotal(this)">
+                                <input type="text" style="width:100%;" class="form-default text-right nilai uppercase" placeholder="Nilai" data-tipe="decimal" maxlength="19" data-required="1" onblur="mm.hitGrandTotal(this)">
                             </td>
                             <td style="text-align:center">                                                       
                                 <button type="button" class=" btn btn-sm btn-danger" onclick="mm.removeRow(this)"><i class="fa fa-times"></i></button>                                                
