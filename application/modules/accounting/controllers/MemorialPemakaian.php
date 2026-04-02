@@ -628,7 +628,6 @@ class MemorialPemakaian extends Public_Controller {
         $m_conf = new \Model\Storage\Conf();
         $sql    = " select * from mmpem_item where no_mmpem = '".$no_mmpem. "'";
         $d_conf = $m_conf->hydrateRaw($sql);
-        
 
         $data = null;
         if ( $d_conf->count() > 0 ) {
