@@ -144,55 +144,50 @@ class MemorialPemakaian extends Public_Controller {
     }
 
 
-    public function viewForm($kode)
-    {
-        $m_mm = new \Model\Storage\Mm_model();
-        $d_mm = $m_mm->getMm( $kode )[0];
+    // public function viewForm($kode)
+    // {
+    //     $m_mm = new \Model\Storage\Mm_model();
+    //     $d_mm = $m_mm->getMm( $kode )[0];
 
-        $m_mmi = new \Model\Storage\MmItem_model();
-        $d_mmi = $m_mmi->getMmItem( $kode );
+    //     $m_mmi = new \Model\Storage\MmItem_model();
+    //     $d_mmi = $m_mmi->getMmItem( $kode );
 
-        $m_log = new \Model\Storage\LogTables_model();
-        $d_log = $m_log->getLog($m_mm->table, $kode);
+    //     $m_log = new \Model\Storage\LogTables_model();
+    //     $d_log = $m_log->getLog($m_mm->table, $kode);
 
-        $content['akses'] = $this->hakAkses;
-        $content['data'] = $d_mm;
-        $content['detail'] = $d_mmi;
-        $content['log'] = !empty($d_log) ? $d_log : null;
+    //     $content['akses'] = $this->hakAkses;
+    //     $content['data'] = $d_mm;
+    //     $content['detail'] = $d_mmi;
+    //     $content['log'] = !empty($d_log) ? $d_log : null;
 
-        $html = $this->load->view($this->pathView . 'viewForm', $content, TRUE);
+    //     $html = $this->load->view($this->pathView . 'viewForm', $content, TRUE);
 
-        return $html;
-    }
+    //     return $html;
+    // }
 
-    public function editForm($kode)
-    {
-        $m_coa = new \Model\Storage\Coa_model();
-        $m_plg = new \Model\Storage\Pelanggan_model();
-        $m_supl = new \Model\Storage\Supplier_model();
-        $m_wilayah = new \Model\Storage\Wilayah_model();
-        $m_jt = new \Model\Storage\JurnalTrans_model();
-        $m_djt = new \Model\Storage\DetJurnalTrans_model();
-
-        $m_mm = new \Model\Storage\Mm_model();
-        $d_mm = $m_mm->getMm( $kode )[0];
-
-        $m_mmi = new \Model\Storage\MmItem_model();
-        $d_mmi = $m_mmi->getMmItem( $kode );
-        
-        $content['coa'] = $m_coa->getDataCoa();
-        $content['pelanggan'] = $m_plg->getDataPelanggan();
-        $content['supplier'] = $m_supl->getDataSupplier();
-        $content['unit'] = $m_wilayah->getDataUnit(1, $this->userid);
-        $content['jurnal_trans'] = $m_jt->getJurnalTransByUrl( $this->url );
-        $content['det_jurnal_trans'] = $m_djt->getDetJurnalTransByUrl( $this->url );
-        $content['data'] = $d_mm;
-        $content['detail'] = $d_mmi;
-
-        $html = $this->load->view($this->pathView . 'editForm', $content, TRUE);
-
-        return $html;
-    }
+    // public function editForm($kode)
+    // {
+    //     $m_coa = new \Model\Storage\Coa_model();
+    //     $m_plg = new \Model\Storage\Pelanggan_model();
+    //     $m_supl = new \Model\Storage\Supplier_model();
+    //     $m_wilayah = new \Model\Storage\Wilayah_model();
+    //     $m_jt = new \Model\Storage\JurnalTrans_model();
+    //     $m_djt = new \Model\Storage\DetJurnalTrans_model();
+    //     $m_mm = new \Model\Storage\Mm_model();
+    //     $d_mm = $m_mm->getMm( $kode )[0];
+    //     $m_mmi = new \Model\Storage\MmItem_model();
+    //     $d_mmi = $m_mmi->getMmItem( $kode );
+    //     $content['coa'] = $m_coa->getDataCoa();
+    //     $content['pelanggan'] = $m_plg->getDataPelanggan();
+    //     $content['supplier'] = $m_supl->getDataSupplier();
+    //     $content['unit'] = $m_wilayah->getDataUnit(1, $this->userid);
+    //     $content['jurnal_trans'] = $m_jt->getJurnalTransByUrl( $this->url );
+    //     $content['det_jurnal_trans'] = $m_djt->getDetJurnalTransByUrl( $this->url );
+    //     $content['data'] = $d_mm;
+    //     $content['detail'] = $d_mmi;
+    //     $html = $this->load->view($this->pathView . 'editForm', $content, TRUE);
+    //     return $html;
+    // }
 
     public function save()
     {
@@ -351,54 +346,54 @@ class MemorialPemakaian extends Public_Controller {
         display_json( $this->result );
     }
 
-    public function updatePo($no_po)
-    {
-        $m_conf = new \Model\Storage\Conf();
-        $sql = "
-            select 
-                pi.po_no as no_po,
-                pi.item_kode as item_kode,
-                pi.harga as harga,
-                pi.jumlah as jumlah_po,
-                isnull(t.jumlah_terima, 0) as jumlah_terima
-            from po_item pi
-            right join
-                po p 
-                on
-                    pi.po_no = p.no_po
-            left join
-                (
-                    select ti.item_kode, ti.harga, sum(ti.jumlah_terima) as jumlah_terima, t.po_no from terima_item ti 
-                    right join
-                        terima t
-                        on
-                            ti.terima_kode = t.kode_terima 
-                    where
-                        t.po_no is not null
-                    group by
-                        ti.item_kode, ti.harga, t.po_no
-                ) t
-                on
-                    t.po_no = p.no_po and
-                    t.item_kode = pi.item_kode
-            where
-                pi.jumlah > isnull(t.jumlah_terima, 0) and
-                p.no_po = '".$no_po."'
-        ";
-        $d_po = $m_conf->hydrateRaw( $sql );
+    // public function updatePo($no_po)
+    // {
+    //     $m_conf = new \Model\Storage\Conf();
+    //     $sql = "
+    //         select 
+    //             pi.po_no as no_po,
+    //             pi.item_kode as item_kode,
+    //             pi.harga as harga,
+    //             pi.jumlah as jumlah_po,
+    //             isnull(t.jumlah_terima, 0) as jumlah_terima
+    //         from po_item pi
+    //         right join
+    //             po p 
+    //             on
+    //                 pi.po_no = p.no_po
+    //         left join
+    //             (
+    //                 select ti.item_kode, ti.harga, sum(ti.jumlah_terima) as jumlah_terima, t.po_no from terima_item ti 
+    //                 right join
+    //                     terima t
+    //                     on
+    //                         ti.terima_kode = t.kode_terima 
+    //                 where
+    //                     t.po_no is not null
+    //                 group by
+    //                     ti.item_kode, ti.harga, t.po_no
+    //             ) t
+    //             on
+    //                 t.po_no = p.no_po and
+    //                 t.item_kode = pi.item_kode
+    //         where
+    //             pi.jumlah > isnull(t.jumlah_terima, 0) and
+    //             p.no_po = '".$no_po."'
+    //     ";
+    //     $d_po = $m_conf->hydrateRaw( $sql );
 
-        if ( $d_po->count() == 0 ) {
-            $m_po = new \Model\Storage\Po_model();
-            $m_po->where('no_po', $no_po)->update(
-                array('done' => 1)
-            );
-        } else {
-            $m_po = new \Model\Storage\Po_model();
-            $m_po->where('no_po', $no_po)->update(
-                array('done' => 0)
-            );
-        }
-    }
+    //     if ( $d_po->count() == 0 ) {
+    //         $m_po = new \Model\Storage\Po_model();
+    //         $m_po->where('no_po', $no_po)->update(
+    //             array('done' => 1)
+    //         );
+    //     } else {
+    //         $m_po = new \Model\Storage\Po_model();
+    //         $m_po->where('no_po', $no_po)->update(
+    //             array('done' => 0)
+    //         );
+    //     }
+    // }
 
     public function printPreview($no_mmpem) {        
         $kode = exDecrypt( $no_mmpem );

@@ -1,3 +1,5 @@
+var lastfilter = null
+
 var mm = {
 	start_up: function () {
 		mm.setting_up();
@@ -225,6 +227,16 @@ var mm = {
 
     add_data : (elm) =>{
 
+         var dcontent = $('div#riwayat');
+
+        // simpan filter terakhir
+        lastfilter = {
+            'start_date': dateSQL( $(dcontent).find('#StartDate').data('DateTimePicker').date() ),
+            'end_date': dateSQL( $(dcontent).find('#EndDate').data('DateTimePicker').date() )
+        };
+
+        // console.log(lastfilter)
+
         var vhref = $(elm).data('href');
         
         $('.nav-tabs').find('a').removeClass('active');
@@ -273,17 +285,6 @@ var mm = {
                 $(dcontent).html(html);
                 mm.setting_up();
 
-                // if ( !empty(resubmit) ) {
-                //     var kode_cust = $(dcontent).find('select.customer').select2().val();
-                //     if ( !empty(kode_cust) ) {
-                //         mm.getNoFaktur( kode_cust );
-                //     }
-
-                //     var kode_supl = $(dcontent).find('select.supplier').select2().val();
-                //     if ( !empty(kode_supl) ) {
-                //         mm.getNoLpb( kode_supl );
-                //     }
-                // }
             },
         });
     }, // end - loadForm
@@ -311,14 +312,15 @@ var mm = {
                 'end_date': dateSQL( $(dcontent).find('#EndDate').data('DateTimePicker').date() )
             };
 
-            // if ($.fn.dataTable.isDataTable('.tbl_riwayat')) {
-            //     $('.tbl_riwayat').DataTable().destroy();
-            // }
+           if (lastfilter) {
+                $(dcontent).find('#StartDate').data('DateTimePicker').date(moment(lastfilter.start_date));
+                $(dcontent).find('#EndDate').data('DateTimePicker').date(moment(lastfilter.end_date));
+            }
 
             $.ajax({
                 url : 'accounting/MemorialPemakaian/getLists',
                 data : {
-                    'params' : params
+                    'params' : lastfilter || params
                 },
                 type : 'GET',
                 dataType : 'HTML',
@@ -548,7 +550,6 @@ var mm = {
                    
 
                 if ( result ) {
-                    // showLoading('Proses simpan data . . .');
 
                     var no_urut = 1;
                      var detail = $.map( $(dcontent).find('.tbl_detail tbody tr'), function(tr) {
@@ -631,8 +632,6 @@ var mm = {
                         hideLoading();
                         if ( data.status == 1 ) {
                             bootbox.alert( data.message, function () {
-                                // mm.getLists();
-                                // mm.loadForm();
 
                                 window.location.reload();
                             });
