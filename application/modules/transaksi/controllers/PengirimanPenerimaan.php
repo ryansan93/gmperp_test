@@ -620,9 +620,9 @@ class PengirimanPenerimaan extends Public_Controller
                 on
                     ovd.perusahaan = prs.kode
             where
-                 -- ov.tanggal between '".$tgl_kirim."' and '".$tgl_kirim."' and
+                ov.tanggal between '".$tgl_kirim."' and '".$tgl_kirim."' and
                 not exists (select * from kirim_voadip where no_order = ov.no_order) 
-                -- and SUBSTRING(ov.no_order, 5, 3) = '".$unit."'
+                and SUBSTRING(ov.no_order, 5, 3) = '".$unit."'
             group by
                 ov.no_order,
                 ov.supplier,
