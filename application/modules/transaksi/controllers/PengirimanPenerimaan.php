@@ -2194,12 +2194,14 @@ class PengirimanPenerimaan extends Public_Controller
                     $m_kirim->where('id', $params['id'])->delete();
 
 
-                    $this->result = [
-                        'status' => 1,
-                        'message' => 'Data Voadip (terima + kirim) berhasil dihapus.'
-                    ];
+                  
 
                 }
+
+                $this->result = [
+                    'status' => 1,
+                    'message' => 'Data Voadip (terima + kirim) berhasil dihapus.'
+                ];
 
             } catch (\Exception $e) {
 

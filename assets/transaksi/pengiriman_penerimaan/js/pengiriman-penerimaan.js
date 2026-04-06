@@ -89,7 +89,7 @@ var pp = {
 		event.preventDefault();
         var jenis = $("#jenis_transaksi").val();
 
-		let tal_selected = '';
+		let tab_selected = '';
 		if(jenis == 'PAKAN'){
 			tab_selected = 'pengiriman_pakan';
 		} else {
@@ -97,7 +97,7 @@ var pp = {
 		}
         // change tab-menu
 
-		console.log(tab_selected)
+		// console.log(tab_selected)
         $('.nav-tabs').find('a').removeClass('active');
         $('.nav-tabs').find('a').removeClass('show');
         $('.nav-tabs').find('li a[data-tab='+tab_selected+']').addClass('show');
@@ -230,7 +230,7 @@ var pp = {
 				success: function(data) {
 					// console.log(data)
 					var id = $(div_action).find('select.no_order_pakan').data('id');
-					console.log(id)
+					// console.log(id)
 
 					var option = '<option value="">-- Pilih No. Order --</option>';
 					if ( data.content.length > 0 ) {
@@ -446,7 +446,7 @@ var pp = {
 			success: function(data) {
 				hideLoading();
 
-				console.log( data );
+				// console.log( data );
 				
 				callback({'status': data.status, 'message': data.message});
 			},
@@ -467,7 +467,7 @@ var pp = {
 			success: function(data) {
 				hideLoading();
 
-				console.log( data );
+				// console.log( data );
 				
 				callback({'status': data.status, 'message': data.message});
 			},
@@ -772,12 +772,13 @@ var pp = {
 					},
 					success: function(data) {
 						hideLoading();
+						console.log(data)
 						if ( data.status == 1 ) {
 							bootbox.alert(data.message, function() {
 								pp.get_lists();
 								pp.load_form();
 
-								pp.load_riwayat()
+								window.location.reload();
 							});
 						} else {
 							bootbox.alert(data.message);
