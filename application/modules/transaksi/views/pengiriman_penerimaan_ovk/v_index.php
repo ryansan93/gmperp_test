@@ -9,9 +9,6 @@
 						<a class="nav-link active" data-toggle="tab" href="#riwayat" data-tab="riwayat">Riwayat Pengiriman</a>
 					</li>
 					<li class="nav-item">
-						<a class="nav-link" data-toggle="tab" href="#pengiriman_pakan" data-tab="pengiriman_pakan">Pengiriman Pakan</a>
-					</li>
-					<li class="nav-item">
 						<a class="nav-link" data-toggle="tab" href="#pengiriman_ovk" data-tab="pengiriman_ovk">Pengiriman OVK</a>
 					</li>
 				</ul>
@@ -43,8 +40,9 @@
 							<div class="col-sm-1 text-center no-padding" style="max-width: 4%;">Unit</div>
                             <div class="col-sm-2">
                                 <select class="form-control unit">
-                                    <!-- <option value="all">All</option> -->
+                                    <option value="all">All</option>
                                     <?php if ( !empty($unit) ): ?>
+										<option> All</option>
                                         <?php foreach ($unit as $k_unit => $v_unit): ?>
                                             <option value="<?php echo $v_unit['kode']; ?>"><?php echo strtoupper($v_unit['nama']); ?></option>
                                         <?php endforeach ?>
@@ -60,11 +58,7 @@
 						</div>
                         
                         <div>  
-                            <span for="">Jenis Transaksi</span>                            
-                            <select id="jenis_transaksi" style=" cursor:pointer; margin-left:20px; padding:6px; border-radius:5px; border:1px solid #ccc; box-shadow:inset 0 1px 1px rgba(0,0,0,.075)">
-                                <option value="PAKAN">PAKAN</option>
-                                <option value="OVK">OVK</option>
-                            </select>
+                         
 							<button id="btn-tampil" type="button" data-href="action" class="btn btn-primary cursor-p " title="TAMPIL" onclick="pp.get_lists()" style="margin-left: 10px;">Tampilkan</button>
 							<button id="btn-add" type="button" data-href="pengiriman_pakan" class="btn btn-primary cursor-p " title="ADD" onclick="pp.changeTabActive(this)"><i class="fa fa-plus" aria-hidden="true"></i> ADD</button>
                         </div>
@@ -91,9 +85,6 @@
 								</table>
 							</small>
 						</div>
-					</div>
-					<div id="pengiriman_pakan" class="tab-pane fade">
-						<?php echo $add_form_pakan; ?>
 					</div>
 
 					<div id="pengiriman_ovk" class="tab-pane fade">
