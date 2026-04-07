@@ -73,6 +73,7 @@ class MemorialPemakaian extends Public_Controller {
         $html = $this->load->view($this->pathView.'v_add_data', $content, true);
         echo $html;
     }
+    
 
 
     public function getListData($start_date, $end_date)
@@ -650,5 +651,11 @@ class MemorialPemakaian extends Public_Controller {
         
         $html = $this->load->view($this->pathView.'v_edit', $content, true);
         echo $html;
+    }
+
+    public function loadForm()
+    {
+
+        $content['data'] = $this->getListData($startdate, $enddate);
     }
 }

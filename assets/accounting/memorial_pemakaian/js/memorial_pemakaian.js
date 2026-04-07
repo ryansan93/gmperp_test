@@ -1,4 +1,5 @@
-var lastfilter = null
+var lastfilter = null;
+var useLastFilter = false;
 
 var mm = {
 	start_up: function () {
@@ -225,29 +226,23 @@ var mm = {
     //     // };
     // }, // end - changeTabActive
 
-    add_data : (elm) =>{
+    add_data : (elm) => {
+        var dcontent = $('div#riwayat');
 
-         var dcontent = $('div#riwayat');
-
-        // simpan filter terakhir
         lastfilter = {
             'start_date': dateSQL( $(dcontent).find('#StartDate').data('DateTimePicker').date() ),
             'end_date': dateSQL( $(dcontent).find('#EndDate').data('DateTimePicker').date() )
         };
 
-        // console.log(lastfilter)
+        useLastFilter = true; // <-- tandai nanti harus pakai ini
 
         var vhref = $(elm).data('href');
-        
-        $('.nav-tabs').find('a').removeClass('active');
-        $('.nav-tabs').find('a').removeClass('show');
-        $('.nav-tabs').find('li a[data-tab='+vhref+']').addClass('show');
-        $('.nav-tabs').find('li a[data-tab='+vhref+']').addClass('active');
 
-        $('.tab-pane').removeClass('show');
-        $('.tab-pane').removeClass('active');
-        $('div#'+vhref).addClass('show');
-        $('div#'+vhref).addClass('active');
+        $('.nav-tabs').find('a').removeClass('active show');
+        $('.nav-tabs').find('li a[data-tab='+vhref+']').addClass('show active');
+
+        $('.tab-pane').removeClass('show active');
+        $('div#'+vhref).addClass('show active');
 
         $.ajax({
             url: 'accounting/MemorialPemakaian/add_data',
@@ -265,17 +260,22 @@ var mm = {
                 }
             },
         });
-
     },
 
-    loadForm: function(v_id = null, resubmit = null) {
-        var dcontent = $('div#action');
+    loadForm: function() {
+        
+        var vhref = 'riwayat'; // id tab
+        $('.nav-tabs').find('a').removeClass('active show');
+        $('.nav-tabs').find('li a[data-tab='+vhref+']').addClass('show active');
+
+        $('.tab-pane').removeClass('show active');
+        $('div#'+vhref).addClass('show active');
 
         $.ajax({
             url : 'accounting/MemorialPemakaian/loadForm',
             data : {
-                'id' :  v_id,
-                'resubmit' : resubmit
+                'startdate' :  startdate,
+                'enddate' : enddate
             },
             type : 'GET',
             dataType : 'HTML',
@@ -290,11 +290,11 @@ var mm = {
     }, // end - loadForm
 
 	getLists: function() {
-        var dcontent = $('div#riwayat');
+        var dcontent = $('div#riwayat'); 
 
         var err = 0;
-        $.map( $(dcontent).find('[data-required=1]'), function(ipt) {
-            if ( empty( $(ipt).val() ) ) {
+        $.map($(dcontent).find('[data-required=1]'), function(ipt) {
+            if (empty($(ipt).val())) {
                 $(ipt).parent().addClass('has-error');
                 err++;
             } else {
@@ -302,40 +302,45 @@ var mm = {
             }
         });
 
-        if ( err > 0 ) {
+        if (err > 0) {
             bootbox.alert('Harap lengkapi data terlebih dahulu.');
         } else {
             var tbody = $(dcontent).find('table.tbl_riwayat tbody');
 
             var params = {
-                'start_date': dateSQL( $(dcontent).find('#StartDate').data('DateTimePicker').date() ),
-                'end_date': dateSQL( $(dcontent).find('#EndDate').data('DateTimePicker').date() )
+                'start_date': dateSQL($(dcontent).find('#StartDate').data('DateTimePicker').date()),
+                'end_date': dateSQL($(dcontent).find('#EndDate').data('DateTimePicker').date())
             };
 
-           if (lastfilter) {
+            var finalParams;
+
+            if (useLastFilter && lastfilter) {
+                finalParams = lastfilter;
+
                 $(dcontent).find('#StartDate').data('DateTimePicker').date(moment(lastfilter.start_date));
                 $(dcontent).find('#EndDate').data('DateTimePicker').date(moment(lastfilter.end_date));
+
+                useLastFilter = false; 
+            } else {
+                finalParams = params;
+
+                lastfilter = params;
             }
 
             $.ajax({
                 url : 'accounting/MemorialPemakaian/getLists',
                 data : {
-                    'params' : lastfilter || params
+                    'params' : finalParams
                 },
                 type : 'GET',
                 dataType : 'HTML',
-                beforeSend : function(){ App.showLoaderInContent( $(tbody) ); },
+                beforeSend : function(){ App.showLoaderInContent($(tbody)); },
                 success : function(html){
-                    App.hideLoaderInContent( $(tbody), html );
-
-                    // if ( $('.tbl_riwayat').find('tbody tr.data').length > 0 ) {
-                    //     $('.tbl_riwayat').DataTable();
-                    // }
+                    App.hideLoaderInContent($(tbody), html);
                 },
             });
         }
-    }, // end - getLists
-
+    },
 
     cekData: function() {
         var dcontent = $('#action');
@@ -596,6 +601,7 @@ var mm = {
                                 bootbox.alert( data.message, function () {
                                     // mm.loadForm( data.content.id );
                                     window.location.reload();
+                                  
                                 });
                             } else {
                                 bootbox.alert(data.message);
@@ -773,6 +779,14 @@ var mm = {
     },
 
     viewDetail: (elm, e) => {
+
+        var dcontent = $('div#riwayat');
+        lastfilter = {
+            'start_date': dateSQL($(dcontent).find('#StartDate').data('DateTimePicker').date()),
+            'end_date': dateSQL($(dcontent).find('#EndDate').data('DateTimePicker').date())
+        };
+        useLastFilter = true;
+
         var vhref = $(elm).data('href');
    
         $('.nav-tabs').find('a').removeClass('active');
@@ -791,7 +805,7 @@ var mm = {
             debet : $(elm).attr("debet"),
             kredit : $(elm).attr("kredit"),
         }
-        console.log(params)
+        // console.log(params)
           
         $.ajax({
             url: 'accounting/MemorialPemakaian/showDetailMemoPemakaian',
