@@ -895,7 +895,7 @@ class PengirimanPenerimaanPakan extends Public_Controller
         );
 
         $m_terima_pakan = new \Model\Storage\TerimaPakan_model();
-        $d_terima_pakan = $m_terima_pakan->where('id', $params['id'])->with(['logs'])->first()->toArray();
+        $d_terima_pakan = $m_terima_pakan->where('id_kirim_pakan', $params['id'])->with(['logs'])->first()->toArray();
 
         $data_terima_pakan = array(
             'no_sj'         => $params['no_sj'],
@@ -908,6 +908,10 @@ class PengirimanPenerimaanPakan extends Public_Controller
 
         $content['data_kirim']    = $data_kirim_pakan;
         $content['data_terima']   = $data_terima_pakan;
+
+        echo "<pre>";
+        print_r($content);
+        die;
     
            
       

@@ -900,7 +900,7 @@ class PengirimanPenerimaanOvk extends Public_Controller
         );
 
         $m_terima_voadip = new \Model\Storage\TerimaVoadip_model();
-        $d_terima_voadip = $m_terima_voadip->where('id', $params['id'])->with(['logs'])->first()->toArray();
+        $d_terima_voadip = $m_terima_voadip->where('id_kirim_voadip', $params['id'])->with(['logs'])->first()->toArray();
 
         $data_terima_voadip = array(
             'no_sj'         => $params['no_sj'],
