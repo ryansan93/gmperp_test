@@ -1,6 +1,6 @@
 <div class="form-group d-flex align-items-center">
     <div class="col-lg-12 d-flex align-items-center no-padding filter">
-        <div class="col-lg-2 text-left">Filter OP OVK</div>
+        <div class="col-lg-2 text-left">Filter OP</div>
         <div class="col-lg-2">
             <select class="form-control unit">
                 <option value="">-- Pilih Unit --</option>
@@ -12,7 +12,7 @@
             </select>
         </div>
         <div class="col-lg-2" style="padding-left: 0px;">
-            <div class="input-group date datetimepicker" name="tgl_kirim_ov" id="tgl_kirim_ov">
+            <div class="input-group date datetimepicker" name="tgl_kirim_op" id="tgl_kirim_op">
                 <input type="text" class="form-control text-center" placeholder="Tanggal Kirim" />
                 <span class="input-group-addon">
                     <span class="glyphicon glyphicon-calendar"></span>
@@ -20,7 +20,7 @@
             </div>
         </div>
         <div class="col-lg-2" style="padding-left: 0px;">
-            <button type="button" class="btn btn-primary get_op_not_kirim" onclick="pp.get_op_not_kirim_ovk(this)">Ambil OP</button>
+            <button type="button" class="btn btn-primary get_op_not_kirim_pakan" onclick="pp.get_op_not_kirim_pakan(this)">Ambil OP</button>
         </div>
     </div>
 </div>
@@ -47,13 +47,10 @@
 	<div class="col-lg-12 d-flex align-items-center no-padding">
 		<div class="col-lg-2 text-left">No. Order</div>
 		<div class="col-lg-2">
-			<select class="form-control no_order_ovk" data-jenis="opks" data-required="1" onchange="pp.get_asal(this)" disabled>
+			<select class="form-control no_order_pakan" data-jenis="opks" data-required="1" onchange="pp.get_asal(this)" disabled>
 				<option value="">-- Pilih No. Order --</option>
-				<?php // foreach ($order_voadip as $k_ov => $v_ov): ?>
-					<!-- <option value="<?php echo $v_ov['no_order']; ?>" data-supplier="<?php echo $v_ov['d_supplier']['nama']; ?>" data-idsupplier="<?php echo $v_ov['supplier']; ?>"><?php echo $v_ov['no_order']; ?></option> -->
-				<?php // endforeach ?>
 			</select>
-			<input type="text" class="form-control no_order_ovk hide" data-jenis="non_opks" placeholder="No. Order" readonly>
+			<input type="text" class="form-control no_order_pakan hide" data-jenis="non_opks" placeholder="No. Order" readonly>
 		</div>
 	</div>
 </div>
@@ -77,11 +74,11 @@
 					<input type="text" class="form-control text-center datetimepicker" placeholder="Bulan" name="bulan_docin" id="bulan_docin" onblur="pp.get_peternak(this)" />
 		        </div>
 		        <div class="col-lg-9">
-					<select class="form-control peternak_asal">
+					<select class="form-control peternak_asal" onchange="pp.getSjAsal(this)">
 						<option value="">-- Pilih Peternak --</option>
-						<!-- <?php foreach ($peternak as $k_peternak => $v_peternak): ?>
-							<option value="<?php echo $v_peternak['noreg']; ?>"><?php echo strtoupper($v_peternak['kode_unit']).' | '.strtoupper($v_peternak['nama']).' ('.$v_peternak['noreg'].')'; ?></option>
-						<?php endforeach ?> -->
+						<?php foreach ($peternak as $k_peternak => $v_peternak): ?>
+							<!-- <option value="<?php echo $v_peternak['noreg']; ?>"><?php echo strtoupper($v_peternak['kode_unit']).' | '.strtoupper($v_peternak['nama']).' ('.$v_peternak['noreg'].')'; ?></option> -->
+						<?php endforeach ?>
 					</select>
 		        </div>
 		    </div>
@@ -120,7 +117,7 @@
 					</select>
 		        </div>
 			</div>
-			<div class="col-lg-12 gudang hide no-padding">
+			<div class="col-lg-6 gudang hide no-padding">
 				<select class="form-control gudang">
 					<option value="">-- Pilih Gudang --</option>
 					<?php foreach ($gudang_tujuan as $k_gudang => $v_gudang): ?>
@@ -133,10 +130,10 @@
 </div>
 <div class="form-group d-flex align-items-center">
 	<div class="col-lg-12 d-flex align-items-center no-padding">
-		<div class="col-lg-2">Rencana Kirim</div>
+		<div class="col-lg-2">Tgl Kirim</div>
 		<div class="col-lg-2">
-			<div class="input-group date datetimepicker lock_date_fiskal" name="rcn_kirim" id="rcn_kirim">
-		        <input type="text" class="form-control text-center" placeholder="Rencana Kirim" data-required="1" />
+			<div class="input-group date datetimepicker lock_date_fiskal" name="tgl_kirim" id="tgl_kirim">
+		        <input type="text" class="form-control text-center" placeholder="Tanggal Kirim" data-required="1" />
 		        <span class="input-group-addon">
 		            <span class="glyphicon glyphicon-calendar"></span>
 		        </span>
@@ -144,16 +141,22 @@
 		</div>
 		<div class="col-lg-2"></div>
 		<div class="col-lg-2">Ekspedisi</div>
-		<div class="col-lg-3">
-			<input type="text" class="form-control ekspedisi" placeholder="Ekspedisi" data-required="1">
+		<div class="col-lg-4">
+			<!-- <input type="text" class="form-control ekspedisi" placeholder="Ekspedisi" data-required="1"> -->
+			<select class="form-control ekspedisi" data-required="1">
+				<option value="">-- Piliih Ekspedisi --</option>
+				<?php foreach ($ekspedisi as $k_eks => $v_eks): ?>
+					<option value="<?php echo $v_eks['nomor']; ?>" data-nama="<?php echo $v_eks['nama']; ?>" ><?php echo $v_eks['nomor'].' | '.$v_eks['nama']; ?></option>
+				<?php endforeach ?>
+			</select>
 		</div>
 	</div>
 </div>
 <div class="form-group d-flex align-items-center">
 	<div class="col-lg-12 d-flex align-items-center no-padding">
-		<div class="col-lg-2">Tgl Kirim</div>
+		<div class="col-lg-2">Tgl Terima</div>
 		<div class="col-lg-2">
-			<div class="input-group date datetimepicker lock_date_fiskal" name="tgl_kirim" id="tgl_kirim">
+			<div class="input-group date datetimepicker lock_date_fiskal" name="tgl_terima" id="tgl_terima">
 		        <input type="text" class="form-control text-center" placeholder="Tanggal Kirim" data-required="1" />
 		        <span class="input-group-addon">
 		            <span class="glyphicon glyphicon-calendar"></span>
@@ -182,10 +185,10 @@
 </div>
 <div class="form-group d-flex align-items-center" style="padding-right: 30px;">
 	<div class="col-lg-12 d-flex align-items-center">
-		<table class="table table-bordered table-hover tbl_detail_brg_ovk" style="margin-bottom: 0px;">
+		<table class="table table-bordered table-hover tbl_detail_brg_pakan non_opkp" style="margin-bottom: 0px;">
 			<thead>
 				<tr>
-					<th class="col-lg-2">Jenis OVK</th>
+					<th class="col-lg-2">Jenis Pakan</th>
 					<th class="col-lg-2">Jumlah</th>
 					<th class="col-lg-2">Kondisi</th>
 				</tr>
@@ -194,14 +197,48 @@
 				<tr>
 					<td>
 						<select class="form-control barang">
-							<?php foreach ($voadip as $k_voadip => $v_voadip): ?>
-								<option value="<?php echo $v_voadip['kode']; ?>"><?php echo $v_voadip['nama']; ?></option>
+							<?php foreach ($pakan as $k_pakan => $v_pakan): ?>
+								<option value="<?php echo $v_pakan['kode']; ?>"><?php echo $v_pakan['nama']; ?></option>
 							<?php endforeach ?>
 						</select>
 					</td>
 					<td>
-						<input type="text" class="form-control text-right jumlah" placeholder="Jumlah" data-tipe="decimal" data-required="1" onblur="pp.cek_stok_gudang(this)">
-						<!-- <input type="text" class="form-control text-right jumlah" placeholder="Jumlah" data-tipe="decimal" data-required="1"> -->
+						<input type="text" class="form-control text-right jumlah" placeholder="Jumlah" data-tipe="integer" data-required="1" onblur="pp.cek_stok_gudang(this)">
+					</td>
+					<td>
+						<input type="text" class="form-control kondisi" placeholder="Kondisi" data-required="1">
+						<div class="btn-ctrl">
+							<span onclick="pp.removeRowChild(this)" class="btn_del_row_2x hide"></span>
+							<span onclick="pp.addRowChild(this)" class="btn_add_row_2x"></span>
+						</div>
+					</td>
+				</tr>
+			</tbody>
+		</table>
+
+		<table class="table table-bordered table-hover tbl_detail_brg opkp hide" style="margin-bottom: 0px;">
+			<thead>
+				<tr>
+					<th class="col-lg-2">No. SJ Asal</th>
+					<th class="col-lg-2">Jenis Pakan</th>
+					<th class="col-lg-2">Jumlah</th>
+					<th class="col-lg-2">Kondisi</th>
+				</tr>
+			</thead>
+			<tbody>
+				<tr>
+					<td>
+						<select class="form-control no_sj_asal" data-required="1" onchange="pp.getBarang(this)">
+							<option value="">No. SJ Asal</option>
+						</select>
+					</td>
+					<td>
+						<select class="form-control barang" data-required="1" onchange="pp.pilihBarang(this)">
+							<option value="">Pilih Barang</option>
+						</select>
+					</td>
+					<td>
+						<input type="text" class="form-control text-right jumlah" placeholder="Jumlah" data-tipe="integer" data-required="1" onkeyup="pp.cekJmlPindah(this)" disabled>
 					</td>
 					<td>
 						<input type="text" class="form-control kondisi" placeholder="Kondisi" data-required="1">
@@ -220,7 +257,7 @@
 </div>
 <div class="form-group">
 	<div class="col-lg-12">
-		<button id="btn-add" type="button" data-href="action" class="btn btn-primary cursor-p pull-left" title="ADD" onclick="pp.save_kirim_voadip()"> 
+		<button id="btn-add" type="button" data-href="action" class="btn btn-primary cursor-p pull-left" title="ADD" onclick="pp.save_kirim_pakan()"> 
 			<i class="fa fa-save" aria-hidden="true"></i> Simpan
 		</button>
 	</div>

@@ -4,7 +4,7 @@
         <div class="col-lg-3">
             <select class="form-control unit" data-required="1">
                 <option value="">-- Pilih Unit --</option>
-                <?php if ( count($unit) > 0 ): ?>
+                <?php if ( !empty($unit) ): ?>
                     <?php foreach ($unit as $k => $val): ?>
                         <option value="<?php echo $val['kode'] ?>"><?php echo strtoupper($val['nama']); ?></option>
                     <?php endforeach ?>

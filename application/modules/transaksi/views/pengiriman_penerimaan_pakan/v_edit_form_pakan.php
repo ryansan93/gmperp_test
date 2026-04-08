@@ -8,7 +8,7 @@
                     <?php foreach ($unit as $k => $val): ?>
                         <?php 
                             $true = false;
-                            if ( stristr($data_ov['no_order'], $val['kode']) !== FALSE ) { 
+                            if ( stristr($data_op['no_order'], $val['kode']) !== FALSE ) { 
                                 $true = true;
                             }
                         ?>
@@ -18,15 +18,15 @@
             </select>
         </div>
         <div class="col-lg-2" style="padding-left: 0px;">
-            <div class="input-group date datetimepicker" name="tgl_kirim_ov" id="tgl_kirim_ov">
-                <input type="text" class="form-control text-center" placeholder="Tanggal Kirim" data-tgl="<?php echo $data_ov['tanggal']; ?>" />
+            <div class="input-group date datetimepicker" name="tgl_kirim_op" id="tgl_kirim_op">
+                <input type="text" class="form-control text-center" placeholder="Tanggal Kirim" data-tgl="<?php echo (isset($data_op['rcn_kirim']) && !empty($data_op['rcn_kirim'])) ? $data_op['rcn_kirim'] : null; ?>" />
                 <span class="input-group-addon">
                     <span class="glyphicon glyphicon-calendar"></span>
                 </span>
             </div>
         </div>
         <div class="col-lg-2" style="padding-left: 0px;">
-            <button type="button" class="btn btn-primary get_sj_not_terima" onclick="pp.get_op_not_kirim_ovk(this)">Ambil SJ</button>
+            <button type="button" class="btn btn-primary get_sj_not_terima" onclick="pp.get_op_not_kirim(this)">Ambil SJ</button>
         </div>
     </div>
 </div>
@@ -45,7 +45,7 @@
 		<div class="col-lg-2"></div>
 		<div class="col-lg-2">Ongkos Angkut</div>
 		<div class="col-lg-2">
-			<input type="text" class="form-control text-right ongkos_angkut" placeholder="Ongkos Angkut" data-required="1" data-tipe="decimal" maxlength="14" value="<?php echo angkaDecimal($data['ongkos_angkut']); ?>">
+			<input type="text" class="form-control text-right ongkos_angkut" placeholder="Ongkos Angkut" data-required="1" data-tipe="decimal" maxlength="14" value="<?php echo angkaDecimal($data['ongkos_angkut']); ?>" <?php echo ($data['jenis_kirim'] == 'opkp') ? 'disabled' : ''; ?> >
 		</div>
 	</div>
 </div>
@@ -66,12 +66,13 @@
 			?>
 			<select class="form-control no_order <?php echo $hide; ?>" data-jenis="opks" <?php echo $data_required; ?> onchange="pp.get_asal(this)">
 				<option value="">-- Pilih No. Order --</option>
-				<option value="<?php echo $data['no_order']; ?>" data-supplier="<?php echo $data_ov['supl_nama']; ?>" data-idsupplier="<?php echo $data_ov['supl_nomor']; ?>" selected ><?php echo $data['no_order']; ?></option>
+				<option value="<?php echo $data['no_order']; ?>" data-supplier="<?php echo $data_op['supl_nama']; ?>" data-idsupplier="<?php echo $data_op['supplier']; ?>" data-namaprs="<?php echo $data_op['nama_prs']; ?>" selected ><?php echo $data['no_order']; ?></option>
 				<?php
-					$supplier = $data_ov['supl_nama'];
-					$id_supplier = $data_ov['supl_nomor'];
+					$supplier = $data_op['supl_nama'];
+					$id_supplier = $data_op['supplier'];
+					$perusahaan = $data_op['nama_prs'];
 				?>
-				<?php foreach ($order_voadip as $k_op => $v_op): ?>
+				<?php // foreach ($order_pakan as $k_op => $v_op): ?>
 					<?php 
 						// $selected = null;
 						// if ( $v_op['no_order'] == $data['no_order'] ) {
@@ -81,8 +82,8 @@
 						// 	$id_supplier = $v_op['supplier'];
 						// }
 					?>
-					<option value="<?php echo $v_op['no_order']; ?>" data-supplier="<?php echo $v_op['d_supplier']['nama']; ?>" data-idsupplier="<?php echo $v_op['supplier']; ?>" <?php // echo $selected; ?> ><?php echo $v_op['no_order']; ?></option>
-				<?php endforeach ?>
+					<!-- <option value="<?php echo $v_op['no_order']; ?>" data-supplier="<?php echo $v_op['d_supplier']['nama']; ?>" data-idsupplier="<?php echo $v_op['supplier']; ?>" <?php // echo $selected; ?> ><?php echo $v_op['no_order']; ?></option> -->
+				<?php // endforeach ?>
 			</select>
 			<?php
 				$hide = 'hide';
@@ -110,7 +111,7 @@
 	<div class="col-lg-12 d-flex align-items-center no-padding">
 		<div class="col-lg-2 text-left">Perusahaan</div>
 		<div class="col-lg-2">
-			<input type="text" class="form-control perusahaan" placeholder="Perusahaan" value="<?php echo $data_ov['nama_prs']; ?>" readonly>
+			<input type="text" class="form-control perusahaan" placeholder="Perusahaan" value="<?php echo $perusahaan; ?>" readonly>
 		</div>
 	</div>
 </div>
@@ -217,7 +218,7 @@
 					</select>
 		        </div>
 			</div>
-			<div class="col-lg-12 gudang no-padding <?php echo ($data['jenis_tujuan'] == 'gudang') ? null : 'hide'; ?>">
+			<div class="col-lg-6 gudang no-padding <?php echo ($data['jenis_tujuan'] == 'gudang') ? null : 'hide'; ?>">
 				<select class="form-control gudang">
 					<option value="">-- Pilih Gudang --</option>
 					<?php foreach ($gudang_tujuan as $k_gudang => $v_gudang): ?>
@@ -238,10 +239,10 @@
 </div>
 <div class="form-group d-flex align-items-center">
 	<div class="col-lg-12 d-flex align-items-center no-padding">
-		<div class="col-lg-2">Rencana Kirim</div>
+		<div class="col-lg-2">Tgl Kirim</div>
 		<div class="col-lg-2">
-			<div class="input-group date datetimepicker lock_date_fiskal" name="rcn_kirim" id="rcn_kirim">
-		        <input type="text" class="form-control text-center" placeholder="Rencana Kirim" data-required="1" data-tgl="<?php echo $data['tgl_kirim']; ?>" />
+			<div class="input-group date datetimepicker lock_date_fiskal" name="tgl_kirim" id="tgl_kirim">
+		        <input type="text" class="form-control text-center" placeholder="Tanggal Kirim" data-required="1" data-tgl="<?php echo $data['tgl_kirim']; ?>" />
 		        <span class="input-group-addon">
 		            <span class="glyphicon glyphicon-calendar"></span>
 		        </span>
@@ -250,16 +251,28 @@
 		<div class="col-lg-2"></div>
 		<div class="col-lg-2">Ekspedisi</div>
 		<div class="col-lg-3">
-			<input type="text" class="form-control ekspedisi" placeholder="Ekspedisi" data-required="1" value="<?php echo $data['ekspedisi'] ?>">
+			<!-- <input type="text" class="form-control ekspedisi" placeholder="Ekspedisi" data-required="1" value="<?php echo $data['ekspedisi'] ?>"> -->
+			<select class="form-control ekspedisi" data-required="1">
+				<option value="">-- Piliih Ekspedisi --</option>
+				<?php foreach ($ekspedisi as $k_eks => $v_eks): ?>
+					<?php 
+						$selected = '';
+						if ( $v_eks['nomor'] == $data['ekspedisi_id'] ) {
+							$selected = 'selected';
+						}
+					?>
+					<option value="<?php echo $v_eks['nomor']; ?>" data-nama="<?php echo $v_eks['nama']; ?>" <?php echo $selected; ?> ><?php echo $v_eks['nomor'].' | '.$v_eks['nama']; ?></option>
+				<?php endforeach ?>
+			</select>
 		</div>
 	</div>
 </div>
 <div class="form-group d-flex align-items-center">
 	<div class="col-lg-12 d-flex align-items-center no-padding">
-		<div class="col-lg-2">Tgl Kirim</div>
+		<div class="col-lg-2">Tgl Terima</div>
 		<div class="col-lg-2">
-			<div class="input-group date datetimepicker lock_date_fiskal" name="tgl_kirim" id="tgl_kirim">
-		        <input type="text" class="form-control text-center" placeholder="Tanggal Kirim" data-required="1" data-tgl="<?php echo $data['tgl_kirim']; ?>" />
+			<div class="input-group date datetimepicker lock_date_fiskal" name="tgl_terima" id="tgl_terima">
+		        <input type="text" class="form-control text-center" placeholder="Tanggal Terima" data-required="1" data-tgl="<?php echo $data['terima']['tgl_terima']; ?>" />
 		        <span class="input-group-addon">
 		            <span class="glyphicon glyphicon-calendar"></span>
 		        </span>
@@ -287,10 +300,19 @@
 </div>
 <div class="form-group d-flex align-items-center" style="padding-right: 30px;">
 	<div class="col-lg-12 d-flex align-items-center">
-		<table class="table table-bordered table-hover tbl_detail_brg_ovk_edit" style="margin-bottom: 0px;">
+		<?php
+			$hide_non_opkp = '';
+			$hide_opkp = 'hide';
+			if ( $data['jenis_kirim'] == 'opkp' ) {
+				$hide_non_opkp = 'hide';
+				$hide_opkp = '';
+			}
+		?>
+
+		<table class="table table-bordered table-hover tbl_detail_brg_pakan_edit non_opkp <?php echo $hide_non_opkp; ?>" style="margin-bottom: 0px;">
 			<thead>
 				<tr>
-					<th class="col-lg-2">Jenis OVK</th>
+					<th class="col-lg-2">Jenis Pakan</th>
 					<th class="col-lg-2">Jumlah</th>
 					<th class="col-lg-2">Kondisi</th>
 				</tr>
@@ -301,23 +323,89 @@
 					<tr>
 						<td>
 							<select class="form-control barang">
-								<?php foreach ($voadip as $k_voadip => $v_voadip): ?>
+								<?php foreach ($pakan as $k_pakan => $v_pakan): ?>
 									<?php
 										$selected = null;
-										if ( $v_voadip['kode'] == $v_det['item'] ) {
+										if ( $v_pakan['kode'] == $v_det['item'] ) {
 											$selected = 'selected';
 										}
 									?>
-									<option value="<?php echo $v_voadip['kode']; ?>" <?php echo $selected; ?> ><?php echo $v_voadip['nama']; ?></option>
+									<option value="<?php echo $v_pakan['kode']; ?>" <?php echo $selected; ?> ><?php echo $v_pakan['nama']; ?></option>
 								<?php endforeach ?>
 							</select>
 						</td>
 						<td>
-							<input type="text" class="form-control text-right jumlah" placeholder="Jumlah" data-tipe="decimal" data-required="1" value="<?php echo angkaDecimal($v_det['jumlah']) ?>">
+							<input type="text" class="form-control text-right jumlah" placeholder="Jumlah" data-tipe="integer" data-required="1" value="<?php echo angkaRibuan($v_det['jumlah']) ?>">
 						</td>
 						<td>
-							<input type="text" class="form-control kondisi" placeholder="Kondisi" data-required="1" value="<?php echo angkaRibuan($v_det['kondisi']) ?>" onblur="pp.cek_stok_gudang(this)">
-							<!-- <input type="text" class="form-control kondisi" placeholder="Kondisi" data-required="1" value="<?php echo angkaRibuan($v_det['kondisi']) ?>"> -->
+							<input type="text" class="form-control kondisi" placeholder="Kondisi" data-required="1" value="<?php echo $v_det['kondisi']; ?>" onblur="pp.cek_stok_gudang(this)">
+							<?php
+								$jml_detail++;
+								$css = 'display: none;';
+								if ( $jml_detail == count($data['detail']) ) {
+									$css = 'display: block;';
+								}
+							?>
+							<div class="btn-ctrl" style="<?php echo $css; ?>">
+								<span onclick="pp.removeRowChild(this)" class="btn_del_row_2x <?php echo (count($data['detail']) == 1) ? 'hide' : null; ?>"></span>
+								<span onclick="pp.addRowChild(this)" class="btn_add_row_2x"></span>
+							</div>
+						</td>
+					</tr>
+				<?php endforeach ?>
+			</tbody>
+		</table>
+
+		<table class="table table-bordered table-hover tbl_detail_brg_pakan_edit opkp <?php echo $hide_opkp; ?>" style="margin-bottom: 0px;">
+			<thead>
+				<tr>
+					<th class="col-lg-2">No. SJ Asal</th>
+					<th class="col-lg-2">Jenis Pakan</th>
+					<th class="col-lg-2">Jumlah</th>
+					<th class="col-lg-2">Kondisi</th>
+				</tr>
+			</thead>
+			<tbody>
+				<?php $jml_detail = 0; ?>
+				<?php foreach ($data['detail'] as $k_det => $v_det): ?>
+					<?php $barang = null; ?>
+					<tr>
+						<td>
+							<select class="form-control no_sj_asal" data-required="1" onchange="pp.getBarang(this)">
+								<option value="">No. SJ Asal</option>
+								<?php foreach ($no_sj_asal as $k_nsa => $v_nsa): ?>
+									<?php
+										$selected = '';
+										if ( $v_nsa['no_sj'] == $v_det['no_sj_asal'] ) {
+											$selected = 'selected';
+											$barang = $v_nsa['barang'];
+										}
+									?>
+									<option value="<?php echo $v_nsa['no_sj']; ?>" data-barang='<?php echo json_encode($v_nsa['barang']); ?>' <?php echo $selected; ?> ><?php echo $v_nsa['text_tgl'].' | '.$v_nsa['no_sj']; ?></option>
+								<?php endforeach ?>
+							</select>
+						</td>
+						<td>
+							<select class="form-control barang" data-required="1" onchange="pp.pilihBarang(this)">
+								<option value="">Pilih Barang</option>
+								<?php if ( !empty($barang) ): ?>
+									<?php foreach ($barang as $k_brg => $v_brg): ?>
+										<?php
+											$selected = '';
+											if ( $v_brg['kode'] == $v_det['item'] ) {
+												$selected = 'selected';
+											}
+										?>
+										<option value="<?php echo $v_brg['kode']; ?>" <?php echo $selected; ?> ><?php echo strtoupper($v_brg['nama']); ?></option>
+									<?php endforeach ?>
+								<?php endif ?>
+							</select>
+						</td>
+						<td>
+							<input type="text" class="form-control text-right jumlah" placeholder="Jumlah" data-tipe="integer" data-required="1" value="<?php echo angkaRibuan($v_det['jumlah']) ?>" onkeyup="pp.cekJmlPindah(this)">
+						</td>
+						<td>
+							<input type="text" class="form-control kondisi" placeholder="Kondisi" data-required="1" value="<?php echo $v_det['kondisi']; ?>">
 							<?php
 								$jml_detail++;
 								$css = 'display: none;';
@@ -341,7 +429,7 @@
 </div>
 <div class="form-group d-flex align-items-center">
 	<div class="col-lg-12">
-		<button type="button" class="btn btn-primary cursor-p pull-right" title="ADD" style="margin-left: 5px;" data-id="<?php echo $data['id']; ?>" onclick="pp.edit_kirim_voadip(this)" data-href="pengiriman"> 
+		<button type="button" class="btn btn-primary cursor-p pull-right" title="ADD" style="margin-left: 5px;" data-id="<?php echo $data['id']; ?>" onclick="pp.edit_kirim_pakan(this)" data-href="pengiriman"> 
 			<i class="fa fa-edit" aria-hidden="true"></i> Update
 		</button>
 		<button type="button" class="btn btn-danger cursor-p pull-right" title="ADD" style="margin-right: 5px;" data-id="<?php echo $data['id']; ?>" onclick="pp.changeTabActive(this)" data-href="pengiriman"> 
@@ -349,11 +437,3 @@
 		</button>
 	</div>
 </div>
-<!-- <div class="form-group">
-	<div class="col-lg-12 no-padding">
-		<hr>
-		<button id="btn-add" type="button" data-href="action" class="btn btn-primary cursor-p pull-left" title="ADD" onclick="pv.edit_kirim_voadip(this)" style="margin-left: 10px;" data-id="<?php echo $data['id']; ?>"> 
-			<i class="fa fa-edit" aria-hidden="true"></i> Update
-		</button>
-	</div>
-</div> -->
