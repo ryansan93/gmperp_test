@@ -107,13 +107,13 @@
                     <form role="form" class="form-horizontal">
                         <div class="col-md-12 no-padding">
                             <div class="col-lg-2 no-padding pull-left">
-                                <label class="control-label">No. Order</label>
+                                <label class="control-label">No. Surat Jalan</label>
                             </div>
                             <div class="col-lg-1 no-padding pull-left" style="max-width: 2%;">
                                 <label class="control-label">:</label>
                             </div>
                             <div class="col-lg-9 no-padding action">
-                                <label class="control-label"><?php echo $data_terima['no_order']; ?></label>
+                                <label class="control-label"><?php echo $data_terima['no_sj']; ?></label>
                             </div>
                         </div>
 

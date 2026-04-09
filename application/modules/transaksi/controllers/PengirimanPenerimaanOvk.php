@@ -1,56 +1,55 @@
 <?php defined('BASEPATH') OR exit('No direct script access allowed');
 
-class PengirimanPenerimaanOvk extends Public_Controller
-{
+class PengirimanPenerimaanOvk extends Public_Controller {
+
     private $url;
-    private $hakAkses;
+
     function __construct()
     {
         parent::__construct();
         $this->url = $this->current_base_uri;
-        $this->hakAkses = hakAkses($this->url);
     }
 
-    public function index()
+    /**************************************************************************************
+     * PUBLIC FUNCTIONS
+     **************************************************************************************/
+    /**
+     * Default
+     */
+    public function index($segment=0)
     {
-        if ( $this->hakAkses['a_view'] == 1 ) {
+        $akses = hakAkses($this->url);
+        if ( $akses['a_view'] == 1 ) {
             $this->add_external_js(array(
-                'assets/select2/js/select2.min.js',
-                'assets/transaksi/pengiriman_penerimaan_ovk/js/pengiriman-penerimaan-ovk.js'
+                "assets/select2/js/select2.min.js",
+                "assets/transaksi/pengiriman_penerimaan_ovk/js/pengiriman-penerimaan-ovk.js",
             ));
             $this->add_external_css(array(
-                'assets/select2/css/select2.min.css',
-                'assets/transaksi/pengiriman_penerimaan_ovk/css/pengiriman-penerimaan-ovk.css'
+                "assets/select2/css/select2.min.css",
+                "assets/transaksi/pengiriman_penerimaan_ovk/css/pengiriman-penerimaan-ovk.css",
             ));
 
-            // echo "<pre>";
-            // print_r(123);
-            // die;
+            $data = $this->includes;
 
-            $data                           = $this->includes;
-            $data['title_menu']             = 'Pengiriman & Penerimaan_ovk';
+            $content['akses'] = $akses;
+            $content['unit'] = $this->get_unit();
 
-            $content['akses']               = $this->hakAkses;
-            $content['unit']                = $this->get_unit();
+            $a_content['order_voadip'] = null;
+            $a_content['gudang_asal'] = $this->get_gudang_asal();
+            $a_content['gudang_tujuan'] = $this->get_gudang_tujuan();
+            $a_content['peternak'] = null;
+            $a_content['voadip'] = $this->get_voadip();
+            $a_content['unit'] = $this->get_unit();
 
-            $ovk_content['order_pakan']     = null;
-            $ovk_content['gudang_asal']     = $this->get_gudang_asal();
-            $ovk_content['gudang_tujuan']   = $this->get_gudang_tujuan();
-            $ovk_content['peternak']        = null;
-            // $ovk_content['pakan']           = $this->get_pakan();
-            $ovk_content['unit']            = $this->get_unit();
-            $ovk_content['ekspedisi']       = $this->get_ekspedisi();
-            $ovk_content['voadip']          = $this->get_voadip();
-            $content['add_form_ovk']        = $this->load->view('transaksi/pengiriman_penerimaan_ovk/v_add_form_ovk', $ovk_content, TRUE);
+            $content['add_form'] = $this->load->view('transaksi/pengiriman_penerimaan_ovk/v_add_form', $a_content, TRUE);
 
-            $data['view']       = $this->load->view('transaksi/pengiriman_penerimaan_ovk/v_index', $content, true);
-
+            $data['title_menu'] = 'Pengiriman Penerimaan Ovk';
+            $data['view'] = $this->load->view('transaksi/pengiriman_penerimaan_ovk/v_index', $content, TRUE);
             $this->load->view($this->template, $data);
         } else {
             showErrorAkses();
         }
     }
-
 
     public function get_unit()
     {
@@ -149,28 +148,10 @@ class PengirimanPenerimaanOvk extends Public_Controller
         return $data;
     }
 
-
-
     public function get_lists()
     {
-        
-        $params                 = $this->input->post('params');
-    
-        $content['data_ovk']    = $this->listDataOvk($params );
-        $html = $this->load->view('transaksi/pengiriman_penerimaan_ovk/v_list_ovk', $content, true);
-        
+        $params = $this->input->post('params');
 
-
-        $this->result['status'] = 1;
-        $this->result['content'] = $html;
-
-        display_json($this->result);
-    }
-
-    
-    public function listDataOvk($params)
-    {
-        
         $data = null;
 
         $kode_unit = $params['kode_unit'];
@@ -250,13 +231,9 @@ class PengirimanPenerimaanOvk extends Public_Controller
                 on
                     kv.tujuan = tujuan.kode
             where
-                kv.tgl_kirim between '".$params['start_date']."' and '".$params['end_date']."' ";
-
-            if (strtolower($kode_unit) != 'all') {
-                $sql .= " and ((asal.unit = '".$kode_unit."') or (tujuan.unit = '".$kode_unit."')) ";
-            }
-
-            $sql .= "group by
+                kv.tgl_kirim between '".$params['start_date']."' and '".$params['end_date']."' and
+                ((asal.unit = '".$kode_unit."') or (tujuan.unit = '".$kode_unit."'))
+            group by
                 kv.id,
                 kv.no_order,
                 kv.tgl_kirim,
@@ -272,95 +249,288 @@ class PengirimanPenerimaanOvk extends Public_Controller
 
         if ( $d_kirim_voadip->count() > 0 ) {
             $data = $d_kirim_voadip->toArray();
+
+            // foreach ($d_kirim_voadip as $k_kp => $v_kp) {
+            //     $tampil = 0;
+
+            //     if ( $v_kp['jenis_kirim'] == 'opks' || $v_kp['jenis_kirim'] == 'opkg' ) {
+            //         if ( $kode_unit != 'all' ) {
+            //             if ( stristr($v_kp['no_order'], $kode_unit) ) {
+            //                 $tampil = 1;
+            //             }
+            //         } else {
+            //             $tampil = 1;
+            //         }
+            //     } else if ( $v_kp['jenis_kirim'] == 'opkp' ) {
+            //         if ( $kode_unit != 'all' ) {
+            //             $m_conf = new \Model\Storage\Conf();
+            //             $sql = "
+            //                 select w.kode from rdim_submit rs
+            //                 right join
+            //                     kandang k
+            //                     on
+            //                         rs.kandang = k.id
+            //                 right join
+            //                     wilayah w
+            //                     on
+            //                         k.unit = w.id
+            //                 where
+            //                     rs.noreg = '".$v_kp['asal']."'
+            //                 group by
+            //                     w.kode
+            //             ";
+            //             $d_asal = $m_conf->hydrateRaw( $sql );
+            //             $kode_unit_asal = null;
+            //             if ( $d_asal->count() > 0 ) {
+            //                 $d_asal = $d_asal->toArray()[0];
+            //                 $kode_unit_asal = $d_asal['kode'];
+            //             }
+
+            //             $sql = "
+            //                 select w.kode from rdim_submit rs
+            //                 right join
+            //                     kandang k
+            //                     on
+            //                         rs.kandang = k.id
+            //                 right join
+            //                     wilayah w
+            //                     on
+            //                         k.unit = w.id
+            //                 where
+            //                     rs.noreg = '".$v_kp['tujuan']."'
+            //                 group by
+            //                     w.kode
+            //             ";
+            //             $d_tujuan = $m_conf->hydrateRaw( $sql );
+            //             $kode_unit_tujuan = null;
+            //             if ( $d_tujuan->count() > 0 ) {
+            //                 $d_tujuan = $d_tujuan->toArray()[0];
+            //                 $kode_unit_tujuan = $d_tujuan['kode'];
+            //             }
+
+            //             if ( stristr($kode_unit_asal, $kode_unit) || stristr($kode_unit_tujuan, $kode_unit) ) {
+            //                 $tampil = 1;
+            //             }
+            //         } else {
+            //             $tampil = 1;
+            //         }
+            //     }
+
+            //     if ( $tampil == 1 ) {
+            //         $asal = null;
+            //         $tujuan = null;
+
+            //         $m_supplier = new \Model\Storage\Pelanggan_model();
+            //         $m_peternak = new \Model\Storage\RdimSubmit_model();
+            //         $m_gudang = new \Model\Storage\Gudang_model();
+            //         // ASAL
+            //         if ( $v_kp['jenis_kirim'] == 'opks' ) {
+            //             $d_supplier = $m_supplier->where('nomor', $v_kp['asal'])->where('tipe', 'supplier')->where('jenis', '<>', 'ekspedisi')->orderBy('id', 'desc')->first();
+            //             $asal = $d_supplier->nama;
+            //         } else if ( $v_kp['jenis_kirim'] == 'opkp' ) {
+            //             $d_peternak = $m_peternak->where('noreg', $v_kp['asal'])->with(['mitra'])->orderBy('id', 'desc')->first();
+            //             $asal = $d_peternak->mitra->dMitra->nama;
+            //         } else if ( $v_kp['jenis_kirim'] == 'opkg' ) {
+            //             $d_gudang = $m_gudang->where('id', $v_kp['asal'])->orderBy('id', 'desc')->first();
+            //             $asal = $d_gudang->nama;
+            //         }
+            //         // TUJUAN
+            //         if ( $v_kp['jenis_tujuan'] == 'peternak' ) {
+            //             $d_peternak = $m_peternak->where('noreg', $v_kp['tujuan'])->with(['mitra'])->orderBy('id', 'desc')->first();
+            //             $tujuan = !empty($d_peternak) ? $d_peternak->mitra->dMitra->nama.' ('.$v_kp['tujuan'].')' : null;
+            //         } else if ( $v_kp['jenis_tujuan'] == 'gudang' ) {
+            //             $d_gudang = $m_gudang->where('id', $v_kp['tujuan'])->orderBy('id', 'desc')->first();
+            //             $tujuan = $d_gudang->nama;
+            //         }
+
+            //         $key = str_replace('-', '', $v_kp['tgl_kirim']).'|'.$v_kp['id'];
+            //         $data[ $key ] = array(
+            //             'id' => $v_kp['id'],
+            //             'no_order' => $v_kp['no_order'],
+            //             'tgl_kirim' => $v_kp['tgl_kirim'],
+            //             'asal' => $asal,
+            //             'tujuan' => $tujuan,
+            //             'nopol' => $v_kp['no_polisi'],
+            //             'tgl_terima' => !empty($v_kp['tgl_terima']) ? $v_kp['tgl_terima'] : null
+            //         );
+            //     }
+            // }
         }
-        // echo "<pre>";
-        // print_r($sql);
-        // die;
 
+        // if ( !empty($data) ) {
+        //     krsort($data);
+        // }
 
-        return $data;
+        $content['data'] = $data;
+        $html = $this->load->view('transaksi/pengiriman_penerimaan_ovk/v_list', $content, true);
+
+        $this->result['status'] = 1;
+        $this->result['content'] = $html;
+
+        display_json($this->result);
     }
 
-
-    public function get_gudang_asal()
+    public function load_form()
     {
-        $unit = $this->get_unit();
+        $id = $this->input->get('id');
+        $resubmit = $this->input->get('resubmit');
 
-        $data = null;
-        foreach ($unit as $k_unit => $v_unit) {
-            $m_wilayah = new \Model\Storage\Wilayah_model();
-            $d_wilayah = $m_wilayah->select('id')->where('kode', $v_unit['kode'])->get();
+        $a_content['order_voadip'] = null;
+        $a_content['gudang_asal'] = $this->get_gudang_asal();
+        $a_content['gudang_tujuan'] = $this->get_gudang_tujuan();
+        $a_content['peternak'] = null;
+        $a_content['voadip'] = $this->get_voadip();
+        $a_content['unit'] = $this->get_unit();
 
-            if ( $d_wilayah->count() > 0 ) {
-                $d_wilayah = $d_wilayah->toArray();                
+        $html = null;
+        if ( !empty($id) ) {
+            $m_kv = new \Model\Storage\KirimVoadip_model();
+            $d_kv = $m_kv->where('id', $id)->with(['terima', 'detail'])->first()->toArray();
 
+            $asal = null;
+            $tujuan = null;
+            $tgl_docin_asal = null;
+            $tgl_docin_tujuan = null;
+            if ( $d_kv['jenis_kirim'] == 'opkp' ) {
+                $m_rs = new \Model\Storage\RdimSubmit_model();
+                $d_rs_asal = $m_rs->where('noreg', $d_kv['asal'])->with(['mitra'])->orderBy('id', 'desc')->first()->toArray();
+                $tgl_docin_asal = $d_rs_asal['tgl_docin'];
+                $asal = $d_rs_asal['mitra']['d_mitra']['nama'].' ('.$d_kv['asal'].')';
+
+                if ( $d_kv['jenis_tujuan'] == 'peternak' ) {
+                    $d_rs_tujuan = $m_rs->where('noreg', $d_kv['tujuan'])->with(['mitra'])->orderBy('id', 'desc')->first()->toArray();
+                    $tgl_docin_tujuan = $d_rs_tujuan['tgl_docin'];
+                    $tujuan = $d_rs_tujuan['mitra']['d_mitra']['nama'].' ('.$d_kv['tujuan'].')';
+                }
+            } else if ( $d_kv['jenis_kirim'] == 'opkg' ) {
                 $m_gudang = new \Model\Storage\Gudang_model();
-                $d_gudang = $m_gudang->where('jenis', 'PAKAN')->whereIn('unit', $d_wilayah)->orderBy('nama', 'asc')->get();
+                $d_gudang = $m_gudang->where('id', $d_kv['asal'])->orderBy('id', 'desc')->first();
 
-                if ( $d_gudang->count() > 0 ) {
-                    $d_gudang = $d_gudang->toArray();
+                $asal = $d_gudang->nama;
 
-                    foreach ($d_gudang as $k_gdg => $v_gdg) {
-                        $key = $v_gdg['nama'].'-'.$v_gdg['id'];
+                if ( $d_kv['jenis_tujuan'] == 'peternak' ) {
+                    if ( !empty($d_kv['tujuan']) ) {
+                        $m_rs = new \Model\Storage\RdimSubmit_model();
+                        $d_rs_tujuan = $m_rs->where('noreg', $d_kv['tujuan'])->with(['mitra'])->orderBy('id', 'desc')->first();
 
-                        $data[ $key ] = $v_gdg;
+                        if ( $d_rs_tujuan ) {
+                            $d_rs_tujuan = $d_rs_tujuan->toArray();
+                            
+                            $tgl_docin_tujuan = $d_rs_tujuan['tgl_docin'];
+                            $tujuan = $d_rs_tujuan['mitra']['d_mitra']['nama'].' ('.$d_kv['tujuan'].')';
+                        }
                     }
+                } else {
+                    $m_gudang = new \Model\Storage\Gudang_model();
+                    $d_gudang = $m_gudang->where('id', $d_kv['tujuan'])->orderBy('id', 'desc')->first();
+
+                    $tujuan = $d_gudang->nama;
+                }
+            } else {
+                $m_supplier = new \Model\Storage\Supplier_model();
+                $d_supplier = $m_supplier->where('nomor', $d_kv['asal'])->where('tipe', 'supplier')->where('jenis', '<>', 'ekspedisi')->orderBy('id', 'desc')->first();
+                $asal = $d_supplier->nama;
+
+                if ( $d_kv['jenis_tujuan'] == 'peternak' ) {
+                    if ( !empty($d_kv['tujuan']) ) {
+                        $m_rs = new \Model\Storage\RdimSubmit_model();
+                        $d_rs_tujuan = $m_rs->where('noreg', $d_kv['tujuan'])->with(['mitra'])->orderBy('id', 'desc')->first();
+
+                        if ( $d_rs_tujuan ) {
+                            $d_rs_tujuan = $d_rs_tujuan->toArray();
+                            
+                            $tgl_docin_tujuan = $d_rs_tujuan['tgl_docin'];
+                            $tujuan = $d_rs_tujuan['mitra']['d_mitra']['nama'].' ('.$d_kv['tujuan'].')';
+                        }
+                    }
+                } else {
+                    $m_gudang = new \Model\Storage\Gudang_model();
+                    $d_gudang = $m_gudang->where('id', $d_kv['tujuan'])->orderBy('id', 'desc')->first();
+
+                    $tujuan = $d_gudang->nama;
                 }
             }
+
+            // $m_ov = new \Model\Storage\OrderVoadip_model();
+            // $d_ov = $m_ov->where('no_order', $d_kv['no_order'])->with(['d_supplier'])->first();
+
+            $m_conf = new \Model\Storage\Conf();
+            $sql = "
+                select
+                    ov.no_order,
+                    ov.supplier,
+                    ov.tanggal,
+                    supl.nomor as supl_nomor,
+                    supl.nama as supl_nama,
+                    ovd.perusahaan as kode_prs,
+                    prs.perusahaan as nama_prs
+                from order_voadip ov
+                left join
+                    (select id_order, perusahaan from order_voadip_detail group by id_order, perusahaan) ovd
+                    on
+                        ov.id = ovd.id_order
+                left join
+                    (
+                        select plg1.* from pelanggan plg1
+                        right join
+                            (select max(id) as id, nomor from pelanggan group by nomor) plg2
+                            on
+                                plg1.id = plg2.id
+                    ) supl
+                    on
+                        ov.supplier = supl.nomor
+                left join
+                    (
+                        select prs1.* from perusahaan prs1
+                        right join
+                            (select kode, max(id) as id from perusahaan group by kode) prs2
+                            on
+                                prs1.id = prs2.id
+                    ) prs
+                    on
+                        ovd.perusahaan = prs.kode
+                where
+                    ov.no_order = '".$d_kv['no_order']."'
+                group by
+                    ov.no_order,
+                    ov.supplier,
+                    ov.tanggal,
+                    supl.nomor,
+                    supl.nama,
+                    ovd.perusahaan,
+                    prs.perusahaan
+                order by
+                    ov.no_order asc
+            ";
+            $d_conf = $m_conf->hydrateRaw( $sql );
+
+            $d_ov = null;
+            if ( $d_conf->count() > 0 ) {
+                $d_ov = $d_conf->toArray()[0];
+            }
+
+            $a_content['asal'] = $asal;
+            $a_content['tujuan'] = $tujuan;
+            $a_content['tgl_docin_asal'] = substr($tgl_docin_asal, 0, 10);
+            $a_content['tgl_docin_tujuan'] = !empty($tgl_docin_tujuan) ? substr($tgl_docin_tujuan, 0, 10) : null;
+            $a_content['data'] = $d_kv;
+            $a_content['data_ov'] = !empty($d_ov) ? $d_ov : null;
+            $a_content['terima'] = !empty($d_kv['terima']) ? 1 : 0;
+
+            if ( $resubmit == 'edit' ) {
+                $html = $this->load->view('transaksi/pengiriman_penerimaan_ovk/v_edit_form', $a_content, TRUE);
+            } else {
+                $html = $this->load->view('transaksi/pengiriman_penerimaan_ovk/v_view_form', $a_content, TRUE);
+            }
+        } else {
+            $html = $this->load->view('transaksi/pengiriman_penerimaan_ovk/v_add_form', $a_content, TRUE);
         }
 
-        return $data;
+        echo $html;
     }
 
-    public function get_gudang_tujuan()
+    public function get_op_not_kirim()
     {
-        $m_gudang = new \Model\Storage\Gudang_model();
-        $d_gudang = $m_gudang->where('jenis', 'PAKAN')->orderBy('nama', 'asc')->get();
-
-        if ( $d_gudang->count() > 0 ) {
-            $d_gudang = $d_gudang->toArray();
-        }
-
-        return $d_gudang;
-    }
-
-
-    public function get_ekspedisi()
-    {
-        $data = null;
-
-        $m_ekspedisi = new \Model\Storage\Ekspedisi_model();
-        $sql = "
-            select 
-                eks.id,
-                eks.nomor,
-                eks.nama
-            from ekspedisi eks 
-            right join 
-                (select max(id) as id, nomor from ekspedisi group by nomor) as e 
-                on
-                    eks.id = e.id
-            where
-                eks.mstatus = 1 
-            group by
-                eks.id,
-                eks.nomor,
-                eks.nama
-            order by eks.nama asc
-        ";
-        $d_ekspedisi = $m_ekspedisi->hydrateRaw( $sql );
-        if ( $d_ekspedisi->count() > 0 ) {
-            $data = $d_ekspedisi->toArray();
-        }
-
-        return $data;
-    }
-
-    public function get_op_not_kirim_ovk()
-    {
-        // echo "<pre>";
-        // print_r('ovk');
-        // die;
         $params = $this->input->post('params');
 
         $unit = $params['unit'];
@@ -411,7 +581,7 @@ class PengirimanPenerimaanOvk extends Public_Controller
             where
                 -- ov.tanggal between '".$tgl_kirim."' and '".$tgl_kirim."' and
                 not exists (select * from kirim_voadip where no_order = ov.no_order) 
-                -- and SUBSTRING(ov.no_order, 5, 3) = '".$unit."'
+                and SUBSTRING(ov.no_order, 5, 3) = '".$unit."'
             group by
                 ov.no_order,
                 ov.supplier,
@@ -425,194 +595,75 @@ class PengirimanPenerimaanOvk extends Public_Controller
         ";
         $d_conf = $m_conf->hydrateRaw( $sql );
 
-        //    echo "<pre>";
-        // print_r($sql);
-        // die;
-
         $data = array();
         if ( $d_conf->count() > 0 ) {
             $data = $d_conf->toArray();
         }
 
-     
- 
+        // $m_ov = new \Model\Storage\OrderVoadip_model();
+        // $d_ov = $m_ov->whereBetween('tanggal', [$tgl_kirim, $tgl_kirim])->with(['d_supplier', 'kirim'])->orderBy('no_order', 'asc')->get();
+
+        // $data = array();
+        // $_data = array();
+        // if ( $d_ov->count() > 0 ) {
+        //     $d_ov = $d_ov->toArray();
+        //     foreach ($d_ov as $k => $v) {
+        //         if ( empty($v['kirim']) ) {
+        //             $_data[ $v['no_order'] ] = $v;
+        //         }
+        //     }
+
+        //     foreach ($_data as $k => $v) {
+        //         array_push($data, $v);
+        //     }
+        // }
 
         $this->result['content'] = $data;
 
         display_json( $this->result );
     }
 
-
-    public function save_ovk()
+    public function get_gudang_asal()
     {
-        $params = $this->input->post('params');
+        $unit = $this->get_unit();
 
-        // echo "<pre>";
-        // print_r($params);
-        // die;
+        $data = null;
+        foreach ($unit as $k_unit => $v_unit) {
+            $m_wilayah = new \Model\Storage\Wilayah_model();
+            $d_wilayah = $m_wilayah->select('id')->where('kode', $v_unit['kode'])->get();
 
-      
-        try {
-            $m_kirim_voadip = new \Model\Storage\KirimVoadip_model();
-            $now = $m_kirim_voadip->getDate();
+            if ( $d_wilayah->count() > 0 ) {
+                $d_wilayah = $d_wilayah->toArray();                
 
-            $no_order = null;
-            $no_sj = null;
-            $kode_unit = null;
-            if ( $params['jenis_kirim'] == 'opks' ) {
-                $no_order = $params['no_order'];
-                $no_sj = $params['no_sj'];
-                $kode_unit = 1;
-            } else {
-                if ( $params['jenis_tujuan'] == 'peternak' ) {
-                    $m_rs = new \Model\Storage\RdimSubmit_model();
-                    $d_rs = $m_rs->where('noreg', $params['tujuan'])->with(['dKandang'])->first();
+                $m_gudang = new \Model\Storage\Gudang_model();
+                $d_gudang = $m_gudang->where('jenis', 'OBAT')->whereIn('unit', $d_wilayah)->orderBy('nama', 'asc')->get();
 
-                    if ( $d_rs ) {
-                        $d_rs = $d_rs->toArray();
-                        $kode_unit = strtoupper($d_rs['d_kandang']['d_unit']['kode']);
-                    }
-                } else {
-                    $m_gdg = new \Model\Storage\Gudang_model();
-                    $d_gdg = $m_gdg->where('id', $params['tujuan'])->with(['dUnit'])->first();
+                if ( $d_gudang->count() > 0 ) {
+                    $d_gudang = $d_gudang->toArray();
 
-                    if ( $d_gdg ) {
-                        $d_gdg = $d_gdg->toArray();
-                        $kode_unit = strtoupper($d_gdg['d_unit']['kode']);
+                    foreach ($d_gudang as $k_gdg => $v_gdg) {
+                        $key = $v_gdg['nama'].'-'.$v_gdg['id'];
+
+                        $data[ $key ] = $v_gdg;
                     }
                 }
-
-                $no_order = $m_kirim_voadip->getNextIdOrder('OP/'.$kode_unit);
-                $no_sj = $m_kirim_voadip->getNextIdSj('SJ/'.$kode_unit);
             }
-
-            if ( !empty($kode_unit) ) {
-
-                // Pengiriman OVK
-                $m_kirim_voadip->tgl_trans      = $now['waktu'];
-                $m_kirim_voadip->tgl_kirim      = $params['tgl_kirim'];
-                $m_kirim_voadip->no_order       = $no_order;
-                $m_kirim_voadip->jenis_kirim    = $params['jenis_kirim'];
-                $m_kirim_voadip->asal           = $params['asal'];
-                $m_kirim_voadip->jenis_tujuan   = $params['jenis_tujuan'];
-                $m_kirim_voadip->tujuan         = $params['tujuan'];
-                $m_kirim_voadip->ekspedisi      = $params['ekspedisi'];
-                $m_kirim_voadip->no_polisi      = $params['nopol'];
-                $m_kirim_voadip->sopir          = $params['sopir'];
-                $m_kirim_voadip->no_sj          = $no_sj;
-                $m_kirim_voadip->ongkos_angkut  = $params['ongkos_angkut'];
-                $m_kirim_voadip->save();
-
-                $id_header = $m_kirim_voadip->id;
-
-                foreach ($params['detail'] as $k_detail => $v_detail) {
-                    $m_kirim_apakn_detail               = new \Model\Storage\KirimVoadipDetail_model();
-                    $m_kirim_apakn_detail->id_header    = $id_header;
-                    $m_kirim_apakn_detail->item         = $v_detail['barang'];
-                    $m_kirim_apakn_detail->jumlah       = $v_detail['jumlah'];
-                    $m_kirim_apakn_detail->kondisi      = $v_detail['kondisi'];
-                    $m_kirim_apakn_detail->save();
-                }
-
-                $d_kirim_voadip = $m_kirim_voadip->where('id', $id_header)->with(['detail'])->first();
-                // End Pengiriman OVK
-
-                // Penerimaan OVK
-
-                $path_name = null;
-
-                // $m_kv = new \Model\Storage\KirimVoadip_model();
-                $d_kv = $m_kirim_voadip->where('id', $id_header)->first();
-
-                $no_bbm = null;
-                if ( $d_kv->jenis_kirim == 'opks' ) {
-                    $no_bbm = 'BBM/OVK/S'.str_replace('OVO', '', $d_kv->no_order);
-                } else if ( $d_kv->jenis_kirim == 'opkg' ) {
-                    $no_bbm = 'BBM/OVK/G'.str_replace('OP', '', $d_kv->no_order);
-                } else if ( $d_kv->jenis_kirim == 'opkp' ) {
-                    $no_bbm = 'BBM/OVK/P'.str_replace('OP', '', $d_kv->no_order);
-                }
-
-                $m_terima_voadip = new \Model\Storage\TerimaVoadip_model();
-                $now = $m_terima_voadip->getDate();
-
-                $m_terima_voadip->id_kirim_voadip   = $id_header;
-                $m_terima_voadip->tgl_trans         = $now['waktu'];
-                $m_terima_voadip->tgl_terima        = $params['tgl_terima'];
-                $m_terima_voadip->path              = $path_name;
-                $m_terima_voadip->no_bbm            = $no_bbm;
-             
-                $m_terima_voadip->save();
-
-                $id_terima = $m_terima_voadip->id;
-
-                foreach ($params['detail'] as $k_detail => $v_detail) {
-                    $m_terima_voadip_detail             = new \Model\Storage\TerimaVoadipDetail_model();
-                    $m_terima_voadip_detail->id_header  = $id_terima;
-                    $m_terima_voadip_detail->item       = $v_detail['barang'];
-                    $m_terima_voadip_detail->jumlah     = $v_detail['jumlah'];
-                    $m_terima_voadip_detail->kondisi    = $v_detail['kondisi'];
-                    $m_terima_voadip_detail->save();
-                }
-
-                $d_terima_voadip = $m_terima_voadip->where('id', $id_terima)->with(['detail'])->first();
-
-                
-                // End Penerimaan OVK
-
-                // LOG
-                $deskripsi_log_kirim_voadip = 'di-submit oleh ' . $this->userdata['detail_user']['nama_detuser'];
-                Modules::run( 'base/event/save', $d_kirim_voadip, $deskripsi_log_kirim_voadip);
-
-                $deskripsi_log_terima_voadip = 'di-submit oleh ' . $this->userdata['detail_user']['nama_detuser'];
-                Modules::run( 'base/event/save', $d_terima_voadip, $deskripsi_log_terima_voadip);
-                // END LOG
-
-                $this->result['status'] = 1;
-                $this->result['message'] = 'Data Pengiriman Voadip berhasil di simpan.';
-            } else {
-                $this->result['message'] = 'Kode unit masih kosong, harap lengkapi kode unit terlebih dahulu.';
-            }
-        } catch (\Illuminate\Database\QueryException $e) {
-            $this->result['message'] = "Gagal : " . $e->getMessage();
         }
 
-        display_json($this->result);
+        return $data;
     }
 
-    public function get_list_table()
+    public function get_gudang_tujuan()
     {
-        $jenis_pengiriman = $this->input->post('jenis_pengiriman');
-        $no_order = $this->input->post('no_order');
+        $m_gudang = new \Model\Storage\Gudang_model();
+        $d_gudang = $m_gudang->where('jenis', 'OBAT')->orderBy('nama', 'asc')->get();
 
-        try {
-            $data = null;
-            if ( $jenis_pengiriman == 'opks' ) {
-                $m_op = new \Model\Storage\OrderPakan_model();
-                $d_op = $m_op->where('no_order', $no_order)->first();
-
-                $m_opd = new \Model\Storage\OrderPakanDetail_model();
-                $d_opd = $m_opd->where('id_header', $d_op->id)->get();
-
-                if ( $d_opd->count() > 0 ) {
-                    $data = $d_opd->toArray();
-                }
-            }
-            $content['jenis_pengiriman'] = $jenis_pengiriman;
-            // $content['pakan'] = $this->get_pakan();
-            $content['data'] = $data;
-            $html = $this->load->view('transaksi/pengiriman_penerimaan_ovk/v_list_order_ovk', $content, TRUE);
-            
-            $this->result['status'] = 1;
-            $this->result['content'] = $html;
-        } catch (\Illuminate\Database\QueryException $e) {
-            $this->result['message'] = "Gagal : " . $e->getMessage();
+        if ( $d_gudang->count() > 0 ) {
+            $d_gudang = $d_gudang->toArray();
         }
 
-        display_json($this->result);
+        return $d_gudang;
     }
-
-    
 
     public function get_peternak()
     {
@@ -625,7 +676,6 @@ class PengirimanPenerimaanOvk extends Public_Controller
         $_data = array();
 
         $m_rs = new \Model\Storage\RdimSubmit_model();
-        // $d_rs = $m_rs->where('tgl_docin', '>=', $date)->get()->toArray();
         $d_rs = $m_rs->select('nim', 'kandang', 'noreg', 'tgl_docin')->distinct('nim', 'kandang', 'noreg', 'tgl_docin')->whereBetween('tgl_docin', [$first_date_of_month, $last_date_of_month])->with(['mitra', 'kandang'])->get();
 
         if ( $d_rs->count() > 0 ) {
@@ -677,8 +727,66 @@ class PengirimanPenerimaanOvk extends Public_Controller
         display_json( $this->result );
     }
 
+    public function get_voadip()
+    {
+        $m_brg = new \Model\Storage\Barang_model();
+        $d_nomor = $m_brg->select('kode')->distinct('kode')->where('tipe', 'obat')->get()->toArray();
 
-    public function cekStokOvk()
+        $datas = array();
+        if ( !empty($d_nomor) ) {
+            foreach ($d_nomor as $nomor) {
+                $brg = $m_brg->where('tipe', 'obat')
+                                          ->where('kode', $nomor['kode'])
+                                          ->orderBy('version', 'desc')
+                                          ->orderBy('id', 'desc')
+                                          ->first()->toArray();
+
+                $key = $brg['nama'].' | '.$brg['kode'];
+                $datas[$key] = $brg;
+
+                ksort( $datas );
+            }
+        }
+
+        return $datas;
+    }
+
+    public function get_list_table()
+    {
+        $jenis_pengiriman = $this->input->post('jenis_pengiriman');
+        $no_order = $this->input->post('no_order');
+
+        try {
+            $data = null;
+            if ( $jenis_pengiriman == 'opks' ) {
+                $m_ov = new \Model\Storage\OrderVoadip_model();
+                $d_ov = $m_ov->where('no_order', $no_order)->orderBy('id', 'desc')->first();
+
+                if ( $d_ov ) {
+                    $m_ovd = new \Model\Storage\OrderVoadipDetail_model();
+                    $d_ovd = $m_ovd->where('id_order', $d_ov->id)->get();
+
+                    if ( $d_ovd->count() > 0 ) {
+                        $data = $d_ovd->toArray();
+                    }
+                }
+            }
+
+            $content['jenis_pengiriman'] = $jenis_pengiriman;
+            $content['obat'] = $this->get_voadip();
+            $content['data'] = $data;
+            $html = $this->load->view('transaksi/pengiriman_penerimaan_ovk/v_list_order_voadip', $content, TRUE);
+            
+            $this->result['status'] = 1;
+            $this->result['content'] = $html;
+        } catch (\Illuminate\Database\QueryException $e) {
+            $this->result['message'] = "Gagal : " . $e->getMessage();
+        }
+
+        display_json($this->result);
+    }
+
+    public function cekStok()
     {
         $params = $this->input->post('params');
 
@@ -878,266 +986,163 @@ class PengirimanPenerimaanOvk extends Public_Controller
         display_json( $this->result );
     }
 
-
-
-     public function listActivity()
+    public function save()
     {
-        $params = $this->input->get('params');
+        $params = $this->input->post('params');
 
+        // echo "<pre>";
+        // print_r($params);
+        // die;
 
+        try {
+            $m_kirim_voadip = new \Model\Storage\KirimVoadip_model();
+            $now = $m_kirim_voadip->getDate();
 
-        
-        $m_kirim_voadip = new \Model\Storage\KirimVoadip_model();
-        $d_kirim_voadip = $m_kirim_voadip->where('id', $params['id'])->with(['logs'])->first()->toArray();
+            $no_order = null;
+            $no_sj = null;
+            $kode_unit = null;
+            if ( $params['jenis_kirim'] == 'opks' ) {
+                $no_order = $params['no_order'];
+                $no_sj = $params['no_sj'];
+                $kode_unit = 1;
+            } else {
+                if ( $params['jenis_tujuan'] == 'peternak' ) {
+                    $m_rs = new \Model\Storage\RdimSubmit_model();
+                    $d_rs = $m_rs->where('noreg', $params['tujuan'])->with(['dKandang'])->first();
 
-        $data_kirim_voadip = array(
-            'no_order'      => $params['no_order'],
-            'tgl_kirim'     => $params['tgl_kirim'],
-            'asal'          => $params['asal'],
-            'tujuan'        => $params['tujuan'],
-            'nopol'         => $params['nopol'],
-            'logs'          => $d_kirim_voadip['logs']
-        );
-
-        $m_terima_voadip = new \Model\Storage\TerimaVoadip_model();
-        $d_terima_voadip = $m_terima_voadip->where('id_kirim_voadip', $params['id'])->with(['logs'])->first()->toArray();
-
-        $data_terima_voadip = array(
-            'no_sj'         => $params['no_sj'],
-            'tgl_terima'    => $params['tgl_terima'],
-            'asal'          => $params['asal'],
-            'tujuan'        => $params['tujuan'],
-            'nopol'         => $params['nopol'],
-            'logs'          => $d_terima_voadip['logs']
-        );
-
-        $content['data_kirim']    = $data_kirim_voadip;
-        $content['data_terima']   = $data_terima_voadip;
-
-
-      
-        $html = $this->load->view('transaksi/pengiriman_penerimaan_ovk/v_list_activity', $content, true);
-
-        echo $html;
-    }
-
-
-    public function load_form_ovk()
-    {
-        $id = $this->input->get('id');
-        $resubmit = $this->input->get('resubmit');
-
-        $a_content['order_voadip'] = null;
-        $a_content['gudang_asal'] = $this->get_gudang_asal();
-        $a_content['gudang_tujuan'] = $this->get_gudang_tujuan();
-        $a_content['peternak'] = null;
-        $a_content['voadip'] = $this->get_voadip();
-        $a_content['unit'] = $this->get_unit();
-        // $a_content['pakan']           = $this->get_pakan();
-
-        $html = null;
-        if ( !empty($id) ) {
-            $m_kv = new \Model\Storage\KirimVoadip_model();
-            $d_kv = $m_kv->where('id', $id)->with(['terima', 'detail'])->first()->toArray();
-
-            $asal = null;
-            $tujuan = null;
-            $tgl_docin_asal = null;
-            $tgl_docin_tujuan = null;
-            if ( $d_kv['jenis_kirim'] == 'opkp' ) {
-                $m_rs = new \Model\Storage\RdimSubmit_model();
-                $d_rs_asal = $m_rs->where('noreg', $d_kv['asal'])->with(['mitra'])->orderBy('id', 'desc')->first()->toArray();
-                $tgl_docin_asal = $d_rs_asal['tgl_docin'];
-                $asal = $d_rs_asal['mitra']['d_mitra']['nama'].' ('.$d_kv['asal'].')';
-
-                if ( $d_kv['jenis_tujuan'] == 'peternak' ) {
-                    $d_rs_tujuan = $m_rs->where('noreg', $d_kv['tujuan'])->with(['mitra'])->orderBy('id', 'desc')->first()->toArray();
-                    $tgl_docin_tujuan = $d_rs_tujuan['tgl_docin'];
-                    $tujuan = $d_rs_tujuan['mitra']['d_mitra']['nama'].' ('.$d_kv['tujuan'].')';
-                }
-            } else if ( $d_kv['jenis_kirim'] == 'opkg' ) {
-                $m_gudang = new \Model\Storage\Gudang_model();
-                $d_gudang = $m_gudang->where('id', $d_kv['asal'])->orderBy('id', 'desc')->first();
-
-                $asal = $d_gudang->nama;
-
-                if ( $d_kv['jenis_tujuan'] == 'peternak' ) {
-                    if ( !empty($d_kv['tujuan']) ) {
-                        $m_rs = new \Model\Storage\RdimSubmit_model();
-                        $d_rs_tujuan = $m_rs->where('noreg', $d_kv['tujuan'])->with(['mitra'])->orderBy('id', 'desc')->first();
-
-                        if ( $d_rs_tujuan ) {
-                            $d_rs_tujuan = $d_rs_tujuan->toArray();
-                            
-                            $tgl_docin_tujuan = $d_rs_tujuan['tgl_docin'];
-                            $tujuan = $d_rs_tujuan['mitra']['d_mitra']['nama'].' ('.$d_kv['tujuan'].')';
-                        }
+                    if ( $d_rs ) {
+                        $d_rs = $d_rs->toArray();
+                        $kode_unit = strtoupper($d_rs['d_kandang']['d_unit']['kode']);
                     }
                 } else {
-                    $m_gudang = new \Model\Storage\Gudang_model();
-                    $d_gudang = $m_gudang->where('id', $d_kv['tujuan'])->orderBy('id', 'desc')->first();
+                    $m_gdg = new \Model\Storage\Gudang_model();
+                    $d_gdg = $m_gdg->where('id', $params['tujuan'])->with(['dUnit'])->first();
 
-                    $tujuan = $d_gudang->nama;
-                }
-            } else {
-                $m_supplier = new \Model\Storage\Supplier_model();
-                $d_supplier = $m_supplier->where('nomor', $d_kv['asal'])->where('tipe', 'supplier')->where('jenis', '<>', 'ekspedisi')->orderBy('id', 'desc')->first();
-                $asal = $d_supplier->nama;
-
-                if ( $d_kv['jenis_tujuan'] == 'peternak' ) {
-                    if ( !empty($d_kv['tujuan']) ) {
-                        $m_rs = new \Model\Storage\RdimSubmit_model();
-                        $d_rs_tujuan = $m_rs->where('noreg', $d_kv['tujuan'])->with(['mitra'])->orderBy('id', 'desc')->first();
-
-                        if ( $d_rs_tujuan ) {
-                            $d_rs_tujuan = $d_rs_tujuan->toArray();
-                            
-                            $tgl_docin_tujuan = $d_rs_tujuan['tgl_docin'];
-                            $tujuan = $d_rs_tujuan['mitra']['d_mitra']['nama'].' ('.$d_kv['tujuan'].')';
-                        }
+                    if ( $d_gdg ) {
+                        $d_gdg = $d_gdg->toArray();
+                        $kode_unit = strtoupper($d_gdg['d_unit']['kode']);
                     }
-                } else {
-                    $m_gudang = new \Model\Storage\Gudang_model();
-                    $d_gudang = $m_gudang->where('id', $d_kv['tujuan'])->orderBy('id', 'desc')->first();
-
-                    $tujuan = $d_gudang->nama;
                 }
+
+                $no_order = $m_kirim_voadip->getNextIdOrder('OP/'.$kode_unit);
+                $no_sj = $m_kirim_voadip->getNextIdSj('SJ/'.$kode_unit);
             }
 
-            // $m_ov = new \Model\Storage\OrderVoadip_model();
-            // $d_ov = $m_ov->where('no_order', $d_kv['no_order'])->with(['d_supplier'])->first();
+            if ( !empty($kode_unit) ) {
+                // Pengiriman
+                    $m_kirim_voadip->tgl_trans = $now['waktu'];
+                    $m_kirim_voadip->tgl_kirim = $params['tgl_kirim'];
+                    $m_kirim_voadip->no_order = $no_order;
+                    $m_kirim_voadip->jenis_kirim = $params['jenis_kirim'];
+                    $m_kirim_voadip->asal = $params['asal'];
+                    $m_kirim_voadip->jenis_tujuan = $params['jenis_tujuan'];
+                    $m_kirim_voadip->tujuan = $params['tujuan'];
+                    $m_kirim_voadip->ekspedisi = $params['ekspedisi'];
+                    $m_kirim_voadip->no_polisi = $params['nopol'];
+                    $m_kirim_voadip->sopir = $params['sopir'];
+                    $m_kirim_voadip->no_sj = $no_sj;
+                    $m_kirim_voadip->ongkos_angkut = $params['ongkos_angkut'];
+                    $m_kirim_voadip->save();
 
-            $m_conf = new \Model\Storage\Conf();
-            $sql = "
-                select
-                    ov.no_order,
-                    ov.supplier,
-                    ov.tanggal,
-                    supl.nomor as supl_nomor,
-                    supl.nama as supl_nama,
-                    ovd.perusahaan as kode_prs,
-                    prs.perusahaan as nama_prs
-                from order_voadip ov
-                left join
-                    (select id_order, perusahaan from order_voadip_detail group by id_order, perusahaan) ovd
-                    on
-                        ov.id = ovd.id_order
-                left join
-                    (
-                        select plg1.* from pelanggan plg1
-                        right join
-                            (select max(id) as id, nomor from pelanggan group by nomor) plg2
-                            on
-                                plg1.id = plg2.id
-                    ) supl
-                    on
-                        ov.supplier = supl.nomor
-                left join
-                    (
-                        select prs1.* from perusahaan prs1
-                        right join
-                            (select kode, max(id) as id from perusahaan group by kode) prs2
-                            on
-                                prs1.id = prs2.id
-                    ) prs
-                    on
-                        ovd.perusahaan = prs.kode
-                where
-                    ov.no_order = '".$d_kv['no_order']."'
-                group by
-                    ov.no_order,
-                    ov.supplier,
-                    ov.tanggal,
-                    supl.nomor,
-                    supl.nama,
-                    ovd.perusahaan,
-                    prs.perusahaan
-                order by
-                    ov.no_order asc
-            ";
-            $d_conf = $m_conf->hydrateRaw( $sql );
+                    $id_header = $m_kirim_voadip->id;
 
-            $d_ov = null;
-            if ( $d_conf->count() > 0 ) {
-                $d_ov = $d_conf->toArray()[0];
-            }
+                    foreach ($params['detail'] as $k_detail => $v_detail) {
+                        $m_kirim_apakn_detail = new \Model\Storage\KirimVoadipDetail_model();
+                        $m_kirim_apakn_detail->id_header = $id_header;
+                        $m_kirim_apakn_detail->item = $v_detail['barang'];
+                        $m_kirim_apakn_detail->jumlah = $v_detail['jumlah'];
+                        $m_kirim_apakn_detail->kondisi = $v_detail['kondisi'];
+                        $m_kirim_apakn_detail->save();
+                    }
+                    
+                    $d_kirim_voadip = $m_kirim_voadip->where('id', $id_header)->with(['detail'])->first();
+                    $deskripsi_log_kirim_voadip = 'di-submit oleh ' . $this->userdata['detail_user']['nama_detuser'];
+                    Modules::run( 'base/event/save', $d_kirim_voadip, $deskripsi_log_kirim_voadip);
+                // End Pengiriman
 
-            $a_content['asal'] = $asal;
-            $a_content['tujuan'] = $tujuan;
-            $a_content['tgl_docin_asal'] = substr($tgl_docin_asal, 0, 10);
-            $a_content['tgl_docin_tujuan'] = !empty($tgl_docin_tujuan) ? substr($tgl_docin_tujuan, 0, 10) : null;
-            $a_content['data'] = $d_kv;
-            $a_content['data_ov'] = !empty($d_ov) ? $d_ov : null;
-            $a_content['terima'] = !empty($d_kv['terima']) ? 1 : 0;
+                // Penerimaan
 
-            // echo "<pre>";
-            // print_r($a_content['data']);
-            // die;
+                    $path_name = null;
 
-            if ( $resubmit == 'edit' ) {
-                $html = $this->load->view('transaksi/pengiriman_penerimaan_ovk/v_edit_form_ovk', $a_content, TRUE);
+                    // $m_kv = new \Model\Storage\KirimVoadip_model();
+                    $d_kv = $m_kirim_voadip->where('id', $id_header)->first();
+
+                    $no_bbm = null;
+                    if ( $d_kv->jenis_kirim == 'opks' ) {
+                        $no_bbm = 'BBM/OVK/S'.str_replace('OVO', '', $d_kv->no_order);
+                    } else if ( $d_kv->jenis_kirim == 'opkg' ) {
+                        $no_bbm = 'BBM/OVK/G'.str_replace('OP', '', $d_kv->no_order);
+                    } else if ( $d_kv->jenis_kirim == 'opkp' ) {
+                        $no_bbm = 'BBM/OVK/P'.str_replace('OP', '', $d_kv->no_order);
+                    }
+
+                    $m_terima_voadip = new \Model\Storage\TerimaVoadip_model();
+                    $now = $m_terima_voadip->getDate();
+
+                    $m_terima_voadip->id_kirim_voadip   = $id_header;
+                    $m_terima_voadip->tgl_trans         = $now['waktu'];
+                    $m_terima_voadip->tgl_terima        = $params['tgl_terima'];
+                    $m_terima_voadip->path              = $path_name;
+                    $m_terima_voadip->no_bbm            = $no_bbm;
+                
+                    $m_terima_voadip->save();
+
+                    $id_terima = $m_terima_voadip->id;
+
+                    foreach ($params['detail'] as $k_detail => $v_detail) {
+                        $m_terima_voadip_detail             = new \Model\Storage\TerimaVoadipDetail_model();
+                        $m_terima_voadip_detail->id_header  = $id_terima;
+                        $m_terima_voadip_detail->item       = $v_detail['barang'];
+                        $m_terima_voadip_detail->jumlah     = $v_detail['jumlah'];
+                        $m_terima_voadip_detail->kondisi    = $v_detail['kondisi'];
+                        $m_terima_voadip_detail->save();
+                    }
+
+                    $d_terima_voadip = $m_terima_voadip->where('id', $id_terima)->with(['detail'])->first();
+                    $deskripsi_log_terima_voadip = 'di-submit oleh ' . $this->userdata['detail_user']['nama_detuser'];
+                    Modules::run( 'base/event/save', $d_terima_voadip, $deskripsi_log_terima_voadip);
+
+                // End Penerimaan
+
+                
+
+                $this->result['status'] = 1;
+                $this->result['message'] = 'Data Pengiriman Voadip berhasil di simpan.';
             } else {
-                $html = $this->load->view('transaksi/pengiriman_penerimaan_ovk/v_view_form_ovk', $a_content, TRUE);
+                $this->result['message'] = 'Kode unit masih kosong, harap lengkapi kode unit terlebih dahulu.';
             }
-        } else {
-            $html = $this->load->view('transaksi/pengiriman_penerimaan_ovk/v_add_form_ovk', $a_content, TRUE);
+        } catch (\Illuminate\Database\QueryException $e) {
+            $this->result['message'] = "Gagal : " . $e->getMessage();
         }
 
-        echo $html;
+        display_json($this->result);
     }
 
-    public function get_voadip()
+    public function edit()
     {
-        $m_brg = new \Model\Storage\Barang_model();
-        $d_nomor = $m_brg->select('kode')->distinct('kode')->where('tipe', 'obat')->get()->toArray();
-
-        $datas = array();
-        if ( !empty($d_nomor) ) {
-            foreach ($d_nomor as $nomor) {
-                $brg = $m_brg->where('tipe', 'obat')
-                                          ->where('kode', $nomor['kode'])
-                                          ->orderBy('version', 'desc')
-                                          ->orderBy('id', 'desc')
-                                          ->first()->toArray();
-
-                $key = $brg['nama'].' | '.$brg['kode'];
-                $datas[$key] = $brg;
-
-                ksort( $datas );
-            }
-        }
-
-        return $datas;
-    }
-
-
-    public function edit_ovk()
-    {
-
         $params = $this->input->post('params');
         // echo "<pre>";
         // print_r($params);
         // die;
 
         try {
-
             // Pengiriman
             $m_kirim_voadip = new \Model\Storage\KirimVoadip_model();
             $now = $m_kirim_voadip->getDate();
 
             $m_kirim_voadip->where('id', $params['id'])->update(
                 array(
-                    'tgl_trans'     => $now['waktu'],
-                    'tgl_kirim'     => $params['tgl_kirim'],
-                    'no_order'      => $params['no_order'],
-                    'jenis_kirim'   => $params['jenis_kirim'],
-                    'asal'          => $params['asal'],
-                    'jenis_tujuan'  => $params['jenis_tujuan'],
-                    'tujuan'        => $params['tujuan'],
-                    'ekspedisi'     => $params['ekspedisi'],
-                    'no_polisi'     => $params['nopol'],
-                    'sopir'         => $params['sopir'],
-                    'no_sj'         => $params['no_sj'],
+                    'tgl_trans' => $now['waktu'],
+                    'tgl_kirim' => $params['tgl_kirim'],
+                    'no_order' => $params['no_order'],
+                    'jenis_kirim' => $params['jenis_kirim'],
+                    'asal' => $params['asal'],
+                    'jenis_tujuan' => $params['jenis_tujuan'],
+                    'tujuan' => $params['tujuan'],
+                    'ekspedisi' => $params['ekspedisi'],
+                    'no_polisi' => $params['nopol'],
+                    'sopir' => $params['sopir'],
+                    'no_sj' => $params['no_sj'],
                     'ongkos_angkut' => $params['ongkos_angkut']
                 )
             );
@@ -1148,17 +1153,20 @@ class PengirimanPenerimaanOvk extends Public_Controller
             $m_kirim_voadip_detail->where('id_header', $id_header)->delete();
 
             foreach ($params['detail'] as $k_detail => $v_detail) {
-                $m_kirim_voadip_detail              = new \Model\Storage\KirimVoadipDetail_model();
-                $m_kirim_voadip_detail->id_header   = $id_header;
-                $m_kirim_voadip_detail->item        = $v_detail['barang'];
-                $m_kirim_voadip_detail->jumlah      = $v_detail['jumlah'];
-                $m_kirim_voadip_detail->kondisi     = $v_detail['kondisi'];
+                $m_kirim_voadip_detail = new \Model\Storage\KirimVoadipDetail_model();
+                $m_kirim_voadip_detail->id_header = $id_header;
+                $m_kirim_voadip_detail->item = $v_detail['barang'];
+                $m_kirim_voadip_detail->jumlah = $v_detail['jumlah'];
+                $m_kirim_voadip_detail->kondisi = $v_detail['kondisi'];
                 $m_kirim_voadip_detail->save();
             }
+
+            $d_kirim_voadip = $m_kirim_voadip->where('id', $id_header)->with(['detail'])->first();
+            $deskripsi_log_kirim_voadip = 'di-update oleh ' . $this->userdata['detail_user']['nama_detuser'];
+            Modules::run( 'base/event/update', $d_kirim_voadip, $deskripsi_log_kirim_voadip);
             // End Pengiriman
 
             // Penerimaan
-
             $m_kv = new \Model\Storage\KirimVoadip_model();
             $d_kv = $m_kv->where('id', $id_header)->first();
 
@@ -1175,9 +1183,7 @@ class PengirimanPenerimaanOvk extends Public_Controller
 
             $m_terima_voadip = new \Model\Storage\TerimaVoadip_model();
 
-            $d_terima_voadip = $m_terima_voadip
-                ->where('id_kirim_voadip', $id_header)
-                ->first();
+            $d_terima_voadip = $m_terima_voadip->where('id_kirim_voadip', $id_header)->first();
 
             if (!$d_terima_voadip) {
                 throw new \Exception("Data terima voadip tidak ditemukan.");
@@ -1186,20 +1192,16 @@ class PengirimanPenerimaanOvk extends Public_Controller
             $id_terima = $d_terima_voadip->id;
             $now = $m_terima_voadip->getDate();
 
-            $m_terima_voadip
-                ->where('id_kirim_voadip', $id_header)
-                ->update([
+            $m_terima_voadip->where('id_kirim_voadip', $id_header)->update([
                     'id_kirim_voadip'   => $id_header,
                     'tgl_trans'         => $now['waktu'],
                     'tgl_terima'        => $params['tgl_terima'],
                     'path'              => $path_name,
                     'no_bbm'            => $no_bbm
-                ]);
+            ]);
 
             $m_terima_voadip_detail = new \Model\Storage\TerimaVoadipDetail_model();
-            $m_terima_voadip_detail
-                ->where('id_header', $id_terima) 
-                ->delete();
+            $m_terima_voadip_detail->where('id_header', $id_terima) ->delete();
 
 
             foreach ($params['detail'] as $k_detail => $v_detail) {
@@ -1210,16 +1212,10 @@ class PengirimanPenerimaanOvk extends Public_Controller
                 $m_terima_voadip_detail->kondisi    = $v_detail['kondisi'];
                 $m_terima_voadip_detail->save();
             }
-            // End Penerimaan
-            
-            $d_kirim_voadip = $m_kirim_voadip->where('id', $id_header)->with(['detail'])->first();
-            $d_terima_voadip = $m_terima_voadip->where('id', $id_header)->with(['detail'])->first();
-            
-            $deskripsi_log_kirim_voadip = 'di-update oleh ' . $this->userdata['detail_user']['nama_detuser'];
-            Modules::run( 'base/event/update', $d_kirim_voadip, $deskripsi_log_kirim_voadip);
 
             $deskripsi_log_terima_voadip = 'di-update oleh ' . $this->userdata['detail_user']['nama_detuser'];
             Modules::run( 'base/event/update', $d_terima_voadip, $deskripsi_log_terima_voadip);
+            // End Penerimaan
 
             $this->result['status'] = 1;
             $this->result['message'] = 'Data Pengiriman Voadip berhasil di ubah.';
@@ -1228,75 +1224,311 @@ class PengirimanPenerimaanOvk extends Public_Controller
         }
 
         display_json($this->result);
-        
     }
 
+    // public function delete()
+    // {
+    //     $params = $this->input->post('params');
 
-        public function delete()
-        {
-            $params = $this->input->post('params');
+    //     try {
+    //         $m_kirim_voadip = new \Model\Storage\KirimVoadip_model();
+    //         $now = $m_kirim_voadip->getDate();
 
-            try {
+    //         $d_kirim_voadip = $m_kirim_voadip->where('id', $params['id'])->with(['detail'])->first();
 
-                $m_terima_voadip = new \Model\Storage\TerimaVoadip_model();
-                $m_terima_voadip_detail = new \Model\Storage\TerimaVoadipDetail_model();
+    //         $deskripsi_log_kirim_voadip = 'di-delete oleh ' . $this->userdata['detail_user']['nama_detuser'];
+    //         Modules::run( 'base/event/update', $d_kirim_voadip, $deskripsi_log_kirim_voadip);
 
-                $d_terima_voadip = $m_terima_voadip
-                    ->where('id_kirim_voadip', $params['id'])
-                    ->with(['detail'])
-                    ->first();
+    //         $m_kirim_voadip_detail = new \Model\Storage\KirimVoadipDetail_model();
+    //         $m_kirim_voadip_detail->where('id_header', $params['id'])->delete();
 
-                if ($d_terima_voadip) {
+    //         $m_kirim_voadip->where('id', $params['id'])->delete();
 
-                    Modules::run(
-                        'base/event/update',
-                        $d_terima_voadip,
-                        'di-delete oleh ' . $this->userdata['detail_user']['nama_detuser']
-                    );
+    //         $this->result['status'] = 1;
+    //         $this->result['message'] = 'Data Pengiriman Voadip berhasil di hapus.';
+    //     } catch (\Illuminate\Database\QueryException $e) {
+    //         $this->result['message'] = "Gagal : " . $e->getMessage();
+    //     }
 
-                    $m_terima_voadip_detail
-                        ->where('id_header', $d_terima_voadip->id)
-                        ->delete();
+    //     display_json($this->result);
+    // }
 
-                    $m_terima_voadip
-                        ->where('id', $d_terima_voadip->id)
-                        ->delete();
-                }
+    public function delete(){
+        $params = $this->input->post('params');
 
+        try {
 
-                $m_kirim = new \Model\Storage\KirimVoadip_model();
-                $m_kirim_detail = new \Model\Storage\KirimVoadipDetail_model();
+            $m_terima_voadip = new \Model\Storage\TerimaVoadip_model();
+            $m_terima_voadip_detail = new \Model\Storage\TerimaVoadipDetail_model();
 
-                $d_kirim = $m_kirim->where('id', $params['id'])->first();
+            $d_terima_voadip = $m_terima_voadip->where('id_kirim_voadip', $params['id'])->with(['detail'])->first();
 
-                if (!$d_kirim) {
-                    throw new \Exception("Data kirim tidak ditemukan.");
-                }
+            if ($d_terima_voadip) {
 
-                Modules::run(
-                    'base/event/update',
-                    $d_kirim,
-                    'di-delete oleh ' . $this->userdata['detail_user']['nama_detuser']
-                );
+                Modules::run('base/event/update',$d_terima_voadip,'di-delete oleh ' . $this->userdata['detail_user']['nama_detuser']);
 
-                $m_kirim_detail->where('id_header', $params['id'])->delete();
-                $m_kirim->where('id', $params['id'])->delete();
-
-                $this->result = [
-                    'status' => 1,
-                    'message' => 'Data Voadip (terima + kirim) berhasil dihapus.'
-                ];
-
-            } catch (\Exception $e) {
-
-                $this->result = [
-                    'status' => 0,
-                    'message' => 'Gagal : ' . $e->getMessage()
-                ];
+                $m_terima_voadip_detail->where('id_header', $d_terima_voadip->id)->delete();
+                $m_terima_voadip->where('id', $d_terima_voadip->id)->delete();
             }
 
-            display_json($this->result);
+
+            $m_kirim = new \Model\Storage\KirimVoadip_model();
+            $m_kirim_detail = new \Model\Storage\KirimVoadipDetail_model();
+
+            $d_kirim = $m_kirim->where('id', $params['id'])->first();
+
+            if (!$d_kirim) {
+                throw new \Exception("Data kirim tidak ditemukan.");
+            }
+
+            Modules::run('base/event/update',$d_kirim,'di-delete oleh ' . $this->userdata['detail_user']['nama_detuser']);
+
+            $m_kirim_detail->where('id_header', $params['id'])->delete();
+            $m_kirim->where('id', $params['id'])->delete();
+
+            $this->result = [
+                'status' => 1,
+                'message' => 'Data Voadip (terima + kirim) berhasil dihapus.'
+            ];
+
+        } catch (\Exception $e) {
+
+            $this->result = [
+                'status' => 0,
+                'message' => 'Gagal : ' . $e->getMessage()
+            ];
         }
 
-    
+        display_json($this->result);
+    }
+
+    public function cek_stok_gudang()
+    {
+        $params = $this->input->post('params');
+
+        try {
+            // $today = date('Y-m-d');
+
+            // $m_stok = new \Model\Storage\Stok_model();
+            // $d_stok = $m_stok->where('periode', '<', substr($today, 0, 7).'-01')->orderBy('periode', 'desc')->first();
+
+            // $stok_masuk = 0;
+            // $stok_keluar = 0;
+            // if ( $d_stok ) {
+            //     $tgl_awal = next_date(date("Y-m-t", strtotime($d_stok->periode)));
+            //     $tgl_akhir = $today;
+
+            //     /* BARANG MASUK */
+            //     $m_dstok = new \Model\Storage\DetStok_model();
+            //     $stok_masuk += $m_dstok->where('id_header', $d_stok->id)->where('kode_gudang', $params['gudang'])->where('kode_barang', $params['item'])->sum('jumlah');
+
+            //     /* KIRIM VOADIP */
+            //     $m_kirim_voadip = new \Model\Storage\KirimVoadip_model();
+            //     $d_kv_ke_gudang = $m_kirim_voadip->select('id')->whereBetween('tgl_kirim', [$tgl_awal, $tgl_akhir])->where('jenis_tujuan', 'gudang')->where('tujuan', $params['gudang'])->get();
+
+            //     if ( $d_kv_ke_gudang->count() > 0 ) {
+            //         $d_kv_ke_gudang = $d_kv_ke_gudang->toArray();
+            //         foreach ($d_kv_ke_gudang as $key => $value) {
+            //             $m_tv = new \Model\Storage\TerimaVoadip_model();
+            //             $d_tv = $m_tv->select('id')->where('id_kirim_voadip', $value['id'])->orderBy('id', 'desc')->first();
+
+            //             if ( !empty($d_tv) ) {
+            //                 $d_tv = $d_tv->toArray();
+
+            //                 $m_dtp = new \Model\Storage\TerimaVoadipDetail_model();
+            //                 $stok_masuk += $m_dtp->whereIn('id_header', $d_tv)->where('item', $params['item'])->sum('jumlah');
+            //             }
+            //         }
+            //     }
+
+            //     /* RETUR VOADIP */
+            //     $m_retur_voadip = new \Model\Storage\ReturVoadip_model();
+            //     $d_rv_ke_gudang = $m_retur_voadip->select('id')->whereBetween('tgl_retur', [$tgl_awal, $tgl_akhir])->where('tujuan', 'gudang')->where('id_tujuan', $params['gudang'])->get();
+
+            //     if ( $d_rv_ke_gudang->count() > 0 ) {
+            //         $d_rv_ke_gudang = $d_rv_ke_gudang->toArray();
+            //         $m_drv = new \Model\Storage\DetReturVoadip_model();
+            //         $stok_masuk += $m_drv->whereIn('id_header', $d_rv_ke_gudang)->where('item', $params['item'])->sum('jumlah');
+            //     }
+            //     /* END - BARANG MASUK */
+
+            //     /* BARANG KELUAR  */
+            //     /* KIRIM VOADIP */
+            //     $m_kirim_voadip = new \Model\Storage\KirimVoadip_model();
+            //     $d_kv_ke_peternak = $m_kirim_voadip->select('id')->whereBetween('tgl_kirim', [$tgl_awal, $tgl_akhir])->where('jenis_kirim', 'opkg')->where('asal', $params['gudang'])->where('jenis_tujuan', 'peternak')->get();
+
+            //     if ( $d_kv_ke_peternak->count() > 0 ) {
+            //         $d_kv_ke_peternak = $d_kv_ke_peternak->toArray();
+            //         foreach ($d_kv_ke_peternak as $key => $value) {
+            //             $m_tv = new \Model\Storage\TerimaVoadip_model();
+            //             $d_tv = $m_tv->select('id')->where('id_kirim_voadip', $value['id'])->orderBy('id', 'desc')->first();
+
+            //             if ( !empty($d_tv) ) {
+            //                 $d_tv = $d_tv->toArray();
+
+            //                 $m_dtp = new \Model\Storage\TerimaVoadipDetail_model();
+            //                 $stok_keluar += $m_dtp->whereIn('id_header', $d_tv)->where('item', $params['item'])->sum('jumlah');
+            //             }
+            //         }
+            //     }
+
+            //     /* RETUR VOADIP */
+            //     $m_retur_voadip = new \Model\Storage\ReturVoadip_model();
+            //     $d_rv_dari_gudang = $m_retur_voadip->select('id')->whereBetween('tgl_retur', [$tgl_awal, $tgl_akhir])->where('asal', 'gudang')->where('id_asal', $params['gudang'])->get();
+
+            //     if ( $d_rv_dari_gudang->count() > 0 ) {
+            //         $d_rv_dari_gudang = $d_rv_dari_gudang->toArray();
+            //         $m_drv = new \Model\Storage\DetReturVoadip_model();
+            //         $stok_keluar += $m_drv->whereIn('id_header', $d_rv_dari_gudang)->where('item', $params['item'])->sum('jumlah');
+            //     }
+            //     /* END - BARANG MASUK */
+            // }
+
+            // $stok = (($stok_masuk - $stok_keluar) > 0) ? $stok_masuk - $stok_keluar : 0;
+
+            // $message = null;
+            // $status_stok = 1;
+            // if ( $stok < $params['jml'] ) {
+            //     $status_stok = 0;
+            //     $message = '<b style="color: red;">STOK TIDAK MENCUKUPI !!!</b><br><br>STOK GUDANG : '.$stok.'<br>JUMLAH YANG ANDA INPUT : '.$params['jml'].'<br>JUMLAH YANG ANDA MASUKKAN MELEBIHI STOK YANG ADA.';
+            // }
+
+            $tanggal = date('Y-m-d');
+
+            $start_date = prev_date($tanggal, 7);
+            $end_date = $tanggal;
+
+            $sql = "
+                select sum(dkv.jumlah) as jumlah from det_kirim_voadip dkv
+                left join 
+                    kirim_voadip kv
+                    on
+                        dkv.id_header = kv.id
+                where
+                    dkv.item = '".$params['item']."' and
+                    kv.tgl_kirim between '".$start_date."' and '".$end_date."' and
+                    kv.asal = '".$params['gudang']."' and
+                    not exists (
+                        select * from terima_voadip tv where tv.id_kirim_voadip = kv.id
+                    )
+            ";
+
+            $m_conf = new \Model\Storage\Conf();
+            $d_conf = $m_conf->hydrateRaw( $sql );
+
+            $jml_kirim = 0;
+            if ( $d_conf->count() > 0 ) {
+                $jml_kirim = $d_conf->toArray()[0]['jumlah'];
+            }
+
+            $m_stok = new \Model\Storage\Stok_model();
+            $sql = "
+                select sum(ds.jml_stok) as jumlah from det_stok ds
+                where 
+                    ds.id_header in (
+                        select max(id) as id from stok s where s.periode in (
+                            select max(cast(s.periode as date)) as periode from det_stok ds 
+                            left join
+                                stok s 
+                                on
+                                    ds.id_header = s.id 
+                            where 
+                                ds.kode_barang = '".$params['item']."' and 
+                                ds.kode_gudang = ".$params['gudang']." and
+                                s.periode <= '".$tanggal."'
+                            group by
+                                ds.kode_barang,
+                                ds.kode_gudang
+                        )
+                    ) and
+                    ds.kode_barang = '".$params['item']."' and 
+                    ds.kode_gudang = ".$params['gudang']."
+            ";
+
+            $d_stok = $m_stok->hydrateRaw( $sql );
+
+            $jml_stok = 0;
+            if ( $d_stok->count() > 0 ) {
+                $jml_stok = $d_stok->toArray()[0]['jumlah'];
+            }
+
+            // $d_dstok = null;
+            // while ( empty($d_dstok) ) {
+            //     $m_stok = new \Model\Storage\Stok_model();
+            //     $d_stok = $m_stok->where('periode', '<=', $tanggal)->orderBy('periode', 'desc')->first();
+
+            //     $m_dstok = new \Model\Storage\DetStok_model();
+            //     $d_dstok = $m_dstok->where('id_header', $d_stok->id)->where('kode_gudang', $params['gudang'])->where('kode_barang', $params['item'])->first();
+
+            //     if ( !$d_dstok ) {
+            //         $d_dstok = null;
+            //         $tanggal = prev_date( $tanggal );
+            //     }
+            // }
+
+            // if ( $d_dstok ) {
+            //     $m_dstok = new \Model\Storage\DetStok_model();
+            //     $d_dstok = $m_dstok->where('id_header', $d_stok->id)->where('kode_gudang', $params['gudang'])->where('kode_barang', $params['item'])->sum('jml_stok');
+            // }
+
+            $stok = (($jml_stok - ($params['jml'] + $jml_kirim)) > 0) ? $jml_stok - ($params['jml'] + $jml_kirim) : 0;
+
+            $message = null;
+            $status_stok = 1;
+
+            if ( $jml_stok < ($params['jml'] + $jml_kirim) ) {
+                $status_stok = 0;
+                $message = '<b style="color: red;">STOK TIDAK MENCUKUPI !!!</b><br><br>STOK GUDANG : '.($jml_stok - $jml_kirim).'<br>JUMLAH YANG ANDA INPUT : '.$params['jml'].'<br>JUMLAH YANG ANDA MASUKKAN MELEBIHI STOK YANG ADA.';
+            }
+            
+            $this->result['status'] = 1;
+            $this->result['stok'] = $stok;
+            $this->result['status_stok'] = $status_stok;
+            $this->result['message'] = $message;
+        } catch (\Illuminate\Database\QueryException $e) {
+            $this->result['message'] = "Gagal : " . $e->getMessage();
+        }
+
+        display_json($this->result);
+    }
+
+    public function listActivity()
+    {
+        $params = $this->input->get('params');
+
+        $m_kirim_voadip = new \Model\Storage\KirimVoadip_model();
+        $d_kirim_voadip = $m_kirim_voadip->where('id', $params['id'])->with(['logs'])->first()->toArray();
+
+        $data = array(
+            'no_order' => $params['no_order'],
+            'tgl_kirim' => $params['tgl_kirim'],
+            'asal' => $params['asal'],
+            'tujuan' => $params['tujuan'],
+            'nopol' => $params['nopol'],
+            'logs' => $d_kirim_voadip['logs']
+        );
+
+        $content['data'] = $data;
+        $html = $this->load->view('transaksi/pengiriman_penerimaan_ovk/v_list_activity', $content, true);
+
+        echo $html;
+    }
+
+    public function tes()
+    {
+        $m_kirim_voadip = new \Model\Storage\KirimVoadip_model();
+        $d_kirim_voadip = $m_kirim_voadip->where('no_order', 'OP/GSK/22/02098')->where('id', '<>', 8023)->get()->toArray();
+
+        foreach ($d_kirim_voadip as $k_kv => $v_kv) {
+            $no_order = $m_kirim_voadip->getNextIdOrder('OP/GSK');
+            $no_sj = $m_kirim_voadip->getNextIdSj('SJ/GSK');
+
+            $m_kirim_voadip->where('id', $v_kv['id'])->update(
+                array(
+                    'no_order' => $no_order,
+                    'no_sj' => $no_sj
+                )
+            );
+        }
+    }
 }
