@@ -6,10 +6,10 @@
 			<div class="panel-heading">
 				<ul class="nav nav-tabs nav-justified">
 					<li class="nav-item">
-						<a class="nav-link active" data-toggle="tab" href="#riwayat" data-tab="riwayat">Riwayat Pengiriman</a>
+						<a class="nav-link active" data-toggle="tab" href="#riwayat" data-tab="riwayat">Riwayat Pengiriman Penerimaan Ovk</a>
 					</li>
 					<li class="nav-item">
-						<a class="nav-link" data-toggle="tab" href="#pengiriman" data-tab="pengiriman">Pengiriman Voadip</a>
+						<a class="nav-link" data-toggle="tab" href="#pengiriman" data-tab="pengiriman">Pengiriman Penerimaan Ovk</a>
 					</li>
 				</ul>
 			</div>

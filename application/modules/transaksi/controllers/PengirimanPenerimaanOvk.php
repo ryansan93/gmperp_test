@@ -1104,10 +1104,15 @@ class PengirimanPenerimaanOvk extends Public_Controller {
 
                 // End Penerimaan
 
-                
-
                 $this->result['status'] = 1;
-                $this->result['message'] = 'Data Pengiriman Voadip berhasil di simpan.';
+                $this->result['content'] = array(
+                    'id' => $id_terima,
+                    'tanggal' => $params['tgl_terima'],
+                    'delete' => 0,
+                    'message' => 'Data Penerimaan Voadip berhasil di simpan.',
+                    'status_jurnal' => 2
+                );
+
             } else {
                 $this->result['message'] = 'Kode unit masih kosong, harap lengkapi kode unit terlebih dahulu.';
             }
@@ -1217,8 +1222,16 @@ class PengirimanPenerimaanOvk extends Public_Controller {
             Modules::run( 'base/event/update', $d_terima_voadip, $deskripsi_log_terima_voadip);
             // End Penerimaan
 
+       
+
             $this->result['status'] = 1;
-            $this->result['message'] = 'Data Pengiriman Voadip berhasil di ubah.';
+            $this->result['content'] = array(
+                'id'        => $d_terima_voadip->id,
+                'tanggal'   => $params['tgl_terima'],
+                'delete'    => 0,
+                'message'   => 'Data Penerimaan Voadip berhasil di ubah.',
+                'status_jurnal' => 2
+            );
         } catch (\Illuminate\Database\QueryException $e) {
             $this->result['message'] = "Gagal : " . $e->getMessage();
         }
@@ -1256,6 +1269,8 @@ class PengirimanPenerimaanOvk extends Public_Controller {
     public function delete(){
         $params = $this->input->post('params');
 
+  
+
         try {
 
             $m_terima_voadip = new \Model\Storage\TerimaVoadip_model();
@@ -1286,12 +1301,22 @@ class PengirimanPenerimaanOvk extends Public_Controller {
             $m_kirim_detail->where('id_header', $params['id'])->delete();
             $m_kirim->where('id', $params['id'])->delete();
 
+            $this->result['content'] = array(
+                'status' => 1,
+                'id' => $d_terima_voadip->id,
+                'tanggal' => $d_terima_voadip->tgl_terima,
+                'delete' => 1,
+                'message' => 'Data Penerimaan Voadip berhasil di hapus.',
+                'status_jurnal' => 3
+            );
+
+        } catch (\Exception $e) {
+
+
             $this->result = [
                 'status' => 1,
                 'message' => 'Data Voadip (terima + kirim) berhasil dihapus.'
             ];
-
-        } catch (\Exception $e) {
 
             $this->result = [
                 'status' => 0,
@@ -1529,6 +1554,225 @@ class PengirimanPenerimaanOvk extends Public_Controller {
                     'no_sj' => $no_sj
                 )
             );
+        }
+    }
+    
+    public function hitungStokByTransaksi()
+    {
+        $params = $this->input->post('params');
+
+        $id = $params['id'];
+        $tanggal = $params['tanggal'];
+        $delete = $params['delete'];
+        $message = $params['message'];
+        $status_jurnal = $params['status_jurnal'];
+
+        try {
+            $noreg1 = null;
+            $noreg2 = null;
+
+            $m_conf = new \Model\Storage\Conf();
+            $sql = "
+                select
+					case
+						when kv.jenis_kirim = 'opkp' then
+							kv.asal
+						else
+							kv.tujuan
+					end as noreg1,
+					case
+						when kv.jenis_kirim = 'opkp' then
+							kv.tujuan
+						else
+							null
+					end as noreg2,
+                    kv.jenis_kirim
+				from terima_voadip tv
+				left join
+					kirim_voadip kv
+					on
+						tv.id_kirim_voadip = kv.id
+				where
+					tv.id = '".$id."'
+            ";
+            $d_conf = $m_conf->hydrateRaw( $sql );
+
+            if ( $d_conf->count() > 0 ) {
+                $d_conf = $d_conf->toArray()[0];
+
+                $noreg1 = $d_conf['noreg1'];
+                $noreg2 = $d_conf['noreg2'];
+            }
+            
+            $this->insertKonfirmasi( $id, $delete );
+
+            $conf = new \Model\Storage\Conf();
+            $sql = "EXEC hitung_stok_voadip_by_transaksi 'terima_voadip', '".$id."', '".$tanggal."', ".$delete.", ".$status_jurnal."";
+            $d_conf = $conf->hydrateRaw($sql);
+
+            $conf = new \Model\Storage\Conf();
+            $sql = "EXEC hitung_stok_siklus 'voadip', 'terima_voadip', '".$id."', '".$tanggal."', ".$delete.",'".$noreg1."', '".$noreg2."'";
+            $d_conf = $conf->hydrateRaw($sql);
+
+            $id_old = null;
+            if ( $status_jurnal <> 1 ) {
+                $id_old = $id;
+            }
+
+            Modules::run( 'base/InsertJurnal/exec', $this->url, $id, $id_old, $status_jurnal);
+
+            $this->result['status'] = 1;
+            $this->result['message'] = $message;
+        } catch (Exception $e) {
+            $this->result['message'] = $e->getMessage();
+        }
+
+        display_json( $this->result );
+    }
+
+    function insertKonfirmasi($id_terima, $delete = 0) {
+        $m_conf = new \Model\Storage\Conf();
+        $sql = "
+            select kv.* from terima_voadip tv
+            left join
+                kirim_voadip kv
+                on
+                    tv.id_kirim_voadip = kv.id
+            where
+                tv.id = '".$id_terima."'
+        ";
+        $d_conf = $m_conf->hydrateRaw( $sql );
+        
+        $no_order = null;
+        if ( $d_conf->count() > 0 ) {
+            $d_conf = $d_conf->toArray()[0];
+
+            $no_order = $d_conf['no_order'];
+        }
+
+        $m_kpvd = new \Model\Storage\KonfirmasiPembayaranVoadipDet_model();
+        $d_kpvd = $m_kpvd->where('no_order', $no_order)->first();
+
+        if ( $d_kpvd ) {
+            $m_kpvd2 = new \Model\Storage\KonfirmasiPembayaranVoadipDet2_model();
+            $m_kpvd2->where('id_header', $d_kpvd->id)->delete();
+
+            $m_kpvd = new \Model\Storage\KonfirmasiPembayaranVoadipDet_model();
+            $m_kpvd->where('id', $d_kpvd->id)->delete();
+
+            $m_kpv = new \Model\Storage\KonfirmasiPembayaranVoadip_model();
+            $m_kpv->where('id', $d_kpvd->id_header)->delete();
+        }
+
+        if ( $delete == 0 ) {
+            $m_conf = new \Model\Storage\Conf();
+            $sql = "
+                select
+                    ov.rcn_kirim as tgl_bayar,
+                    ov.rcn_kirim as periode_docin,
+                    ov.perusahaan,
+                    ov.supplier,
+                    sum(dtv.jumlah * ov.harga) as total,
+                    kv.no_sj,
+                    ov.rcn_kirim as tgl_sj,
+                    SUBSTRING(ov.no_order, 5, 3) as id_kab_kota,
+                    ov.no_order,
+                    sum(dtv.jumlah) as jumlah
+                from det_terima_voadip dtv
+                left join
+                    (
+                        select tv1.* from terima_voadip tv1
+                        right join
+                            (select max(id) as id, id_kirim_voadip from terima_voadip group by id_kirim_voadip) tv2
+                            on
+                                tv1.id = tv2.id
+                    ) tv
+                    on
+                        dtv.id_header = tv.id
+                left join
+                    kirim_voadip kv
+                    on
+                        tv.id_kirim_voadip = kv.id
+                left join
+                    (
+                        select 
+                            ovd.*, 
+                            ov.no_order, 
+                            ov.tgl_submit as tgl_trans, 
+                            ov.tanggal as rcn_kirim, 
+                            ov.supplier 
+                        from order_voadip_detail ovd
+                        left join
+                            (
+                                select ov1.* from order_voadip ov1
+                                right join
+                                    (select max(id) as id, no_order from order_voadip group by no_order) ov2
+                                    on
+                                        ov1.id = ov2.id
+                            ) ov
+                            on
+                                ovd.id_order = ov.id
+                    ) ov
+                    on
+                        kv.no_order = ov.no_order and
+                        dtv.item = ov.kode_barang
+                where
+                    kv.jenis_kirim = 'opks' and
+                    ov.no_order = '".$no_order."'
+                group by
+                    ov.rcn_kirim,
+                    ov.perusahaan,
+                    ov.supplier,
+                    kv.no_sj,
+                    ov.no_order
+            ";
+            $d_conf = $m_conf->hydrateRaw( $sql );
+
+            if ( $d_conf->count() > 0 ) {
+                $d_conf = $d_conf->toArray()[0];
+
+                $m_kpv = new \Model\Storage\KonfirmasiPembayaranVoadip_model();
+                $nomor = $m_kpv->getNextNomor();
+
+                $m_kpv->nomor = $nomor;
+                $m_kpv->tgl_bayar = $d_conf['tgl_bayar'];
+                $m_kpv->periode = trim($d_conf['periode_docin']);
+                $m_kpv->perusahaan = $d_conf['perusahaan'];
+                $m_kpv->supplier = $d_conf['supplier'];
+                $m_kpv->total = $d_conf['total'];
+                // $m_kpv->invoice = $d_conf['no_sj'];
+                // $m_kpv->rekening = $d_conf['rekening'];
+                $m_kpv->save();
+
+                $id = $m_kpv->id;
+
+                $m_kpvd = new \Model\Storage\KonfirmasiPembayaranVoadipDet_model();
+                $m_kpvd->id_header = $id;
+                $m_kpvd->tgl_sj = $d_conf['tgl_sj'];
+                $m_kpvd->kode_unit = $d_conf['id_kab_kota'];
+                $m_kpvd->no_order = $d_conf['no_order'];
+                $m_kpvd->no_sj = $d_conf['no_sj'];
+                $m_kpvd->jumlah = $d_conf['jumlah'];
+                $m_kpvd->total = $d_conf['total'];
+                $m_kpvd->save();
+
+                // $id_det = $m_kpvd->id;
+                // foreach ($v_det['detail'] as $k_det2 => $v_det2) {
+                //     $m_kpvd2 = new \Model\Storage\KonfirmasiPembayaranVoadipDet2_model();
+                //     $m_kpvd2->id_header = $id_det;
+                //     $m_kpvd2->id_gudang = $v_det2['id_gudang'];
+                //     $m_kpvd2->kode_brg = $v_det2['kode_brg'];
+                //     $m_kpvd2->jumlah = $v_det2['jumlah'];
+                //     $m_kpvd2->harga = $v_det2['harga'];
+                //     $m_kpvd2->total = $v_det2['total'];
+                //     $m_kpvd2->save();
+                // }
+                
+                $d_kpd = $m_kpv->where('id', $id)->first();
+
+                $deskripsi_log = 'di-submit oleh ' . $this->userdata['detail_user']['nama_detuser'];
+                Modules::run( 'base/event/save', $d_kpd, $deskripsi_log);
+            }
         }
     }
 }

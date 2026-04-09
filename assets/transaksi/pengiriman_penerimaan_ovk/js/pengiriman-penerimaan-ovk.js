@@ -526,19 +526,26 @@ var pv = {
 			},
 			success: function(data) {
 				hideLoading();
-				if ( data.status == 1 ) {
-					bootbox.alert(data.message, function() {
-						var div_riwayat = $('div#riwayat');
-				    	var start_date = $(div_riwayat).find('[name=startDate]').data('DateTimePicker').date();
-						var end_date = $(div_riwayat).find('[name=endDate]').data('DateTimePicker').date();
-						if ( !empty(start_date) && !empty(end_date) ) {
-							// pv.get_lists();
-						}
+				// if ( data.status == 1 ) {
+				// 	bootbox.alert(data.message, function() {
+				// 		var div_riwayat = $('div#riwayat');
+				//     	var start_date = $(div_riwayat).find('[name=startDate]').data('DateTimePicker').date();
+				// 		var end_date = $(div_riwayat).find('[name=endDate]').data('DateTimePicker').date();
+				// 		if ( !empty(start_date) && !empty(end_date) ) {
+				// 			// pv.get_lists();
+				// 		}
 
-						var btn = '<button data-href="riwayat">';
-						pv.changeTabActive(btn);
-						pv.load_form();
-					});
+				// 		var btn = '<button data-href="riwayat">';
+				// 		pv.changeTabActive(btn);
+				// 		pv.load_form();
+				// 	});
+				// } else {
+				// 	bootbox.alert(data.message);
+				// };
+
+				if ( data.status == 1 ) {
+					// pv.hitungStokAwal( data.content.id_terima );
+					pv.hitungStokByTransaksi(data.content);
 				} else {
 					bootbox.alert(data.message);
 				};
@@ -649,14 +656,21 @@ var pv = {
 			},
 			success: function(data) {
 				hideLoading();
-				if ( data.status == 1 ) {
-					bootbox.alert(data.message, function() {
-						pv.get_lists();
+				// if ( data.status == 1 ) {
+				// 	bootbox.alert(data.message, function() {
+				// 		pv.get_lists();
 
-						var btn = '<button data-href="riwayat">';
-						pv.changeTabActive(btn);
-						pv.load_form();
-					});
+				// 		var btn = '<button data-href="riwayat">';
+				// 		pv.changeTabActive(btn);
+				// 		pv.load_form();
+				// 	});
+				// } else {
+				// 	bootbox.alert(data.message);
+				// };
+
+
+				if ( data.status == 1 ) {
+					pv.hitungStokByTransaksi(data.content);
 				} else {
 					bootbox.alert(data.message);
 				};
@@ -683,11 +697,21 @@ var pv = {
 					},
 					success: function(data) {
 						hideLoading();
+						// if ( data.status == 1 ) {
+						// 	bootbox.alert(data.message, function() {
+						// 		pv.get_lists();
+						// 		pv.load_form();
+						// 	});
+						// } else {
+						// 	bootbox.alert(data.message);
+						// };
+
 						if ( data.status == 1 ) {
-							bootbox.alert(data.message, function() {
-								pv.get_lists();
-								pv.load_form();
-							});
+							pv.hitungStokByTransaksi(data.content);
+							// bootbox.alert(data.message, function() {
+							// 	pv.get_lists();
+							// 	pv.load_form();
+							// });
 						} else {
 							bootbox.alert(data.message);
 						};
@@ -784,6 +808,33 @@ var pv = {
             });
         },'html');
 	}, // end - listActivity
+
+	hitungStokByTransaksi: function(content) {
+		var params = content;
+
+		$.ajax({
+			url: 'transaksi/PengirimanPenerimaanOvk/hitungStokByTransaksi',
+			data: {
+				'params': params
+			},
+			type: 'POST',
+			dataType: 'JSON',
+			beforeSend: function() {
+				showLoading('Hitung Stok Ulang . . .');
+			},
+			success: function(data) {
+				hideLoading();
+				if ( data.status == 1 ) {
+					bootbox.alert(content.message, function() {
+						pv.get_lists();
+						pv.load_form();
+					});
+				} else {
+					bootbox.alert(data.message);
+				};
+			},
+	    });
+	}, // end - hitungStokByTransaksi
 };
 
 pv.start_up()
