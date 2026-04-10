@@ -86,6 +86,8 @@ var pp = {
     }, // end - removeRowChild
 
     changeTabActive: function(elm) {
+
+		$("#pengiriman").html("<div style='width:100%; text-align:center;'> <div class='spinner-load'></div> Proses load data</div>");
         var vhref = $(elm).data('href');
         // change tab-menu
         $('.nav-tabs').find('a').removeClass('active');
