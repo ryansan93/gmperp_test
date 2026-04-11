@@ -1301,12 +1301,13 @@ class PengirimanPenerimaanOvk extends Public_Controller {
             $m_kirim_detail->where('id_header', $params['id'])->delete();
             $m_kirim->where('id', $params['id'])->delete();
 
+            $this->result['status'] = 1;
             $this->result['content'] = array(
                 'status' => 1,
                 'id' => $d_terima_voadip->id,
                 'tanggal' => $d_terima_voadip->tgl_terima,
                 'delete' => 1,
-                'message' => 'Data Penerimaan Voadip berhasil di hapus.',
+                'message' => 'Data Voadip (terima + kirim) berhasil di hapus.',
                 'status_jurnal' => 3
             );
 
@@ -1621,8 +1622,10 @@ class PengirimanPenerimaanOvk extends Public_Controller {
 
             Modules::run( 'base/InsertJurnal/exec', $this->url, $id, $id_old, $status_jurnal);
 
-            $this->result['status'] = 1;
-            $this->result['message'] = $message;
+            $this->result['status']         = 1;
+            $this->result['message']        = $message;
+            $this->result['data_params']   = $params;
+            
         } catch (Exception $e) {
             $this->result['message'] = $e->getMessage();
         }

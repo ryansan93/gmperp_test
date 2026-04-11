@@ -585,7 +585,7 @@ var pp = {
 		if ( err > 0 ) {
 			bootbox.alert('Harap lengkapi data terlebih dahulu.');
 		} else {
-			var id = $(elm).data('id');
+			var id 				= $(elm).data('id');
 			var tgl_kirim 		= dateSQL( $('[name=tgl_kirim]').data('DateTimePicker').date() );
 			var tgl_terima 		= dateSQL( $('[name=tgl_terima]').data('DateTimePicker').date() );
 			var jenis_kirim 	= $('.jenis_kirim').val();
@@ -1005,7 +1005,7 @@ var pp = {
         });
     }, // end - execHitStokSiklus
 
-	 execInsertJurnal: function(content) {
+	execInsertJurnal: function(content) {
         var params = content;
 
         $.ajax({
@@ -1020,6 +1020,7 @@ var pp = {
             },
             success: function(data) {
                 hideLoading();
+				console.log("iki", data)
                 if ( data.status == 1 ) {
                     // bootbox.alert(data.content.message, function() {
                     //     ppm.load_form(data.content.no_sj, null, 'transaksi');
@@ -1033,17 +1034,85 @@ var pp = {
 						}
 
 						if ( data.content.status == 3 ) {
-							pp.load_form();
+							// pp.load_form();
+							pp.load_riwayat(data.content.tanggal)
 						} else {
-							pp.load_form(data.content.id);
+							// pp.load_form(data.content.id);
+							pp.load_riwayat(data.content.tanggal)
 						}
 					});
                 } else {
                     bootbox.alert(data.message);
+					pp.load_riwayat(data.content.tanggal)
                 };
             },
         });
     }, // end - execInsertJurnal
+
+
+	load_riwayat: (params) => {
+		var div_riwayat = $('div#riwayat');
+		var kode_unit 	= $(div_riwayat).find('select.unit').val();
+
+		let tgl	 		= new Date(params);
+		let startdate 	= new Date(tgl.getFullYear(), tgl.getMonth(), 1);
+		let enddate 	= new Date(tgl.getFullYear(), tgl.getMonth() + 1, 0);
+
+		let format = (date) => {
+			let y = date.getFullYear();
+			let m = String(date.getMonth() + 1).padStart(2, '0');
+			let d = String(date.getDate()).padStart(2, '0');
+			return `${y}-${m}-${d}`;
+		};
+
+		var params = {
+			'start_date': format(startdate),
+			'end_date'	: format(enddate),
+			'kode_unit'	: kode_unit
+		};
+
+		// console.log(params)
+
+		$.ajax({
+			url: 'transaksi/PengirimanPenerimaanPakan/get_lists',
+			data: {'params': params},
+			type: 'POST',
+			dataType: 'JSON',
+			beforeSend: function() {
+				showLoading();
+			},
+			success: function(data) {
+				hideLoading();
+				if ( data.status == 1 ) {
+					$(div_riwayat).find('table.tbl_pengiriman tbody').html( data.content );
+
+					$(div_riwayat).find('[name=startDate]').data('DateTimePicker').date(startdate);
+					$(div_riwayat).find('[name=endDate]').data('DateTimePicker').date(enddate);
+					$(div_riwayat).find('.unit option').each(function(){
+						if ($(this).val() == kode_unit) {
+							$(this).attr('selected', 'selected');
+						}
+					});
+
+					// change tab-menu
+					let vhref ="riwayat";
+					$('.nav-tabs').find('a').removeClass('active');
+					$('.nav-tabs').find('a').removeClass('show');
+					$('.nav-tabs').find('li a[data-tab='+vhref+']').addClass('show');
+					$('.nav-tabs').find('li a[data-tab='+vhref+']').addClass('active');
+
+					// change tab-content
+					$('.tab-pane').removeClass('show');
+					$('.tab-pane').removeClass('active');
+					$('div#'+vhref).addClass('show');
+					$('div#'+vhref).addClass('active');
+
+				};
+			},
+		});
+	
+	}
+	
 
 };
 
