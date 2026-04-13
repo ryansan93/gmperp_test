@@ -1,55 +1,56 @@
 <?php defined('BASEPATH') OR exit('No direct script access allowed');
 
-class PengirimanPenerimaanPakan extends Public_Controller
-{
+class PengirimanPenerimaanPakan extends Public_Controller {
+
     private $url;
-    private $hakAkses;
+
     function __construct()
     {
         parent::__construct();
         $this->url = $this->current_base_uri;
-        $this->hakAkses = hakAkses($this->url);
     }
 
-    public function index()
+    /**************************************************************************************
+     * PUBLIC FUNCTIONS
+     **************************************************************************************/
+    /**
+     * Default
+     */
+    public function index($segment=0)
     {
-        if ( $this->hakAkses['a_view'] == 1 ) {
+        $akses = hakAkses($this->url);
+        if ( $akses['a_view'] == 1 ) {
             $this->add_external_js(array(
-                'assets/select2/js/select2.min.js',
-                'assets/transaksi/pengiriman_penerimaan_pakan/js/pengiriman-penerimaan-pakan.js'
+                "assets/select2/js/select2.min.js",
+                "assets/transaksi/pengiriman_penerimaan_pakan/js/pengiriman-penerimaan-pakan.js",
             ));
             $this->add_external_css(array(
-                'assets/select2/css/select2.min.css',
-                'assets/transaksi/pengiriman_penerimaan_pakan/css/pengiriman-penerimaan-pakan.css'
+                "assets/select2/css/select2.min.css",
+                "assets/transaksi/pengiriman_penerimaan_pakan/css/pengiriman-penerimaan-pakan.css",
             ));
 
-            // echo "<pre>";
-            // print_r(123);
-            // die;
+            $data = $this->includes;
 
-            $data                           = $this->includes;
-            $data['title_menu']             = 'Pengiriman & Penerimaan Pakan';
+            $content['akses'] = $akses;
+            $content['unit'] = $this->get_unit();
 
-            $content['akses']               = $this->hakAkses;
-            $content['unit']                = $this->get_unit();
+            $a_content['order_pakan']   = null;
+            $a_content['gudang_asal']   = $this->get_gudang_asal();
+            $a_content['gudang_tujuan'] = $this->get_gudang_tujuan();
+            $a_content['peternak']      = null;
+            $a_content['pakan']         = $this->get_pakan();
+            $a_content['unit']          = $this->get_unit();
+            $a_content['ekspedisi']     = $this->get_ekspedisi();
 
-            $pakan_content['order_pakan']   = null;
-            $pakan_content['gudang_asal']   = $this->get_gudang_asal();
-            $pakan_content['gudang_tujuan'] = $this->get_gudang_tujuan();
-            $pakan_content['peternak']      = null;
-            $pakan_content['pakan']         = $this->get_pakan();
-            $pakan_content['unit']          = $this->get_unit();
-            $pakan_content['ekspedisi']     = $this->get_ekspedisi();
-            $content['add_form_pakan']      = $this->load->view('transaksi/pengiriman_penerimaan_pakan/v_add_form_pakan', $pakan_content, TRUE);
+            $content['add_form']        = $this->load->view('transaksi/pengiriman_penerimaan_pakan/v_add_form', $a_content, TRUE);
 
-            $data['view']       = $this->load->view('transaksi/pengiriman_penerimaan_pakan/v_index', $content, true);
-
+            $data['title_menu']         = 'Pengiriman & Penerimaan Pakan';
+            $data['view'] = $this->load->view('transaksi/pengiriman_penerimaan_pakan/v_index', $content, TRUE);
             $this->load->view($this->template, $data);
         } else {
             showErrorAkses();
         }
     }
-
 
     public function get_unit()
     {
@@ -148,28 +149,14 @@ class PengirimanPenerimaanPakan extends Public_Controller
         return $data;
     }
 
-
-
     public function get_lists()
     {
-        
-        $params                 = $this->input->post('params');
-        
-        $content['data_pakan']  = $this->listDataPakan($params);
-        $html = $this->load->view('transaksi/pengiriman_penerimaan_pakan/v_list_pakan', $content, true);
-
-        $this->result['status'] = 1;
-        $this->result['content'] = $html;
-
-        display_json($this->result);
-    }
-
-    public function listDataPakan($params)
-    {
-        
+        $params = $this->input->post('params');
 
         $kode_unit = $params['kode_unit'];
 
+        // $m_kirim_pakan = new \Model\Storage\KirimPakan_model();
+        // $d_kirim_pakan = $m_kirim_pakan->whereBetween('tgl_kirim', [$params['start_date'], $params['end_date']])->with(['terima'])->get();
 
         $m_conf = new \Model\Storage\Conf();
         $sql_asal_tujuan = "
@@ -246,13 +233,13 @@ class PengirimanPenerimaanPakan extends Public_Controller
                 on
                     kp.tujuan = tujuan.kode
             where
-                kp.tgl_kirim between '".$params['start_date']."' and '".$params['end_date']."'";
+                kp.tgl_kirim between '".$params['start_date']."' and '".$params['end_date']."' ";
 
-            if (strtolower($kode_unit) != 'all') {
-                $sql .= " and ((asal.unit = '".$kode_unit."') or (tujuan.unit = '".$kode_unit."')) ";
+            if ($kode_unit != 'all'){
+               $sql .= " and ((asal.unit = '".$kode_unit."') or (tujuan.unit = '".$kode_unit."')) ";
             }
-
-            $sql .= "group by
+            
+            $sql .= " group by
                 kp.id,
                 kp.no_order,
                 kp.tgl_kirim,
@@ -269,116 +256,279 @@ class PengirimanPenerimaanPakan extends Public_Controller
         $data = null;
         if ( !empty($d_kirim_pakan) ) {
             $data = $d_kirim_pakan->toArray();
+
+            // foreach ($d_kirim_pakan as $k_kp => $v_kp) {
+            //     $tampil = 0;
+
+            //     if ( $v_kp['jenis_kirim'] == 'opks' || $v_kp['jenis_kirim'] == 'opkg' ) {
+            //         if ( $kode_unit != 'all' ) {
+            //             if ( stristr($v_kp['no_order'], $kode_unit) ) {
+            //                 $tampil = 1;
+            //             }
+            //         } else {
+            //             $tampil = 1;
+            //         }
+            //     } else if ( $v_kp['jenis_kirim'] == 'opkp' ) {
+            //         if ( $kode_unit != 'all' ) {
+            //             $m_conf = new \Model\Storage\Conf();
+            //             $sql = "
+            //                 select w.kode from rdim_submit rs
+            //                 right join
+            //                     kandang k
+            //                     on
+            //                         rs.kandang = k.id
+            //                 right join
+            //                     wilayah w
+            //                     on
+            //                         k.unit = w.id
+            //                 where
+            //                     rs.noreg = '".$v_kp['asal']."'
+            //                 group by
+            //                     w.kode
+            //             ";
+            //             $d_asal = $m_conf->hydrateRaw( $sql );
+            //             $kode_unit_asal = null;
+            //             if ( $d_asal->count() > 0 ) {
+            //                 $d_asal = $d_asal->toArray()[0];
+            //                 $kode_unit_asal = $d_asal['kode'];
+            //             }
+
+            //             $sql = "
+            //                 select w.kode from rdim_submit rs
+            //                 right join
+            //                     kandang k
+            //                     on
+            //                         rs.kandang = k.id
+            //                 right join
+            //                     wilayah w
+            //                     on
+            //                         k.unit = w.id
+            //                 where
+            //                     rs.noreg = '".$v_kp['tujuan']."'
+            //                 group by
+            //                     w.kode
+            //             ";
+            //             $d_tujuan = $m_conf->hydrateRaw( $sql );
+            //             $kode_unit_tujuan = null;
+            //             if ( $d_tujuan->count() > 0 ) {
+            //                 $d_tujuan = $d_tujuan->toArray()[0];
+            //                 $kode_unit_tujuan = $d_tujuan['kode'];
+            //             }
+
+            //             if ( stristr($kode_unit_asal, $kode_unit) || stristr($kode_unit_tujuan, $kode_unit) ) {
+            //                 $tampil = 1;
+            //             }
+            //         } else {
+            //             $tampil = 1;
+            //         }
+            //     }
+
+            //     if ( $tampil == 1 ) {
+            //         $asal = null;
+            //         $tujuan = null;
+
+            //         $m_supplier = new \Model\Storage\Pelanggan_model();
+            //         $m_peternak = new \Model\Storage\RdimSubmit_model();
+            //         $m_gudang = new \Model\Storage\Gudang_model();
+            //         // ASAL
+            //         if ( $v_kp['jenis_kirim'] == 'opks' ) {
+            //             $d_supplier = $m_supplier->where('nomor', $v_kp['asal'])->where('tipe', 'supplier')->where('jenis', '<>', 'ekspedisi')->orderBy('id', 'desc')->first();
+            //             $asal = $d_supplier->nama;
+            //         } else if ( $v_kp['jenis_kirim'] == 'opkp' ) {
+            //             $d_peternak = $m_peternak->where('noreg', $v_kp['asal'])->with(['mitra'])->orderBy('id', 'desc')->first();
+            //             if ( !$d_peternak ) {
+            //                 // cetak_r( $v_kp['asal'] );
+            //             } else {
+            //                 $asal = $d_peternak->mitra->dMitra->nama;
+            //             }
+            //         } else if ( $v_kp['jenis_kirim'] == 'opkg' ) {
+            //             $d_gudang = $m_gudang->where('id', $v_kp['asal'])->orderBy('id', 'desc')->first();
+            //             $asal = $d_gudang->nama;
+            //         }
+            //         // TUJUAN
+            //         if ( $v_kp['jenis_tujuan'] == 'peternak' ) {
+            //             $d_peternak = $m_peternak->where('noreg', $v_kp['tujuan'])->with(['mitra'])->orderBy('id', 'desc')->first();
+            //             if ( $d_peternak ) {
+            //                 $tujuan = $d_peternak->mitra->dMitra->nama.' ('.$v_kp['tujuan'].')';
+            //             }
+            //         } else if ( $v_kp['jenis_tujuan'] == 'gudang' ) {
+            //             $d_gudang = $m_gudang->where('id', $v_kp['tujuan'])->orderBy('id', 'desc')->first();
+            //             $tujuan = $d_gudang->nama;
+            //         }
+
+            //         $key = str_replace('-', '', $v_kp['tgl_kirim']).'|'.$v_kp['id'];
+            //         $data[ $key ] = array(
+            //             'id' => $v_kp['id'],
+            //             'no_order' => $v_kp['no_order'],
+            //             'tgl_kirim' => $v_kp['tgl_kirim'],
+            //             'asal' => $asal,
+            //             'tujuan' => $tujuan,
+            //             'nopol' => $v_kp['no_polisi'],
+            //             'tgl_terima' => !empty($v_kp['tgl_terima']) ? $v_kp['tgl_terima'] : null
+            //         );
+            //     }
+            // }
         }
+
+    	// if ( !empty($data) ) {
+    	// 	krsort($data);
+    	// }
 
         // echo "<pre>";
         // print_r($sql);
         // die;
 
-        return $data;
+        $content['data'] = $data;
+        $html = $this->load->view('transaksi/pengiriman_penerimaan_pakan/v_list', $content, true);
+
+        $this->result['status'] = 1;
+        $this->result['content'] = $html;
+
+        display_json($this->result);
     }
 
-
-    public function get_gudang_asal()
+    public function load_form()
     {
-        $unit = $this->get_unit();
+        $id = $this->input->get('id');
+        $resubmit = $this->input->get('resubmit');
 
-        $data = null;
-        foreach ($unit as $k_unit => $v_unit) {
-            $m_wilayah = new \Model\Storage\Wilayah_model();
-            $d_wilayah = $m_wilayah->select('id')->where('kode', $v_unit['kode'])->get();
+        $a_content['order_pakan'] = null;
+        $a_content['gudang_asal'] = $this->get_gudang_asal();
+        $a_content['gudang_tujuan'] = $this->get_gudang_tujuan();
+        $a_content['peternak'] = null;
+        $a_content['pakan'] = $this->get_pakan();
+        $a_content['unit'] = $this->get_unit();
+        $a_content['ekspedisi'] = $this->get_ekspedisi();
 
-            if ( $d_wilayah->count() > 0 ) {
-                $d_wilayah = $d_wilayah->toArray();                
+        $html = null;
+        if ( !empty($id) ) {
+            $m_kp = new \Model\Storage\KirimPakan_model();
+            $d_kp = $m_kp->where('id', $id)->with(['terima', 'detail'])->first()->toArray();
 
+            $asal = null;
+            $tujuan = null;
+            $tgl_docin_asal = null;
+            $tgl_docin_tujuan = null;
+            if ( $d_kp['jenis_kirim'] == 'opkp' ) {
+                $m_rs = new \Model\Storage\RdimSubmit_model();
+                $d_rs_asal = $m_rs->where('noreg', $d_kp['asal'])->with(['mitra'])->orderBy('id', 'desc')->first()->toArray();
+                $tgl_docin_asal = $d_rs_asal['tgl_docin'];
+                $asal = $d_rs_asal['mitra']['d_mitra']['nama'].' ('.$d_kp['asal'].')';
+
+                if ( $d_kp['jenis_tujuan'] == 'peternak' ) {
+                    $d_rs_tujuan = $m_rs->where('noreg', $d_kp['tujuan'])->with(['mitra'])->orderBy('id', 'desc')->first()->toArray();
+                    $tgl_docin_tujuan = $d_rs_tujuan['tgl_docin'];
+                    $tujuan = $d_rs_tujuan['mitra']['d_mitra']['nama'].' ('.$d_kp['tujuan'].')';
+                }
+
+                $a_content['no_sj_asal'] = $data = $this->getDataSjAsal( $d_kp['asal'] );
+            } else if ( $d_kp['jenis_kirim'] == 'opkg' ) {
                 $m_gudang = new \Model\Storage\Gudang_model();
-                $d_gudang = $m_gudang->where('jenis', 'PAKAN')->whereIn('unit', $d_wilayah)->orderBy('nama', 'asc')->get();
+                $d_gudang = $m_gudang->where('id', $d_kp['asal'])->orderBy('id', 'desc')->first();
 
-                if ( $d_gudang->count() > 0 ) {
-                    $d_gudang = $d_gudang->toArray();
+                $asal = $d_gudang->nama;
 
-                    foreach ($d_gudang as $k_gdg => $v_gdg) {
-                        $key = $v_gdg['nama'].'-'.$v_gdg['id'];
+                if ( $d_kp['jenis_tujuan'] == 'peternak' ) {
+                    $m_rs = new \Model\Storage\RdimSubmit_model();
+                    $d_rs_tujuan = $m_rs->where('noreg', $d_kp['tujuan'])->with(['mitra'])->orderBy('id', 'desc')->first();
 
-                        $data[ $key ] = $v_gdg;
-                    }
+                    $tgl_docin_tujuan = ($d_rs_tujuan) ? $d_rs_tujuan->tgl_docin : null;
+                    $tujuan = ($d_rs_tujuan) ? $d_rs_tujuan->mitra->dMitra->nama.' ('.$d_kp['tujuan'].')' : null;
+                }
+            } else {
+                $m_supplier = new \Model\Storage\Supplier_model();
+                $d_supplier = $m_supplier->where('nomor', $d_kp['asal'])->where('tipe', 'supplier')->where('jenis', '<>', 'ekspedisi')->orderBy('id', 'desc')->first();
+                $asal = $d_supplier->nama;
+
+                if ( $d_kp['jenis_tujuan'] == 'peternak' ) {
+                    $m_rs = new \Model\Storage\RdimSubmit_model();
+                    $d_rs_tujuan = $m_rs->where('noreg', $d_kp['tujuan'])->with(['mitra'])->orderBy('id', 'desc')->first();
+
+                    $tgl_docin_tujuan = ($d_rs_tujuan) ? $d_rs_tujuan->tgl_docin : null;
+                    $tujuan = ($d_rs_tujuan) ? $d_rs_tujuan->mitra->dMitra->nama.' ('.$d_kp['tujuan'].')' : null;
+                } else {
+                    $m_gudang = new \Model\Storage\Gudang_model();
+                    $d_gudang = $m_gudang->where('id', $d_kp['tujuan'])->orderBy('id', 'desc')->first();
+
+                    $tujuan = $d_gudang->nama;
                 }
             }
-        }
 
-        return $data;
-    }
+            // $m_op = new \Model\Storage\OrderPakan_model();
+            // $d_op = $m_op->where('no_order', $d_kp['no_order'])->with(['d_supplier'])->first();
 
-    public function get_gudang_tujuan()
-    {
-        $m_gudang = new \Model\Storage\Gudang_model();
-        $d_gudang = $m_gudang->where('jenis', 'PAKAN')->orderBy('nama', 'asc')->get();
+            $m_conf = new \Model\Storage\Conf();
+            $sql = "
+                select
+                    op.*,
+                    supl.nomor as supl_nomor,
+                    supl.nama as supl_nama,
+                    opd.perusahaan as kode_prs,
+                    prs.perusahaan as nama_prs
+                from order_pakan op
+                left join
+                    (select id_header, perusahaan from order_pakan_detail group by id_header, perusahaan) opd
+                    on
+                        op.id = opd.id_header
+                left join
+                    pelanggan supl
+                    on
+                        op.supplier = supl.nomor
+                left join
+                    (
+                        select prs1.* from perusahaan prs1
+                        right join
+                            (select kode, max(id) as id from perusahaan group by kode) prs2
+                            on
+                                prs1.id = prs2.id
+                    ) prs
+                    on
+                        opd.perusahaan = prs.kode
+                where
+                    op.no_order = '".$d_kp['no_order']."'
+                group by
+                    op.id,
+                    op.no_order,
+                    op.tgl_trans,
+                    op.rcn_kirim,
+                    op.supplier,
+                    op.no_po,
+                    supl.nomor,
+                    supl.nama,
+                    opd.perusahaan,
+                    prs.perusahaan
+                order by
+                    op.no_order asc
+            ";
+            $d_conf = $m_conf->hydrateRaw( $sql );
 
-        if ( $d_gudang->count() > 0 ) {
-            $d_gudang = $d_gudang->toArray();
-        }
-
-        return $d_gudang;
-    }
-
-    public function get_pakan()
-    {
-        $m_brg = new \Model\Storage\Barang_model();
-        $d_nomor = $m_brg->select('kode')->distinct('kode')->where('tipe', 'pakan')->get()->toArray();
-
-        $datas = array();
-        if ( !empty($d_nomor) ) {
-            foreach ($d_nomor as $nomor) {
-                $pelanggan = $m_brg->where('tipe', 'pakan')
-                                          ->where('kode', $nomor['kode'])
-                                          ->orderBy('version', 'desc')
-                                          ->orderBy('id', 'desc')
-                                          ->first()->toArray();
-
-                array_push($datas, $pelanggan);
+            $d_op = null;
+            if ( $d_conf->count() > 0 ) {
+                $d_op = $d_conf->toArray()[0];
             }
+
+            $a_content['asal'] = $asal;
+            $a_content['tujuan'] = $tujuan;
+            $a_content['tgl_docin_asal'] = substr($tgl_docin_asal, 0, 10);
+            $a_content['tgl_docin_tujuan'] = substr($tgl_docin_tujuan, 0, 10);
+            $a_content['data'] = $d_kp;
+            $a_content['data_op'] = !empty($d_op) ? $d_op : null;
+            $a_content['terima'] = !empty($d_kp['terima']) ? 1 : 0;            
+
+            if ( $resubmit == 'edit' ) {
+                $html = $this->load->view('transaksi/pengiriman_penerimaan_pakan/v_edit_form', $a_content, TRUE);
+            } else {
+                $html = $this->load->view('transaksi/pengiriman_penerimaan_pakan/v_view_form', $a_content, TRUE);
+            }
+        } else {
+            $html = $this->load->view('transaksi/pengiriman_penerimaan_pakan/v_add_form', $a_content, TRUE);
         }
 
-        return $datas;
+        echo $html;
     }
 
-
-    public function get_ekspedisi()
+    public function get_op_not_kirim()
     {
-        $data = null;
-
-        $m_ekspedisi = new \Model\Storage\Ekspedisi_model();
-        $sql = "
-            select 
-                eks.id,
-                eks.nomor,
-                eks.nama
-            from ekspedisi eks 
-            right join 
-                (select max(id) as id, nomor from ekspedisi group by nomor) as e 
-                on
-                    eks.id = e.id
-            where
-                eks.mstatus = 1 
-            group by
-                eks.id,
-                eks.nomor,
-                eks.nama
-            order by eks.nama asc
-        ";
-        $d_ekspedisi = $m_ekspedisi->hydrateRaw( $sql );
-        if ( $d_ekspedisi->count() > 0 ) {
-            $data = $d_ekspedisi->toArray();
-        }
-
-        return $data;
-    }
-
-    public function get_op_not_kirim_pakan()
-    {
-        // echo "<pre>";
-        // print_r('pakan');
-        // die;
         $params = $this->input->post('params');
 
         $unit = $params['unit'];
@@ -436,180 +586,118 @@ class PengirimanPenerimaanPakan extends Public_Controller
             $data = $d_conf->toArray();
         }
 
-        // echo "<pre>";
-        // print_r($data);
-        // die;
+        // $m_op = new \Model\Storage\OrderPakan_model();
+        // $d_op = $m_op->whereBetween('rcn_kirim', [$tgl_kirim, $tgl_kirim])->with(['d_supplier', 'kirim'])->orderBy('no_order', 'asc')->get();
+
+        // $data = array();
+        // if ( $d_op->count() > 0 ) {
+        //     $d_op = $d_op->toArray();
+        //     foreach ($d_op as $k => $v) {
+        //         if ( empty($v['kirim']) ) {
+        //             array_push($data, $v);
+        //         }
+        //     }
+        // }
+
+        // $m_terima_pakan = new \Model\Storage\TerimaPakan_model();
+        // $d_terima_pakan = $m_terima_pakan->select('id_kirim_pakan')->whereBetween('tgl_terima', [$prev_date, $today])->get();
+
+        // $m_kirim_pakan = new \Model\Storage\KirimPakan_model();
+        // if ( $d_terima_pakan->count() > 0 ) {
+        //     $d_terima_pakan = $d_terima_pakan->toArray();
+        //     $d_kirim_pakan = $m_kirim_pakan->select('no_order')->whereNotIn('id', $d_terima_pakan)->whereBetween('tgl_kirim', [$prev_date, $today])->get();
+        // } else {
+        //     $d_kirim_pakan = $m_kirim_pakan->select('no_order')->whereBetween('tgl_kirim', [$prev_date, $today])->get();
+        // }
+
+        // $m_op = new \Model\Storage\OrderPakan_model();
+        // if ( $d_kirim_pakan->count() > 0 ) {
+        //     $d_kirim_pakan = $d_kirim_pakan->toArray();
+        //     $d_op = $m_op->whereNotIn('no_order', $d_kirim_pakan)->whereBetween('rcn_kirim', [$prev_date, $today])->with(['d_supplier'])->orderBy('no_order', 'asc')->get();
+        // } else {
+        //     $d_op = $m_op->with(['d_supplier'])->orderBy('no_order', 'asc')->get();
+        // }
+
+        // if ( $d_op->count() > 0 ) {
+        //     $d_op = $d_op->toArray();
+        // }
 
         $this->result['content'] = $data;
 
         display_json( $this->result );
     }
 
-
-    public function save_pakan()
+    public function get_ekspedisi()
     {
-        $params = $this->input->post('params');
+        $data = null;
 
-        // echo "<pre>";
-        // print_r($params);
-        // die;
-
-        try {
-            $m_kirim_pakan = new \Model\Storage\KirimPakan_model();
-            $now = $m_kirim_pakan->getDate();
-
-            $no_order = null;
-            $no_sj = null;
-            $kode_unit = null;
-            if ( $params['jenis_kirim'] == 'opks' ) {
-                $no_order = $params['no_order'];
-                $no_sj = $params['no_sj'];
-                $kode_unit = 1;
-            } else {
-                if ( $params['jenis_tujuan'] == 'peternak' ) {
-                    $m_rs = new \Model\Storage\RdimSubmit_model();
-                    $d_rs = $m_rs->where('noreg', $params['tujuan'])->with(['dKandang'])->first();
-
-                    if ( $d_rs ) {
-                        $d_rs = $d_rs->toArray();
-                        $kode_unit = strtoupper($d_rs['d_kandang']['d_unit']['kode']);
-                    }
-                } else {
-                    $m_gdg = new \Model\Storage\Gudang_model();
-                    $d_gdg = $m_gdg->where('id', $params['tujuan'])->with(['dUnit'])->first();
-
-                    if ( $d_gdg ) {
-                        $d_gdg = $d_gdg->toArray();
-                        $kode_unit = strtoupper($d_gdg['d_unit']['kode']);
-                    }
-                }
-
-                $no_order = $m_kirim_pakan->getNextIdOrder('OP/'.$kode_unit);
-                $no_sj = $m_kirim_pakan->getNextIdSj('SJ/'.$kode_unit);
-
-            }
-
-            if ( !empty($kode_unit) ) {
-
-                // Pengiriman Pakan
-                $m_kirim_pakan->tgl_trans       = $now['waktu'];
-                $m_kirim_pakan->tgl_kirim       = $params['tgl_kirim'];
-                $m_kirim_pakan->no_order        = $no_order;
-                $m_kirim_pakan->jenis_kirim     = $params['jenis_kirim'];
-                $m_kirim_pakan->asal            = $params['asal'];
-                $m_kirim_pakan->jenis_tujuan    = $params['jenis_tujuan'];
-                $m_kirim_pakan->tujuan          = $params['tujuan'];
-                $m_kirim_pakan->ekspedisi       = $params['ekspedisi'];
-                $m_kirim_pakan->no_polisi       = $params['nopol'];
-                $m_kirim_pakan->sopir           = $params['sopir'];
-                $m_kirim_pakan->no_sj           = $no_sj;
-                $m_kirim_pakan->ongkos_angkut   = $params['ongkos_angkut'];
-                $m_kirim_pakan->ekspedisi_id    = $params['ekspedisi_id'];
-                $m_kirim_pakan->save();
-
-                $id_header = $m_kirim_pakan->id;
-
-                foreach ($params['detail'] as $k_detail => $v_detail) {
-                    $m_kirim_pakan_detail               = new \Model\Storage\KirimPakanDetail_model();
-                    $m_kirim_pakan_detail->id_header    = $id_header;
-                    $m_kirim_pakan_detail->item         = $v_detail['barang'];
-                    $m_kirim_pakan_detail->jumlah       = $v_detail['jumlah'];
-                    $m_kirim_pakan_detail->kondisi      = $v_detail['kondisi'];
-                    $m_kirim_pakan_detail->no_sj_asal   = $v_detail['no_sj_asal'];
-                    $m_kirim_pakan_detail->save();
-                }
-                // End Pengiriman Pakan
-
-                // Penerimaan Pakan
-
-                    $path_name = null;
-
-                    $m_kp = new \Model\Storage\KirimPakan_model();
-                    $d_kp = $m_kp->where('id', $id_header)->first();
-
-                    $no_bbm = null;
-                    if ( $d_kp->jenis_kirim == 'opks' ) {
-                        $no_bbm = 'BBM/PKN/S'.str_replace('OPK', '', $d_kp->no_order);
-                    } else if ( $d_kp->jenis_kirim == 'opkg' ) {
-                        $no_bbm = 'BBM/PKN/G'.str_replace('OP', '', $d_kp->no_order);
-                    } else if ( $d_kp->jenis_kirim == 'opkp' ) {
-                        $no_bbm = 'BBM/PKN/P'.str_replace('OP', '', $d_kp->no_order);
-                    }
-
-                    $m_terima_pakan                 = new \Model\Storage\TerimaPakan_model();
-                    $now                            = $m_terima_pakan->getDate();
-                    $m_terima_pakan->id_kirim_pakan = $id_header;
-                    $m_terima_pakan->tgl_trans      = $now['waktu'];
-                    $m_terima_pakan->tgl_terima     = $params['tgl_terima'];
-                    $m_terima_pakan->path           = $path_name;
-                    $m_terima_pakan->no_bbm         = $no_bbm;
-                    $m_terima_pakan->save();
-
-                    $id_terima = $m_terima_pakan->id;
-
-                    foreach ($params['detail'] as $k_detail => $v_detail) {
-                        $m_terima_pakan_detail              = new \Model\Storage\TerimaPakanDetail_model();
-                        $m_terima_pakan_detail->id_header   = $id_terima;
-                        $m_terima_pakan_detail->item        = $v_detail['barang'];
-                        $m_terima_pakan_detail->jumlah      = $v_detail['jumlah'];
-                        $m_terima_pakan_detail->kondisi     = $v_detail['kondisi'];
-                        $m_terima_pakan_detail->save();
-                    }
-
-                    // End Penerimaan Pakan
-                    
-                $d_kirim_pakan  = $m_kirim_pakan->where('id', $id_header)->with(['detail'])->first();
-                $d_terima_pakan = $m_terima_pakan->where('id', $id_terima)->with(['detail'])->first();
-
-                $deskripsi_log_kirim_pakan = 'di-submit oleh ' . $this->userdata['detail_user']['nama_detuser'];
-                Modules::run( 'base/event/save', $d_kirim_pakan, $deskripsi_log_kirim_pakan);
-
-                $deskripsi_log_terima_pakan = 'di-submit oleh ' . $this->userdata['detail_user']['nama_detuser'];
-                Modules::run( 'base/event/save', $d_terima_pakan, $deskripsi_log_terima_pakan);
-
-                $this->result['status'] = 1;
-                $this->result['message'] = 'Data Pengiriman Pakan berhasil di simpan.';
-            } else {
-                $this->result['message'] = 'Kode unit masih kosong, harap lengkapi kode unit terlebih dahulu.';
-            }
-        } catch (\Illuminate\Database\QueryException $e) {
-            $this->result['message'] = "Gagal : " . $e->getMessage();
+        $m_ekspedisi = new \Model\Storage\Ekspedisi_model();
+        $sql = "
+            select 
+                eks.id,
+                eks.nomor,
+                eks.nama
+            from ekspedisi eks 
+            right join 
+                (select max(id) as id, nomor from ekspedisi group by nomor) as e 
+                on
+                    eks.id = e.id
+            where
+                eks.mstatus = 1 
+            group by
+                eks.id,
+                eks.nomor,
+                eks.nama
+            order by eks.nama asc
+        ";
+        $d_ekspedisi = $m_ekspedisi->hydrateRaw( $sql );
+        if ( $d_ekspedisi->count() > 0 ) {
+            $data = $d_ekspedisi->toArray();
         }
 
-        display_json($this->result);
+        return $data;
     }
 
-
-    public function get_list_table()
+    public function get_gudang_asal()
     {
-        $jenis_pengiriman = $this->input->post('jenis_pengiriman');
-        $no_order = $this->input->post('no_order');
+        $unit = $this->get_unit();
 
-        try {
-            $data = null;
-            if ( $jenis_pengiriman == 'opks' ) {
-                $m_op = new \Model\Storage\OrderPakan_model();
-                $d_op = $m_op->where('no_order', $no_order)->first();
+        $data = null;
+        foreach ($unit as $k_unit => $v_unit) {
+            $m_wilayah = new \Model\Storage\Wilayah_model();
+            $d_wilayah = $m_wilayah->select('id')->where('kode', $v_unit['kode'])->get();
 
-                $m_opd = new \Model\Storage\OrderPakanDetail_model();
-                $d_opd = $m_opd->where('id_header', $d_op->id)->get();
+            if ( $d_wilayah->count() > 0 ) {
+                $d_wilayah = $d_wilayah->toArray();                
 
-                if ( $d_opd->count() > 0 ) {
-                    $data = $d_opd->toArray();
+                $m_gudang = new \Model\Storage\Gudang_model();
+                $d_gudang = $m_gudang->where('jenis', 'PAKAN')->whereIn('unit', $d_wilayah)->orderBy('nama', 'asc')->get();
+
+                if ( $d_gudang->count() > 0 ) {
+                    $d_gudang = $d_gudang->toArray();
+
+                    foreach ($d_gudang as $k_gdg => $v_gdg) {
+                        $key = $v_gdg['nama'].'-'.$v_gdg['id'];
+
+                        $data[ $key ] = $v_gdg;
+                    }
                 }
             }
-            $content['jenis_pengiriman'] = $jenis_pengiriman;
-            $content['pakan'] = $this->get_pakan();
-            $content['data'] = $data;
-            $html = $this->load->view('transaksi/pengiriman_penerimaan_pakan/v_list_order_pakan', $content, TRUE);
-            
-            $this->result['status'] = 1;
-            $this->result['content'] = $html;
-        } catch (\Illuminate\Database\QueryException $e) {
-            $this->result['message'] = "Gagal : " . $e->getMessage();
         }
 
-        display_json($this->result);
+        return $data;
+    }
+
+    public function get_gudang_tujuan()
+    {
+        $m_gudang = new \Model\Storage\Gudang_model();
+        $d_gudang = $m_gudang->where('jenis', 'PAKAN')->orderBy('nama', 'asc')->get();
+
+        if ( $d_gudang->count() > 0 ) {
+            $d_gudang = $d_gudang->toArray();
+        }
+
+        return $d_gudang;
     }
 
     public function get_peternak()
@@ -675,8 +763,60 @@ class PengirimanPenerimaanPakan extends Public_Controller
         display_json( $this->result );
     }
 
+    public function get_pakan()
+    {
+        $m_brg = new \Model\Storage\Barang_model();
+        $d_nomor = $m_brg->select('kode')->distinct('kode')->where('tipe', 'pakan')->get()->toArray();
 
-    public function cekStokPakan()
+        $datas = array();
+        if ( !empty($d_nomor) ) {
+            foreach ($d_nomor as $nomor) {
+                $pelanggan = $m_brg->where('tipe', 'pakan')
+                                          ->where('kode', $nomor['kode'])
+                                          ->orderBy('version', 'desc')
+                                          ->orderBy('id', 'desc')
+                                          ->first()->toArray();
+
+                array_push($datas, $pelanggan);
+            }
+        }
+
+        return $datas;
+    }
+
+    public function get_list_table()
+    {
+        $jenis_pengiriman = $this->input->post('jenis_pengiriman');
+        $no_order = $this->input->post('no_order');
+
+        try {
+            $data = null;
+            if ( $jenis_pengiriman == 'opks' ) {
+                $m_op = new \Model\Storage\OrderPakan_model();
+                $d_op = $m_op->where('no_order', $no_order)->first();
+
+                $m_opd = new \Model\Storage\OrderPakanDetail_model();
+                $d_opd = $m_opd->where('id_header', $d_op->id)->get();
+
+                if ( $d_opd->count() > 0 ) {
+                    $data = $d_opd->toArray();
+                }
+            }
+            $content['jenis_pengiriman'] = $jenis_pengiriman;
+            $content['pakan'] = $this->get_pakan();
+            $content['data'] = $data;
+            $html = $this->load->view('transaksi/pengiriman_penerimaan_pakan/v_list_order_pakan', $content, TRUE);
+            
+            $this->result['status'] = 1;
+            $this->result['content'] = $html;
+        } catch (\Illuminate\Database\QueryException $e) {
+            $this->result['message'] = "Gagal : " . $e->getMessage();
+        }
+
+        display_json($this->result);
+    }
+
+    public function cekStok()
     {
         $params = $this->input->post('params');
 
@@ -876,197 +1016,464 @@ class PengirimanPenerimaanPakan extends Public_Controller
         display_json( $this->result );
     }
 
-
-
-     public function listActivity()
+    public function save()
     {
-        $params = $this->input->get('params');
+        $params = $this->input->post('params');
+        // echo "<pre>";
+        // print_r($params);
+        // die;
 
-        $m_kirim_pakan = new \Model\Storage\KirimPakan_model();
-        $d_kirim_pakan = $m_kirim_pakan->where('id', $params['id'])->with(['logs'])->first()->toArray();
+        try {
 
-        $data_kirim_pakan = array(
-            'no_order'      => $params['no_order'],
-            'tgl_kirim'     => $params['tgl_kirim'],
-            'asal'          => $params['asal'],
-            'tujuan'        => $params['tujuan'],
-            'nopol'         => $params['nopol'],
-            'logs'          => $d_kirim_pakan['logs']
-        );
+            // Pengiriman Pakan
+                $m_kirim_pakan = new \Model\Storage\KirimPakan_model();
+                $now = $m_kirim_pakan->getDate();
 
-        $m_terima_pakan = new \Model\Storage\TerimaPakan_model();
-        $d_terima_pakan = $m_terima_pakan->where('id_kirim_pakan', $params['id'])->with(['logs'])->first()->toArray();
+                $no_order = null;
+                $no_sj = null;
+                $kode_unit = null;
+                if ( $params['jenis_kirim'] == 'opks' ) {
+                    $no_order = $params['no_order'];
+                    $no_sj = $params['no_sj'];
+                    $kode_unit = 1;
+                } else {
+                    if ( $params['jenis_tujuan'] == 'peternak' ) {
+                        $m_rs = new \Model\Storage\RdimSubmit_model();
+                        $d_rs = $m_rs->where('noreg', $params['tujuan'])->with(['dKandang'])->first();
 
-        $data_terima_pakan = array(
-            'no_sj'         => $params['no_sj'],
-            'tgl_terima'    => $params['tgl_terima'],
-            'asal'          => $params['asal'],
-            'tujuan'        => $params['tujuan'],
-            'nopol'         => $params['nopol'],
-            'logs'          => $d_terima_pakan['logs']
-        );
+                        if ( $d_rs ) {
+                            $d_rs = $d_rs->toArray();
+                            $kode_unit = strtoupper($d_rs['d_kandang']['d_unit']['kode']);
+                        }
+                    } else {
+                        $m_gdg = new \Model\Storage\Gudang_model();
+                        $d_gdg = $m_gdg->where('id', $params['tujuan'])->with(['dUnit'])->first();
 
-        $content['data_kirim']    = $data_kirim_pakan;
-        $content['data_terima']   = $data_terima_pakan;
+                        if ( $d_gdg ) {
+                            $d_gdg = $d_gdg->toArray();
+                            $kode_unit = strtoupper($d_gdg['d_unit']['kode']);
+                        }
+                    }
 
-        echo "<pre>";
-        print_r($content);
-        die;
-    
-           
-      
-        $html = $this->load->view('transaksi/pengiriman_penerimaan_pakan/v_list_activity', $content, true);
+                    $no_order = $m_kirim_pakan->getNextIdOrder('OP/'.$kode_unit);
+                    $no_sj = $m_kirim_pakan->getNextIdSj('SJ/'.$kode_unit);
+                }
 
-        echo $html;
+                if ( !empty($kode_unit) ) {
+                    $m_kirim_pakan->tgl_trans       = $now['waktu'];
+                    $m_kirim_pakan->tgl_kirim       = $params['tgl_kirim'];
+                    $m_kirim_pakan->no_order        = $no_order;
+                    $m_kirim_pakan->jenis_kirim     = $params['jenis_kirim'];
+                    $m_kirim_pakan->asal            = $params['asal'];
+                    $m_kirim_pakan->jenis_tujuan    = $params['jenis_tujuan'];
+                    $m_kirim_pakan->tujuan          = $params['tujuan'];
+                    $m_kirim_pakan->ekspedisi       = $params['ekspedisi'];
+                    $m_kirim_pakan->no_polisi       = $params['nopol'];
+                    $m_kirim_pakan->sopir           = $params['sopir'];
+                    $m_kirim_pakan->no_sj           = $no_sj;
+                    $m_kirim_pakan->ongkos_angkut   = $params['ongkos_angkut'];
+                    $m_kirim_pakan->ekspedisi_id    = $params['ekspedisi_id'];
+                    $m_kirim_pakan->save();
+
+                    $id_header = $m_kirim_pakan->id;
+
+                    foreach ($params['detail'] as $k_detail => $v_detail) {
+                        $m_kirim_pakan_detail = new \Model\Storage\KirimPakanDetail_model();
+                        $m_kirim_pakan_detail->id_header = $id_header;
+                        $m_kirim_pakan_detail->item = $v_detail['barang'];
+                        $m_kirim_pakan_detail->jumlah = $v_detail['jumlah'];
+                        $m_kirim_pakan_detail->kondisi = $v_detail['kondisi'];
+                        $m_kirim_pakan_detail->no_sj_asal = $v_detail['no_sj_asal'];
+                        $m_kirim_pakan_detail->save();
+                    }
+
+                    $d_kirim_pakan = $m_kirim_pakan->where('id', $id_header)->with(['detail'])->first();
+                    $deskripsi_log_kirim_pakan = 'di-submit oleh ' . $this->userdata['detail_user']['nama_detuser'];
+                    Modules::run( 'base/event/save', $d_kirim_pakan, $deskripsi_log_kirim_pakan);
+
+                // End Pengiriman Pakan
+
+                // Penerimaan Pakan
+
+                    $path_name = null;
+
+                    $m_kp = new \Model\Storage\KirimPakan_model();
+                    $d_kp = $m_kp->where('id', $id_header)->first();
+
+                    $no_bbm = null;
+                    if ( $d_kp->jenis_kirim == 'opks' ) {
+                        $no_bbm = 'BBM/PKN/S'.str_replace('OPK', '', $d_kp->no_order);
+                    } else if ( $d_kp->jenis_kirim == 'opkg' ) {
+                        $no_bbm = 'BBM/PKN/G'.str_replace('OP', '', $d_kp->no_order);
+                    } else if ( $d_kp->jenis_kirim == 'opkp' ) {
+                        $no_bbm = 'BBM/PKN/P'.str_replace('OP', '', $d_kp->no_order);
+                    }
+
+                    $m_terima_pakan                 = new \Model\Storage\TerimaPakan_model();
+                    $now                            = $m_terima_pakan->getDate();
+                    $m_terima_pakan->id_kirim_pakan = $id_header;
+                    $m_terima_pakan->tgl_trans      = $now['waktu'];
+                    $m_terima_pakan->tgl_terima     = $params['tgl_terima'];
+                    $m_terima_pakan->path           = $path_name;
+                    $m_terima_pakan->no_bbm         = $no_bbm;
+                    $m_terima_pakan->save();
+
+                    $id_terima = $m_terima_pakan->id;
+
+                    foreach ($params['detail'] as $k_detail => $v_detail) {
+                        $m_terima_pakan_detail              = new \Model\Storage\TerimaPakanDetail_model();
+                        $m_terima_pakan_detail->id_header   = $id_terima;
+                        $m_terima_pakan_detail->item        = $v_detail['barang'];
+                        $m_terima_pakan_detail->jumlah      = $v_detail['jumlah'];
+                        $m_terima_pakan_detail->kondisi     = $v_detail['kondisi'];
+                        $m_terima_pakan_detail->save();
+                    }
+
+                    $d_terima_pakan = $m_terima_pakan->where('id', $id_terima)->with(['detail'])->first();
+                    $deskripsi_log_terima_pakan = 'di-submit oleh ' . $this->userdata['detail_user']['nama_detuser'];
+                    Modules::run( 'base/event/save', $d_terima_pakan, $deskripsi_log_terima_pakan);
+
+                    $noreg1 = null;
+                    $noreg2 = null;
+                    $m_conf = new \Model\Storage\Conf();
+                    $sql = "
+                        select tp.id, kp.jenis_kirim, kp.jenis_tujuan, kp.asal, kp.tujuan from terima_pakan tp
+                        left join
+                            kirim_pakan kp
+                            on
+                                tp.id_kirim_pakan = kp.id
+                        where
+                            tp.id = '".$id_terima."'
+                    ";
+                    $d_conf = $m_conf->hydrateRaw( $sql );
+                    if ( $d_conf->count() > 0 ) {
+                        $d_conf = $d_conf->toArray()[0];
+
+                        if ( $d_conf['jenis_kirim'] == 'opkg' ) {
+                            if ( $d_conf['jenis_tujuan'] == 'peternak' ) {
+                                $noreg1 = $d_conf['tujuan'];
+                            }
+                        }
+
+                        if ( $d_conf['jenis_kirim'] == 'opkp' ) {
+                            $noreg1 = $d_conf['asal'];
+                            $noreg2 = $d_conf['tujuan'];
+                        }
+                    }
+                    
+
+                // End Penerimaan Pakan
+
+                $this->result['status'] = 1;
+                $this->result['message'] = 'Data Pengiriman Pakan berhasil di simpan.';
+                $this->result['content'] = array(
+                    'id' => $id_terima,
+                    'tanggal' => $params['tgl_terima'],
+                    'delete' => 0,
+                    'message' => 'Data Penerimaan Pakan berhasil di simpan.',
+                    'status_jurnal' => 2,
+                    'status' => 2,
+                    'noreg1' => $noreg1,
+                    'noreg2' => $noreg2
+                );
+            } else {
+                $this->result['message'] = 'Kode unit masih kosong, harap lengkapi kode unit terlebih dahulu.';
+            }
+        } catch (\Illuminate\Database\QueryException $e) {
+            $this->result['message'] = "Gagal : " . $e->getMessage();
+        }
+
+        display_json($this->result);
+    }
+
+    public function execInsertKonfirmasi()
+    {
+        $params = $this->input->post('params');
+
+        try {
+            $id = $params['id'];
+            $status = $params['status'];
+            $delete = ($status == 3) ? 1 : 0;
+
+            $this->insertKonfirmasi( $id, $delete );
+
+            $this->result['status'] = 1;
+            $this->result['content'] = $params;
+        } catch (Exception $e) {
+            $this->result['message'] = $e->getMessage();
+        }
+
+        display_json( $this->result );
     }
 
 
-    public function load_form_pakan()
-    {
-        $id         = $this->input->get('id');
-        $resubmit   = $this->input->get('resubmit');
+    function insertKonfirmasi($id_terima, $delete = 0) {
+        $m_conf = new \Model\Storage\Conf();
+        $sql = "
+            select kp.* from terima_pakan tp
+            left join
+                kirim_pakan kp
+                on
+                    tp.id_kirim_pakan = kp.id
+            where
+                tp.id = '".$id_terima."'
+        ";
+        $d_conf = $m_conf->hydrateRaw( $sql );
+        
+        $no_order = null;
+        if ( $d_conf->count() > 0 ) {
+            $d_conf = $d_conf->toArray()[0];
 
-        $a_content['order_pakan'] = null;
-        $a_content['gudang_asal'] = $this->get_gudang_asal();
-        $a_content['gudang_tujuan'] = $this->get_gudang_tujuan();
-        $a_content['peternak'] = null;
-        $a_content['pakan'] = $this->get_pakan();
-        $a_content['unit'] = $this->get_unit();
-        $a_content['ekspedisi'] = $this->get_ekspedisi();
+            $no_order = $d_conf['no_order'];
+        }
 
-        $html = null;
-        if ( !empty($id) ) {
-            $m_kp = new \Model\Storage\KirimPakan_model();
-            $d_kp = $m_kp->where('id', $id)->with(['terima', 'detail'])->first()->toArray();
+        $m_kppd = new \Model\Storage\KonfirmasiPembayaranPakanDet_model();
+        $d_kppd = $m_kppd->where('no_order', $no_order)->first();
 
-            $asal = null;
-            $tujuan = null;
-            $tgl_docin_asal = null;
-            $tgl_docin_tujuan = null;
-            if ( $d_kp['jenis_kirim'] == 'opkp' ) {
-                $m_rs = new \Model\Storage\RdimSubmit_model();
-                $d_rs_asal = $m_rs->where('noreg', $d_kp['asal'])->with(['mitra'])->orderBy('id', 'desc')->first()->toArray();
-                $tgl_docin_asal = $d_rs_asal['tgl_docin'];
-                $asal = $d_rs_asal['mitra']['d_mitra']['nama'].' ('.$d_kp['asal'].')';
+        if ( $d_kppd ) {
+            $m_kppd2 = new \Model\Storage\KonfirmasiPembayaranPakanDet2_model();
+            $m_kppd2->where('id_header', $d_kppd->id)->delete();
 
-                if ( $d_kp['jenis_tujuan'] == 'peternak' ) {
-                    $d_rs_tujuan = $m_rs->where('noreg', $d_kp['tujuan'])->with(['mitra'])->orderBy('id', 'desc')->first()->toArray();
-                    $tgl_docin_tujuan = $d_rs_tujuan['tgl_docin'];
-                    $tujuan = $d_rs_tujuan['mitra']['d_mitra']['nama'].' ('.$d_kp['tujuan'].')';
-                }
+            $m_kppd = new \Model\Storage\KonfirmasiPembayaranPakanDet_model();
+            $m_kppd->where('id', $d_kppd->id)->delete();
 
-                $a_content['no_sj_asal'] = $data = $this->getDataSjAsal( $d_kp['asal'] );
-            } else if ( $d_kp['jenis_kirim'] == 'opkg' ) {
-                $m_gudang = new \Model\Storage\Gudang_model();
-                $d_gudang = $m_gudang->where('id', $d_kp['asal'])->orderBy('id', 'desc')->first();
+            $m_kpp = new \Model\Storage\KonfirmasiPembayaranPakan_model();
+            $m_kpp->where('id', $d_kppd->id_header)->delete();
+        }
 
-                $asal = $d_gudang->nama;
-
-                if ( $d_kp['jenis_tujuan'] == 'peternak' ) {
-                    $m_rs = new \Model\Storage\RdimSubmit_model();
-                    $d_rs_tujuan = $m_rs->where('noreg', $d_kp['tujuan'])->with(['mitra'])->orderBy('id', 'desc')->first();
-
-                    $tgl_docin_tujuan = ($d_rs_tujuan) ? $d_rs_tujuan->tgl_docin : null;
-                    $tujuan = ($d_rs_tujuan) ? $d_rs_tujuan->mitra->dMitra->nama.' ('.$d_kp['tujuan'].')' : null;
-                }
-            } else {
-                $m_supplier = new \Model\Storage\Supplier_model();
-                $d_supplier = $m_supplier->where('nomor', $d_kp['asal'])->where('tipe', 'supplier')->where('jenis', '<>', 'ekspedisi')->orderBy('id', 'desc')->first();
-                $asal = $d_supplier->nama;
-
-                if ( $d_kp['jenis_tujuan'] == 'peternak' ) {
-                    $m_rs = new \Model\Storage\RdimSubmit_model();
-                    $d_rs_tujuan = $m_rs->where('noreg', $d_kp['tujuan'])->with(['mitra'])->orderBy('id', 'desc')->first();
-
-                    $tgl_docin_tujuan = ($d_rs_tujuan) ? $d_rs_tujuan->tgl_docin : null;
-                    $tujuan = ($d_rs_tujuan) ? $d_rs_tujuan->mitra->dMitra->nama.' ('.$d_kp['tujuan'].')' : null;
-                } else {
-                    $m_gudang = new \Model\Storage\Gudang_model();
-                    $d_gudang = $m_gudang->where('id', $d_kp['tujuan'])->orderBy('id', 'desc')->first();
-
-                    $tujuan = $d_gudang->nama;
-                }
-            }
-
-            // $m_op = new \Model\Storage\OrderPakan_model();
-            // $d_op = $m_op->where('no_order', $d_kp['no_order'])->with(['d_supplier'])->first();
-
+        if ( $delete == 0 ) {
             $m_conf = new \Model\Storage\Conf();
             $sql = "
                 select
-                    op.*,
-                    supl.nomor as supl_nomor,
-                    supl.nama as supl_nama,
-                    opd.perusahaan as kode_prs,
-                    prs.perusahaan as nama_prs
-                from order_pakan op
-                left join
-                    (select id_header, perusahaan from order_pakan_detail group by id_header, perusahaan) opd
-                    on
-                        op.id = opd.id_header
-                left join
-                    pelanggan supl
-                    on
-                        op.supplier = supl.nomor
+                    tp.tgl_terima as tgl_bayar,
+                    tp.tgl_terima as periode_docin,
+                    op.perusahaan,
+                    op.supplier,
+                    sum(dtp.jumlah * op.harga) as total,
+                    kp.no_sj,
+                    kp.tgl_kirim as tgl_sj,
+                    SUBSTRING(op.no_order, 5, 3) as id_kab_kota,
+                    op.no_order,
+                    sum(dtp.jumlah) as jumlah
+                from det_terima_pakan dtp
                 left join
                     (
-                        select prs1.* from perusahaan prs1
+                        select tp1.* from terima_pakan tp1
                         right join
-                            (select kode, max(id) as id from perusahaan group by kode) prs2
+                            (select max(id) as id, id_kirim_pakan from terima_pakan group by id_kirim_pakan) tp2
                             on
-                                prs1.id = prs2.id
-                    ) prs
+                                tp1.id = tp2.id
+                    ) tp
                     on
-                        opd.perusahaan = prs.kode
+                        dtp.id_header = tp.id
+                left join
+                    kirim_pakan kp
+                    on
+                        tp.id_kirim_pakan = kp.id
+                left join
+                    (
+                        select 
+                            opd.*, 
+                            op.no_order, 
+                            op.tgl_trans, 
+                            op.rcn_kirim, 
+                            op.supplier 
+                        from order_pakan_detail opd
+                        left join
+                            (
+                                select op1.* from order_pakan op1
+                                right join
+                                    (select max(id) as id, no_order from order_pakan group by no_order) op2
+                                    on
+                                        op1.id = op2.id
+                            ) op
+                            on
+                                opd.id_header = op.id
+                    ) op
+                    on
+                        kp.no_order = op.no_order and
+                        dtp.item = op.barang
                 where
-                    op.no_order = '".$d_kp['no_order']."'
+                    kp.jenis_kirim = 'opks' and
+                    op.no_order = '".$no_order."'
                 group by
-                    op.id,
-                    op.no_order,
-                    op.tgl_trans,
-                    op.rcn_kirim,
+                    tp.tgl_terima,
+                    op.perusahaan,
                     op.supplier,
-                    op.no_po,
-                    supl.nomor,
-                    supl.nama,
-                    opd.perusahaan,
-                    prs.perusahaan
-                order by
-                    op.no_order asc
+                    kp.no_sj,
+                    kp.tgl_kirim,
+                    op.no_order
             ";
             $d_conf = $m_conf->hydrateRaw( $sql );
 
-            $d_op = null;
             if ( $d_conf->count() > 0 ) {
-                $d_op = $d_conf->toArray()[0];
-            }
+                $d_conf = $d_conf->toArray()[0];
 
-            $a_content['asal'] = $asal;
-            $a_content['tujuan'] = $tujuan;
-            $a_content['tgl_docin_asal'] = substr($tgl_docin_asal, 0, 10);
-            $a_content['tgl_docin_tujuan'] = substr($tgl_docin_tujuan, 0, 10);
-            $a_content['data'] = $d_kp;
-            $a_content['data_op'] = !empty($d_op) ? $d_op : null;
-            $a_content['terima'] = !empty($d_kp['terima']) ? 1 : 0;   
-            
-            // echo "<pre>";
-            // print_r($d_kp);
-            // die;
+                $m_kpp = new \Model\Storage\KonfirmasiPembayaranPakan_model();
+                $nomor = $m_kpp->getNextNomor();
 
-            if ( $resubmit == 'edit' ) {
-                $html = $this->load->view('transaksi/pengiriman_penerimaan_pakan/v_edit_form_pakan', $a_content, TRUE);
-            } else {
-                $html = $this->load->view('transaksi/pengiriman_penerimaan_pakan/v_view_form_pakan', $a_content, TRUE);
+                $m_kpp->nomor = $nomor;
+                $m_kpp->tgl_bayar = $d_conf['tgl_bayar'];
+                $m_kpp->periode = trim($d_conf['periode_docin']);
+                $m_kpp->perusahaan = $d_conf['perusahaan'];
+                $m_kpp->supplier = $d_conf['supplier'];
+                $m_kpp->total = $d_conf['total'];
+                $m_kpp->invoice = $d_conf['no_sj'];
+                // $m_kpp->rekening = $d_conf['rekening'];
+                $m_kpp->save();
+
+                $id = $m_kpp->id;
+
+                $m_kppd = new \Model\Storage\KonfirmasiPembayaranPakanDet_model();
+                $m_kppd->id_header = $id;
+                $m_kppd->tgl_sj = $d_conf['tgl_sj'];
+                $m_kppd->kode_unit = $d_conf['id_kab_kota'];
+                $m_kppd->no_order = $d_conf['no_order'];
+                $m_kppd->no_sj = $d_conf['no_sj'];
+                $m_kppd->jumlah = $d_conf['jumlah'];
+                $m_kppd->total = $d_conf['total'];
+                $m_kppd->save();
+                
+                $d_kpd = $m_kpp->where('id', $id)->first();
+
+                $deskripsi_log = 'di-submit oleh ' . $this->userdata['detail_user']['nama_detuser'];
+                Modules::run( 'base/event/save', $d_kpd, $deskripsi_log);
             }
-        } else {
-            $html = $this->load->view('transaksi/pengiriman_penerimaan_pakan/v_add_form_pakan', $a_content, TRUE);
         }
-
-        echo $html;
     }
 
 
-    public function edit_pakan(){
+    public function hitungStokByTransaksi()
+    {
+        $params = $this->input->post('params');
+
+        $id = $params['id'];
+        $tanggal = $params['tanggal'];
+        $delete = $params['delete'];
+        $status_jurnal = $params['status_jurnal'];
+
+        try {
+            $sql = "EXEC hitung_stok_pakan_by_transaksi 'terima_pakan', '".$id."', '".$tanggal."', ".$delete.", ".$status_jurnal."";
+
+            // echo "<pre>";
+            // print_r($sql);
+            // die;
+            $return = Modules::run( 'base/ExecStoredProcedure/exec', $sql);
+
+            $this->result['status'] = $return['status'];
+            $this->result['message'] = json_encode($return);
+            $this->result['content'] = $params;
+        } catch (Exception $e) {
+            $this->result['message'] = $e->getMessage();
+        }
+
+        display_json( $this->result );
+    }
+
+    public function execHitStokSiklus() {
+        $params = $this->input->post('params');
+
+        try {
+            $id = $params['id'];
+            $tanggal = $params['tanggal'];
+            $status = $params['status'];
+            $noreg1 = $params['noreg1'];
+            $noreg2 = $params['noreg2'];
+
+            $sql = "EXEC hitung_stok_siklus 'pakan', 'terima_pakan', '".$id."', '".$tanggal."', ".$status.", '".$noreg1."', '".$noreg2."'";
+            $return = Modules::run( 'base/ExecStoredProcedure/exec', $sql);
+
+            $this->result['status'] = $return['status'];
+            $this->result['message'] = json_encode($return);
+            $this->result['content'] = $params;
+        } catch (Exception $e) {
+            $this->result['message'] = $e->getMessage();
+        }
+
+        display_json( $this->result );
+    }
+
+
+    public function execInsertJurnal() {
+        $params = $this->input->post('params');
+
+        try {
+            $id = $params['id'];
+            $id_old = $params['id'];
+            $status = $params['status'];
+
+            $return = Modules::run( 'base/InsertJurnal/exec', $this->url, $id, $id_old, $status);
+
+            $this->result['status'] = $return['status'];
+            $this->result['message'] = json_encode($return);
+            $this->result['content'] = $params;
+        } catch (Exception $e) {
+            $this->result['message'] = $e->getMessage();
+        }
+
+        display_json( $this->result );
+    }
+
+
+
+
+
+    // public function edit()
+    // {
+    //     $params = $this->input->post('params');
+
+    //     try {
+    //         $m_kirim_pakan = new \Model\Storage\KirimPakan_model();
+    //         $now = $m_kirim_pakan->getDate();
+
+    //         $m_kirim_pakan->where('id', $params['id'])->update(
+    //             array(
+    //                 'tgl_trans' => $now['waktu'],
+    //                 'tgl_kirim' => $params['tgl_kirim'],
+    //                 'no_order' => $params['no_order'],
+    //                 'jenis_kirim' => $params['jenis_kirim'],
+    //                 'asal' => $params['asal'],
+    //                 'jenis_tujuan' => $params['jenis_tujuan'],
+    //                 'tujuan' => $params['tujuan'],
+    //                 'ekspedisi' => $params['ekspedisi'],
+    //                 'no_polisi' => $params['nopol'],
+    //                 'sopir' => $params['sopir'],
+    //                 'no_sj' => $params['no_sj'],
+    //                 'ongkos_angkut' => $params['ongkos_angkut'],
+    //                 'ekspedisi_id' => $params['ekspedisi_id']
+    //             )
+    //         );
+
+    //         $id_header = $params['id'];
+
+    //         $m_kirim_pakan_detail = new \Model\Storage\KirimPakanDetail_model();
+    //         $m_kirim_pakan_detail->where('id_header', $id_header)->delete();
+
+    //         foreach ($params['detail'] as $k_detail => $v_detail) {
+    //             $m_kirim_pakan_detail = new \Model\Storage\KirimPakanDetail_model();
+    //             $m_kirim_pakan_detail->id_header = $id_header;
+    //             $m_kirim_pakan_detail->item = $v_detail['barang'];
+    //             $m_kirim_pakan_detail->jumlah = $v_detail['jumlah'];
+    //             $m_kirim_pakan_detail->kondisi = $v_detail['kondisi'];
+    //             $m_kirim_pakan_detail->no_sj_asal = $v_detail['no_sj_asal'];
+    //             $m_kirim_pakan_detail->save();
+    //         }
+
+    //         $d_kirim_pakan = $m_kirim_pakan->where('id', $id_header)->with(['detail'])->first();
+
+    //         $deskripsi_log_kirim_pakan = 'di-update oleh ' . $this->userdata['detail_user']['nama_detuser'];
+    //         Modules::run( 'base/event/update', $d_kirim_pakan, $deskripsi_log_kirim_pakan);
+
+    //         $this->result['status'] = 1;
+    //         $this->result['message'] = 'Data Pengiriman Pakan berhasil di ubah.';
+    //     } catch (\Illuminate\Database\QueryException $e) {
+    //         $this->result['message'] = "Gagal : " . $e->getMessage();
+    //     }
+
+    //     display_json($this->result);
+    // }
+
+    public function edit(){
         $params = $this->input->post('params');
 
         // echo "<pre>";
@@ -1172,8 +1579,53 @@ class PengirimanPenerimaanPakan extends Public_Controller
             Modules::run( 'base/event/update', $d_terima_pakan, $deskripsi_log_terima_pakan);
             // End Log Update
 
+            $tgl_trans = $d_terima_pakan->tgl_terima;
+            if ( $d_terima_pakan_old->tgl_terima < $tgl_trans ) {
+                $tgl_trans = $d_terima_pakan_old->tgl_terima;
+            }
+
+            $noreg1 = null;
+            $noreg2 = null;
+            $m_conf = new \Model\Storage\Conf();
+            $sql = "
+                select tp.id, kp.jenis_kirim, kp.jenis_tujuan, kp.asal, kp.tujuan from terima_pakan tp
+                left join
+                    kirim_pakan kp
+                    on
+                        tp.id_kirim_pakan = kp.id
+                where
+                    tp.id = '".$params['id']."'
+            ";
+            $d_conf = $m_conf->hydrateRaw( $sql );
+            if ( $d_conf->count() > 0 ) {
+                $d_conf = $d_conf->toArray()[0];
+
+                if ( $d_conf['jenis_kirim'] == 'opkg' ) {
+                    if ( $d_conf['jenis_tujuan'] == 'peternak' ) {
+                        $noreg1 = $d_conf['tujuan'];
+                    }
+                }
+
+                if ( $d_conf['jenis_kirim'] == 'opkp' ) {
+                    $noreg1 = $d_conf['asal'];
+                    $noreg2 = $d_conf['tujuan'];
+                }
+            }
+
             $this->result['status'] = 1;
             $this->result['message'] = 'Data Pengiriman Pakan berhasil di ubah.';
+            $this->result['content'] = array(
+                    'id' => $d_terima_pakan->id,
+                    'tanggal' => $params['tgl_terima'],
+                    'delete' => 0,
+                    'message' => 'Data Penerimaan Pakan berhasil di ubah.',
+                    'status_jurnal' => 2,
+                    'status' => 2,
+                    'noreg1' => $noreg1,
+                    'noreg2' => $noreg2
+                );
+
+                
         } catch (\Illuminate\Database\QueryException $e) {
             $this->result['message'] = "Gagal : " . $e->getMessage();
         }
@@ -1182,105 +1634,589 @@ class PengirimanPenerimaanPakan extends Public_Controller
     }
 
 
-
-
     public function delete()
     {
         $params = $this->input->post('params');
 
         try {
+            // Pengiriman
+            $m_kirim_pakan = new \Model\Storage\KirimPakan_model();
+            $now = $m_kirim_pakan->getDate();
+
+            $d_kirim_pakan = $m_kirim_pakan->where('id', $params['id'])->with(['detail'])->first();
+            $deskripsi_log_kirim_pakan = 'di-delete oleh ' . $this->userdata['detail_user']['nama_detuser'];
+            Modules::run( 'base/event/update', $d_kirim_pakan, $deskripsi_log_kirim_pakan);
+
+            $m_kirim_pakan_detail = new \Model\Storage\KirimPakanDetail_model();
+            $m_kirim_pakan_detail->where('id_header', $params['id'])->delete();
+            $m_kirim_pakan->where('id', $params['id'])->delete();
+            // End Pengiriman
 
         
+            
+            $m_terima_pakan = new \Model\Storage\TerimaPakan_model();
+            $now = $m_terima_pakan->getDate();
 
-            $m_terima = new \Model\Storage\TerimaPakan_model();
-            $m_terima_detail = new \Model\Storage\TerimaPakanDetail_model();
-            $m_kirim = new \Model\Storage\KirimPakan_model();
-            $m_kirim_detail = new \Model\Storage\KirimPakanDetail_model();
-            $m_conf = new \Model\Storage\Conf();
+            $d_terima_pakan = $m_terima_pakan->where('id', $params['id'])->with(['detail'])->first();
 
-
-            $list_terima = $m_terima->where('id_kirim_pakan', $params['id'])->get();
-
-            if ($list_terima->count() == 0) {
-                throw new \Exception("Data terima pakan tidak ditemukan.");
-            }
-
-            $tgl_terima = null;
-
-            foreach ($list_terima as $d_terima) {
-
-                $tgl_terima = $d_terima->tgl_terima;
-
-                Modules::run('base/event/update', $d_terima,'di-delete oleh ' . $this->userdata['detail_user']['nama_detuser']);
-
-                $m_terima_detail->where('id_header', $d_terima->id)->delete();
-
-                $m_terima->where('id', $d_terima->id)->delete();
-            }
-
-            Modules::run('base/event/update',$m_kirim->where('id', $params['id'])->first(),
-                'di-delete oleh ' . $this->userdata['detail_user']['nama_detuser']
-            );
-
-            $m_kirim_detail->where('id_header', $params['id'])->delete();
-
-            $m_kirim->where('id', $params['id'])->delete();
+            $deskripsi_log_terima_pakan = 'di-delete oleh ' . $this->userdata['detail_user']['nama_detuser'];
+            Modules::run( 'base/event/update', $d_terima_pakan, $deskripsi_log_terima_pakan);
 
             $noreg1 = null;
             $noreg2 = null;
-
+            $m_conf = new \Model\Storage\Conf();
             $sql = "
-                SELECT kp.jenis_kirim, kp.jenis_tujuan, kp.asal, kp.tujuan 
-                FROM kirim_pakan kp
-                WHERE kp.id = '".$params['id']."'
+                select tp.id, kp.jenis_kirim, kp.jenis_tujuan, kp.asal, kp.tujuan from terima_pakan tp
+                left join
+                    kirim_pakan kp
+                    on
+                        tp.id_kirim_pakan = kp.id
+                where
+                    tp.id = '".$params['id']."'
             ";
-
-            $d_conf = $m_conf->hydrateRaw($sql);
-
-            if ($d_conf->count() > 0) {
+            $d_conf = $m_conf->hydrateRaw( $sql );
+            if ( $d_conf->count() > 0 ) {
                 $d_conf = $d_conf->toArray()[0];
 
-                if ($d_conf['jenis_kirim'] == 'opkg' && $d_conf['jenis_tujuan'] == 'peternak') {
-                    $noreg1 = $d_conf['tujuan'];
+                if ( $d_conf['jenis_kirim'] == 'opkg' ) {
+                    if ( $d_conf['jenis_tujuan'] == 'peternak' ) {
+                        $noreg1 = $d_conf['tujuan'];
+                    }
                 }
 
-                if ($d_conf['jenis_kirim'] == 'opkp') {
+                if ( $d_conf['jenis_kirim'] == 'opkp' ) {
                     $noreg1 = $d_conf['asal'];
                     $noreg2 = $d_conf['tujuan'];
                 }
             }
 
-            $this->result = [
-                'status' => 1,
-                'content' => [
-                    'id' => $params['id'],
-                    'tanggal' => $tgl_terima,
-                    'delete' => 1,
-                    'message' => 'Data Pakan (terima + kirim) berhasil dihapus.',
-                    'status_jurnal' => 3,
-                    'status' => 3,
-                    'noreg1' => $noreg1,
-                    'noreg2' => $noreg2
-                ]
-            ];
+                
+            $this->result['message'] = 'Data Pengiriman Pakan berhasil di hapus.';
+            $this->result['status'] = 1;
+            $this->result['content'] = array(
+                'id' => $d_terima_pakan->id,
+                'tanggal' => $d_terima_pakan->tgl_terima,
+                'delete' => 1,
+                'message' => 'Data Penerimaan Pakan berhasil di hapus.',
+                'status_jurnal' => 3,
+                'status' => 3,
+                'noreg1' => $noreg1,
+                'noreg2' => $noreg2
+            );
 
-            
-
-            $this->result = [
-                'status' => 1,
-                'message' => 'Data Voadip (terima + kirim) berhasil dihapus.'
-            ];
-
-        } catch (\Exception $e) {
-
-            $this->result = [
-                'status' => 0,
-                'message' => 'Gagal : ' . $e->getMessage()
-            ];
+        } catch (\Illuminate\Database\QueryException $e) {
+            $this->result['message'] = "Gagal : " . $e->getMessage();
         }
 
         display_json($this->result);
     }
 
+    // public function delete()
+    // {
+    //     $params = $this->input->post('params');
+
+    //     try {
+
+    //         $m_terima = new \Model\Storage\TerimaPakan_model();
+    //         $m_terima_detail = new \Model\Storage\TerimaPakanDetail_model();
+    //         $m_kirim = new \Model\Storage\KirimPakan_model();
+    //         $m_kirim_detail = new \Model\Storage\KirimPakanDetail_model();
+    //         $m_conf = new \Model\Storage\Conf();
+
+
+    //         $list_terima = $m_terima->where('id_kirim_pakan', $params['id'])->get();
+
+    //         if ($list_terima->count() == 0) {
+    //             throw new \Exception("Data terima pakan tidak ditemukan.");
+    //         }
+
+    //         $tgl_terima = null;
+
+    //         foreach ($list_terima as $d_terima) {
+
+    //             $tgl_terima = $d_terima->tgl_terima;
+
+    //             Modules::run('base/event/update', $d_terima,'di-delete oleh ' . $this->userdata['detail_user']['nama_detuser']);
+
+    //             $m_terima_detail->where('id_header', $d_terima->id)->delete();
+
+    //             $m_terima->where('id', $d_terima->id)->delete();
+    //         }
+
+    //         Modules::run('base/event/update',$m_kirim->where('id', $params['id'])->first(),
+    //             'di-delete oleh ' . $this->userdata['detail_user']['nama_detuser']
+    //         );
+
+    //         $m_kirim_detail->where('id_header', $params['id'])->delete();
+
+    //         $m_kirim->where('id', $params['id'])->delete();
+
+    //         $noreg1 = null;
+    //         $noreg2 = null;
+
+    //         $sql = "
+    //             SELECT kp.jenis_kirim, kp.jenis_tujuan, kp.asal, kp.tujuan 
+    //             FROM kirim_pakan kp
+    //             WHERE kp.id = '".$params['id']."'
+    //         ";
+
+    //         $d_conf = $m_conf->hydrateRaw($sql);
+
+    //         if ($d_conf->count() > 0) {
+    //             $d_conf = $d_conf->toArray()[0];
+
+    //             if ($d_conf['jenis_kirim'] == 'opkg' && $d_conf['jenis_tujuan'] == 'peternak') {
+    //                 $noreg1 = $d_conf['tujuan'];
+    //             }
+
+    //             if ($d_conf['jenis_kirim'] == 'opkp') {
+    //                 $noreg1 = $d_conf['asal'];
+    //                 $noreg2 = $d_conf['tujuan'];
+    //             }
+    //         }
+
+    //         $this->result = [
+    //             'status' => 1,
+    //             'content' => [
+    //                 'id' => $params['id'],
+    //                 'tanggal' => $tgl_terima,
+    //                 'delete' => 1,
+    //                 'message' => 'Data Pakan (terima + kirim) berhasil dihapus.',
+    //                 'status_jurnal' => 3,
+    //                 'status' => 3,
+    //                 'noreg1' => $noreg1,
+    //                 'noreg2' => $noreg2
+    //             ]
+    //         ];
+
+    //         $this->result = [
+    //             'status' => 1,
+    //             'message' => 'Data Voadip (terima + kirim) berhasil dihapus.'
+    //         ];
+
+    //     } catch (\Exception $e) {
+
+    //         $this->result = [
+    //             'status' => 0,
+    //             'message' => 'Gagal : ' . $e->getMessage()
+    //         ];
+    //     }
+
+    //     display_json($this->result);
+    // }
+
+    public function cek_stok_gudang()
+    {
+        $params = $this->input->post('params');
+
+        try {
+            // $today = date('Y-m-d');
+
+            // $m_stok = new \Model\Storage\Stok_model();
+            // $d_stok = $m_stok->where('periode', '<', substr($today, 0, 7).'-01')->orderBy('periode', 'desc')->first();
+
+            // $stok_masuk = 0;
+            // $stok_keluar = 0;
+            // if ( $d_stok ) {
+            //     $tgl_awal = next_date(date("Y-m-t", strtotime($d_stok->periode)));
+            //     $tgl_akhir = $today;
+            //     // $tgl_akhir = '2022-07-25';
+
+            //     /* BARANG MASUK */
+            //     $m_dstok = new \Model\Storage\DetStok_model();
+            //     $stok_masuk += $m_dstok->where('id_header', $d_stok->id)->where('kode_gudang', $params['gudang'])->where('kode_barang', $params['item'])->sum('jumlah');
+
+            //     /* KIRIM PAKAN */
+            //     $m_kirim_pakan = new \Model\Storage\KirimPakan_model();
+            //     $d_kp_ke_gudang = $m_kirim_pakan->select('id')->whereBetween('tgl_kirim', [$tgl_awal, $tgl_akhir])->where('jenis_tujuan', 'gudang')->where('tujuan', $params['gudang'])->get();
+
+            //     if ( $d_kp_ke_gudang->count() > 0 ) {
+            //         $d_kp_ke_gudang = $d_kp_ke_gudang->toArray();
+            //         foreach ($d_kp_ke_gudang as $key => $value) {
+            //             $m_tp = new \Model\Storage\TerimaPakan_model();
+            //             $d_tp = $m_tp->select('id')->where('id_kirim_pakan', $value['id'])->orderBy('id', 'desc')->first();
+
+            //             if ( !empty($d_tp) ) {
+            //                 $d_tp = $d_tp->toArray();
+
+            //                 $m_dtp = new \Model\Storage\TerimaPakanDetail_model();
+            //                 $stok_masuk += $m_dtp->whereIn('id_header', $d_tp)->where('item', $params['item'])->sum('jumlah');
+            //             }
+            //         }
+            //     }
+
+            //     /* RETUR PAKAN */
+            //     $m_retur_pakan = new \Model\Storage\ReturPakan_model();
+            //     $d_rp_ke_gudang = $m_retur_pakan->select('id')->whereBetween('tgl_retur', [$tgl_awal, $tgl_akhir])->where('tujuan', 'gudang')->where('id_tujuan', $params['gudang'])->get();
+
+            //     if ( $d_rp_ke_gudang->count() > 0 ) {
+            //         $d_rp_ke_gudang = $d_rp_ke_gudang->toArray();
+            //         $m_drp = new \Model\Storage\DetReturPakan_model();
+            //         $stok_masuk += $m_drp->whereIn('id_header', $d_rp_ke_gudang)->where('item', $params['item'])->sum('jumlah');
+            //     }
+            //     /* END - BARANG MASUK */
+
+            //     /* BARANG KELUAR  */
+            //     /* KIRIM PAKAN */
+            //     $m_kirim_pakan = new \Model\Storage\KirimPakan_model();
+            //     $d_kp_ke_peternak = $m_kirim_pakan->select('id')->whereBetween('tgl_kirim', [$tgl_awal, $tgl_akhir])->where('jenis_kirim', 'opkg')->where('asal', $params['gudang'])->where('jenis_tujuan', 'peternak')->get();
+
+            //     if ( $d_kp_ke_peternak->count() > 0 ) {
+            //         $d_kp_ke_peternak = $d_kp_ke_peternak->toArray();
+            //         foreach ($d_kp_ke_peternak as $key => $value) {
+            //             $m_tp = new \Model\Storage\TerimaPakan_model();
+            //             $d_tp = $m_tp->select('id')->where('id_kirim_pakan', $value['id'])->orderBy('id', 'desc')->first();
+
+            //             if ( !empty($d_tp) ) {
+            //                 $d_tp = $d_tp->toArray();
+
+            //                 $m_dtp = new \Model\Storage\TerimaPakanDetail_model();
+            //                 $stok_keluar += $m_dtp->whereIn('id_header', $d_tp)->where('item', $params['item'])->sum('jumlah');
+            //             }
+            //         }
+            //     }
+
+            //     /* RETUR PAKAN */
+            //     $m_retur_pakan = new \Model\Storage\ReturPakan_model();
+            //     $d_rp_dari_gudang = $m_retur_pakan->select('id')->whereBetween('tgl_retur', [$tgl_awal, $tgl_akhir])->where('asal', 'gudang')->where('id_asal', $params['gudang'])->get();
+
+            //     if ( $d_rp_dari_gudang->count() > 0 ) {
+            //         $d_rp_dari_gudang = $d_rp_dari_gudang->toArray();
+            //         $m_drp = new \Model\Storage\DetReturPakan_model();
+            //         $stok_keluar += $m_drp->whereIn('id_header', $d_rp_dari_gudang)->where('item', $params['item'])->sum('jumlah');
+            //     }
+            //     /* END - BARANG KELUAR */
+            // }
+
+            $tanggal = date('Y-m-d');
+
+            $start_date = prev_date($tanggal, 7);
+            $end_date = $tanggal;
+
+            $sql = "
+                select sum(dkp.jumlah) as jumlah from det_kirim_pakan dkp
+                left join 
+                    kirim_pakan kp
+                    on
+                        dkp.id_header = kp.id
+                where
+                    dkp.item = '".$params['item']."' and
+                    kp.tgl_kirim between '".$start_date."' and '".$end_date."' and
+                    kp.asal = '".$params['gudang']."' and
+                    not exists (
+                        select * from terima_pakan tp where tp.id_kirim_pakan = kp.id
+                    ) and
+                    dkp.no_sj_asal is null and
+                    kp.jenis_kirim = 'opkg'
+            ";
+
+            $m_conf = new \Model\Storage\Conf();
+            $d_conf = $m_conf->hydrateRaw( $sql );
+
+            $jml_kirim = 0;
+            if ( $d_conf->count() > 0 ) {
+                $jml_kirim = $d_conf->toArray()[0]['jumlah'];
+            }
+
+            $m_stok = new \Model\Storage\Stok_model();
+            $sql = "
+                select sum(ds.jml_stok) as jumlah from det_stok ds
+                where 
+                    ds.id_header in (
+                        select max(id) as id from stok s where s.periode in (
+                            select max(cast(s.periode as date)) as periode from det_stok ds 
+                            left join
+                                stok s 
+                                on
+                                    ds.id_header = s.id 
+                            where 
+                                ds.kode_barang = '".$params['item']."' and 
+                                ds.kode_gudang = ".$params['gudang']." and
+                                s.periode <= '".$tanggal."'
+                            group by
+                                ds.kode_barang,
+                                ds.kode_gudang
+                        )
+                    ) and
+                    ds.kode_barang = '".$params['item']."' and 
+                    ds.kode_gudang = ".$params['gudang']."
+            ";
+
+            $d_stok = $m_stok->hydrateRaw( $sql );
+
+            $jml_stok = 0;
+            if ( $d_stok->count() > 0 ) {
+                $jml_stok = $d_stok->toArray()[0]['jumlah'];
+            }
+
+            // $d_dstok = null;
+            // while ( empty($d_dstok) ) {
+            //     $m_stok = new \Model\Storage\Stok_model();
+            //     $d_stok = $m_stok->where('periode', '<=', $tanggal)->orderBy('periode', 'desc')->first();
+
+            //     $m_dstok = new \Model\Storage\DetStok_model();
+            //     $d_dstok = $m_dstok->where('id_header', $d_stok->id)->where('kode_gudang', $params['gudang'])->where('kode_barang', $params['item'])->first();
+
+            //     if ( !$d_dstok ) {
+            //         $d_dstok = null;
+            //         $tanggal = prev_date( $tanggal );
+            //     }
+            // }
+
+            // if ( $d_dstok ) {
+            //     $m_dstok = new \Model\Storage\DetStok_model();
+            //     $d_dstok = $m_dstok->where('id_header', $d_stok->id)->where('kode_gudang', $params['gudang'])->where('kode_barang', $params['item'])->sum('jml_stok');
+            // }
+
+            $stok = (($jml_stok - ($params['jml'] + $jml_kirim)) > 0) ? $jml_stok - ($params['jml'] + $jml_kirim) : 0;
+
+            $message = null;
+            $status_stok = 1;
+
+            if ( $jml_stok < ($params['jml'] + $jml_kirim) ) {
+                $status_stok = 0;
+                $message = '<b style="color: red;">STOK TIDAK MENCUKUPI !!!</b><br><br>STOK GUDANG : '.($jml_stok - $jml_kirim).'<br>JUMLAH YANG ANDA INPUT : '.$params['jml'].'<br>JUMLAH YANG ANDA MASUKKAN MELEBIHI STOK YANG ADA.';
+            }
+            
+            $this->result['status'] = 1;
+            $this->result['stok'] = $stok;
+            $this->result['status_stok'] = $status_stok;
+            $this->result['message'] = $message;
+        } catch (\Illuminate\Database\QueryException $e) {
+            $this->result['message'] = "Gagal : " . $e->getMessage();
+        }
+
+        display_json($this->result);
+    }
+
+    public function listActivity()
+    {
+        $params = $this->input->get('params');
     
+
+        $m_kirim_pakan = new \Model\Storage\KirimPakan_model();
+        $d_kirim_pakan = $m_kirim_pakan->where('id', $params['id'])->with(['logs'])->first()->toArray();
+
+        $data_kirim_pakan = array(
+            'no_order'      => $params['no_order'],
+            'tgl_kirim'     => $params['tgl_kirim'],
+            'asal'          => $params['asal'],
+            'tujuan'        => $params['tujuan'],
+            'nopol'         => $params['nopol'],
+            'logs'          => $d_kirim_pakan['logs']
+        );
+
+        $m_terima_pakan = new \Model\Storage\TerimaPakan_model();
+        $d_terima_pakan = $m_terima_pakan->where('id_kirim_pakan', $params['id'])->with(['logs'])->first()->toArray();
+
+        $data_terima_pakan = array(
+            'no_sj'         => $d_kirim_pakan['no_sj'],
+            'tgl_terima'    => $d_terima_pakan['tgl_terima'],
+            'asal'          => $params['asal'],
+            'tujuan'        => $params['tujuan'],
+            'nopol'         => $params['nopol'],
+            'logs'          => $d_terima_pakan['logs']
+        );
+
+        // echo "<pre>";
+        // print_r($data_terima_pakan);
+        // die;
+
+        $content['data_kirim']    = $data_kirim_pakan;
+        $content['data_terima']   = $data_terima_pakan;
+
+        $html = $this->load->view('transaksi/pengiriman_penerimaan_pakan/v_list_activity', $content, true);
+
+        echo $html;
+    }
+
+    public function getSjAsal()
+    {
+        $params = $this->input->post('params');
+        try {
+            $noreg = $params['noreg'];
+
+            $data = $this->getDataSjAsal( $noreg );
+            
+            $this->result['status'] = 1;
+            $this->result['content'] = array('data' => $data);
+        } catch (Exception $e) {
+            $this->result['message'] = "Gagal : " . $e->getMessage();
+        }
+
+        display_json( $this->result );
+    }
+
+    public function getDataSjAsal($noreg)
+    {
+        $m_kirim_pakan = new \Model\Storage\KirimPakan_model();
+        $d_kirim_pakan = $m_kirim_pakan->where('tujuan', $noreg)->with(['terima'])->get();
+
+        $data = array();
+        if ( $d_kirim_pakan->count() > 0 ) {
+            $d_kirim_pakan = $d_kirim_pakan->toArray();
+
+            $_data = null;
+            foreach ($d_kirim_pakan as $k => $v) {
+                if ( !empty($v['terima']) ) {
+                    $m_dtp = new \Model\Storage\TerimaPakanDetail_model();
+                    $d_dtp = $m_dtp->where('id_header', $v['terima']['id'])->where('jumlah', '>', 0)->with(['d_barang'])->get();
+
+                    $barang = null;
+                    if ( $d_dtp->count() > 0 ) {
+                        $d_dtp = $d_dtp->toArray();
+
+                        $_barang = null;
+                        foreach ($d_dtp as $k_dtp => $v_dtp) {
+                            $key = $v_dtp['item'];
+
+                            if ( !isset($_barang[ $key ]) ) {
+                                $_barang[ $key ] = array(
+                                    'kode' => $v_dtp['item'],
+                                    'nama' => $v_dtp['d_barang']['nama'],
+                                    'jumlah' => $v_dtp['jumlah']
+                                );
+                            } else {
+                                $_barang[ $key ]['jumlah'] += $v_dtp['jumlah'];
+                            }
+                        }
+
+                        if ( !empty($_barang) ) {
+                            foreach ($_barang as $key => $value) {
+                                $barang[] = $value;
+                            }
+                        }
+                    }
+
+                    $key = str_replace('-', '', $v['terima']['tgl_terima']).'|'.$v['no_sj'];
+                    $_data[ $key ] = array(
+                        'text_tgl' => strtoupper((tglIndonesia($v['terima']['tgl_terima'], '-', ' '))), 
+                        'no_sj' => $v['no_sj'],
+                        'barang' => $barang
+                    );
+                }
+            }
+
+            if ( !empty($_data) ) {
+                ksort($_data);
+
+                foreach ($_data as $k_data => $v_data) {
+                    $data[] = $v_data;
+                }
+            }
+        }
+
+        return $data;
+    }
+
+    public function cetak_nota_kiriman($id) {
+        $this->load->library('PDFGenerator');
+
+        $m_conf = new \Model\Storage\Conf();
+        $sql = "
+            select
+                kp.no_sj,
+                kp.tgl_trans as tanggal,
+                kp.no_polisi,
+                kp.sopir,
+                mtr.*,
+                dkp.item,
+                dkp.jumlah,
+                (dkp.jumlah / 50) as zak,
+                brg.nama as nama_barang,
+                dkp.kondisi as keterangan
+            from det_kirim_pakan dkp 
+            left join
+                kirim_pakan kp
+                on
+                    dkp.id_header = kp.id
+            left join
+                (
+                    select brg1.* from barang brg1
+                    right join
+                        (select max(id) as id, kode from barang where tipe = 'pakan' group by kode) brg2
+                        on
+                            brg1.id = brg2.id
+                ) brg
+                on
+                    dkp.item = brg.kode
+            left join
+                (
+                    select
+                        rs.noreg,
+                        rs.nim,
+                        m.nama,
+                        k.alamat_jalan,
+                        k.alamat_rt,
+                        k.alamat_rw,
+                        k.alamat_kelurahan,
+                        l_kec.nama as alamat_kecamatan,
+                        l_kab_kota.nama as alamat_kab_kota,
+                        l_prov.nama as alamat_prov
+                    from rdim_submit rs
+                    left join
+                        (
+                            select mm1.* from mitra_mapping mm1
+                            right join
+                                (select max(id) as id, nim from mitra_mapping group by nim) mm2
+                                on
+                                    mm1.id = mm2.id
+                        ) mm
+                        on
+                            rs.nim = mm.nim
+                    left join
+                        mitra m 
+                        on
+                            mm.mitra = m.id
+                    left join
+                        kandang k 
+                        on
+                            k.mitra_mapping = mm.id and
+                            k.kandang = cast(SUBSTRING(rs.noreg, 10, 2) as int)
+                    left join
+                        lokasi l_kec 
+                        on
+                            l_kec.id = k.alamat_kecamatan
+                    left join
+                        lokasi l_kab_kota
+                        on
+                            l_kab_kota.id = l_kec.induk
+                    left join
+                        lokasi l_prov
+                        on
+                            l_prov.id = l_kab_kota.induk
+                ) mtr
+                on
+                    kp.tujuan = mtr.noreg
+            where
+                kp.id = ".$id."
+        ";
+        $d_conf = $m_conf->hydrateRaw( $sql );
+
+        $no_sj = null;
+        $data = null;
+        if ( $d_conf->count() > 0 ) {
+            $data = $d_conf->toArray();
+            $no_sj = $data[0]['no_sj'];
+        }
+
+        $content['data'] = $data;
+        $res_view_html = $this->load->view('transaksi/pengiriman_penerimaan_pakan/v_cetak_nota_kiriman', $content, true);
+
+        $this->pdfgenerator->generate($res_view_html, "pengiriman_penerimaan_pakan".$no_sj, 'a5', 'portrait');
+    }
+
+    public function tes($no_spm='')
+    {
+        $m_gdg = new \Model\Storage\Gudang_model();
+        $d_gdg = $m_gdg->where('id', 8)->with(['dUnit'])->first();
+
+        $kode_unit = null;
+        if ( $d_gdg ) {
+            $d_gdg = $d_gdg->toArray();
+            $kode_unit = $d_gdg['d_unit']['kode'];
+        }
+
+        cetak_r( $kode_unit );
+    }
 }

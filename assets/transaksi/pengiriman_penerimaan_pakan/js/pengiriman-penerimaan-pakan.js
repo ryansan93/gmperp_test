@@ -86,45 +86,37 @@ var pp = {
     }, // end - removeRowChild
 
     changeTabActive: function(elm) {
-		event.preventDefault();
-   
-		let tab_selected = 'pengiriman_pakan';
 
-		// console.log(tab_selected)
+		$("#pengiriman").html("<div style='width:100%; text-align:center;'> <div class='spinner-load'></div> Proses load data</div>");
+        var vhref = $(elm).data('href');
+        // change tab-menu
         $('.nav-tabs').find('a').removeClass('active');
         $('.nav-tabs').find('a').removeClass('show');
-        $('.nav-tabs').find('li a[data-tab='+tab_selected+']').addClass('show');
-        $('.nav-tabs').find('li a[data-tab='+tab_selected+']').addClass('active');
+        $('.nav-tabs').find('li a[data-tab='+vhref+']').addClass('show');
+        $('.nav-tabs').find('li a[data-tab='+vhref+']').addClass('active');
 
         // change tab-content
         $('.tab-pane').removeClass('show');
         $('.tab-pane').removeClass('active');
-        $('div#'+tab_selected).addClass('show');
-        $('div#'+tab_selected).addClass('active');
+        $('div#'+vhref).addClass('show');
+        $('div#'+vhref).addClass('active');
 
-        // if ( vhref == 'pengiriman_pakan' ) {
-		var v_id = $(elm).attr('data-id');
-		var v_resubmit = $(elm).attr('data-resubmit');
+        if ( vhref == 'pengiriman' ) {
+            var v_id = $(elm).attr('data-id');
+            var v_resubmit = $(elm).attr('data-resubmit');
 
-		pp.load_form(v_id, v_resubmit);
-        // };
+            pp.load_form(v_id, v_resubmit);
+        };
     }, // end - changeTabActive
 
     load_form: function(v_id = null, v_resubmit = null) {
-
-		
-		let tab_selected = 'pengiriman_pakan';
-		let view = 'load_form_pakan';
-		
-        var dcontent = $('div#'+tab_selected);
-
-		 $(dcontent).html('<div style="width:100%; text-align:center;"><i>Proses Load Data.. </i></div>');
+        var dcontent = $('div#pengiriman');
 
         $.ajax({
-            url : 'transaksi/PengirimanPenerimaanPakan/'+ view,
+            url : 'transaksi/PengirimanPenerimaanPakan/load_form',
             data : {
                 'id' :  v_id,
-                'resubmit': v_resubmit,
+                'resubmit': v_resubmit
             },
             type : 'GET',
             dataType : 'HTML',
@@ -142,9 +134,7 @@ var pp = {
                 		hideLoading();
                 	}
                 } else {
-                		hideLoading();
-                	
-					
+                	hideLoading();
                 }
             },
         });
@@ -156,7 +146,6 @@ var pp = {
     	var start_date = $(div_riwayat).find('[name=startDate]').data('DateTimePicker').date();
 		var end_date = $(div_riwayat).find('[name=endDate]').data('DateTimePicker').date();
 		var kode_unit = $(div_riwayat).find('select.unit').val();
-		var jenis = $(div_riwayat).find("#jenis_transaksi").val();
 
 		if ( empty(start_date) || empty(end_date) ) {
 			bootbox.alert('Harap lengkapi periode terlebih dahulu.');
@@ -167,8 +156,7 @@ var pp = {
 			var params = {
 				'start_date': start_date,
 				'end_date': end_date,
-				'kode_unit': kode_unit,
-				'jenis': jenis,
+				'kode_unit': kode_unit
 			};
 
 			$.ajax({
@@ -182,16 +170,16 @@ var pp = {
 				success: function(data) {
 					hideLoading();
 					if ( data.status == 1 ) {
-						$(div_riwayat).find('table.tbl_data tbody').html( data.content );
+						$(div_riwayat).find('table.tbl_pengiriman tbody').html( data.content );
 					};
 				},
 		    });
 		}
     }, // end - get_lists
 
-    get_op_not_kirim_pakan: function(elm) {
+    get_op_not_kirim: function(elm) {
     	var div_filter = $(elm).closest('div.filter');
-    	var div_action = $(div_filter).closest('div#pengiriman_pakan');
+    	var div_action = $(div_filter).closest('div#pengiriman');
 
     	var unit = $(div_filter).find('.unit').val();
     	var tgl_kirim = $(div_filter).find('div#tgl_kirim_op input').val();
@@ -205,7 +193,7 @@ var pp = {
     		};
 
     		$.ajax({
-				url: 'transaksi/PengirimanPenerimaanPakan/get_op_not_kirim_pakan',
+				url: 'transaksi/PengirimanPenerimaanPakan/get_op_not_kirim',
 				data: {
 					'params': params
 				},
@@ -215,9 +203,7 @@ var pp = {
 					showLoading();
 				},
 				success: function(data) {
-					// console.log(data)
-					var id = $(div_action).find('select.no_order_pakan').data('id');
-					// console.log(id)
+					var id = $(div_action).find('select.no_order').data('id');
 
 					var option = '<option value="">-- Pilih No. Order --</option>';
 					if ( data.content.length > 0 ) {
@@ -233,7 +219,7 @@ var pp = {
 					}
 
 					// $(div_action).find('select.no_order').removeAttr('disabled');
-					$(div_action).find('select.no_order_pakan').html(option);
+					$(div_action).find('select.no_order').html(option);
 
 					hideLoading();
 				},
@@ -419,9 +405,9 @@ var pp = {
 	    });
 	}, // end - get_list_table
 
-	cekStokPakan: function(callback, params) {
+	cekStok: function(callback, params) {
 		$.ajax({
-			url: 'transaksi/PengirimanPenerimaanPakan/cekStokPakan',
+			url: 'transaksi/PengirimanPenerimaanPakan/cekStok',
 			data: {
 				'params': params
 			},
@@ -433,7 +419,7 @@ var pp = {
 			success: function(data) {
 				hideLoading();
 
-				// console.log( data );
+				console.log( data );
 				
 				callback({'status': data.status, 'message': data.message});
 			},
@@ -441,10 +427,7 @@ var pp = {
 	}, // end - cekStok
 
 	save_kirim_pakan: function() {
-		var div_pengiriman = $('div#pengiriman_pakan');
-
-		// console.log(div_pengiriman);
-		// return false
+		var div_pengiriman = $('div#pengiriman');
 
 		var err = 0;
 		$.map( $(div_pengiriman).find('[data-required=1]:not(.hide)'), function(ipt) {
@@ -472,37 +455,37 @@ var pp = {
 		if ( err > 0 ) {
 			bootbox.alert('Harap lengkapi data terlebih dahulu.');
 		} else {
-			var tgl_kirim 	= dateSQL( div_pengiriman.find('[name=tgl_kirim]').data('DateTimePicker').date() );
-			var tgl_terima  = dateSQL( div_pengiriman.find('[name=tgl_terima]').data('DateTimePicker').date() );
+			var tgl_kirim = dateSQL( $('[name=tgl_kirim]').data('DateTimePicker').date() );
+			var tgl_terima = dateSQL( $('[name=tgl_terima]').data('DateTimePicker').date() );
 			var jenis_kirim = $('.jenis_kirim').val();
 			var no_order = null;
 			var asal = null;
 			if ( jenis_kirim == 'opks' ) {
-				no_order 	= div_pengiriman.find('select.no_order_pakan').val();
-				asal 		= div_pengiriman.find('input.asal').data('id');
+				no_order = $('select.no_order').val();
+				asal = $('input.asal').data('id');
 			} else {
-				no_order 	= div_pengiriman.find('input.no_order_pakan').val();
+				no_order = $('input.no_order').val();
 				if ( jenis_kirim == 'opkp' ) {
-					asal 	= div_pengiriman.find('select.peternak_asal').select2('val');
+					asal = $('select.peternak_asal').select2('val');
 				} else if ( jenis_kirim == 'opkg' ) {
-					asal 	= div_pengiriman.find('select.gudang_asal').select2('val');
+					asal = $('select.gudang_asal').select2('val');
 				}
 			}
-			var jenis_tujuan = div_pengiriman.find('select.tujuan').val();
+			var jenis_tujuan = $('select.tujuan').val();
 			var tujuan = null;
 			if ( jenis_tujuan == 'peternak' ) {
-				tujuan = div_pengiriman.find('select.peternak').select2('val')
+				tujuan = $('select.peternak').select2('val')
 			} else {
-				tujuan = div_pengiriman.find('select.gudang').select2('val')
+				tujuan = $('select.gudang').select2('val')
 			}
-			var ekspedisi_id = empty(div_pengiriman.find('.ekspedisi').select2('val')) ? div_pengiriman.find('.ekspedisi').select2('val') : div_pengiriman.find('.ekspedisi').val()
-			var ekspedisi 	= div_pengiriman.find('.ekspedisi option:selected').attr('data-nama');
-			var nopol 		= div_pengiriman.find('input.no_pol').val();
-			var sopir 		= div_pengiriman.find('input.sopir').val();
-			var no_sj 		= div_pengiriman.find('input.no_sj').val();
-			var ongkos_angkut = numeral.unformat(div_pengiriman.find('input.ongkos_angkut').val());
+			var ekspedisi_id = empty($('.ekspedisi').select2('val')) ? $('.ekspedisi').select2('val') : $('.ekspedisi').val()
+			var ekspedisi = $('.ekspedisi option:selected').attr('data-nama');
+			var nopol = $('input.no_pol').val();
+			var sopir = $('input.sopir').val();
+			var no_sj = $('input.no_sj').val();
+			var ongkos_angkut = numeral.unformat($('input.ongkos_angkut').val());
 
-			var detail = $.map( $('table.tbl_detail_brg_pakan:not(.hide) tbody tr'), function(tr) {
+			var detail = $.map( $('table.tbl_detail_brg:not(.hide) tbody tr'), function(tr) {
 				var _data = {
 					'no_sj_asal': ($(tr).find('select.no_sj_asal').length > 0) ? $(tr).find('select.no_sj_asal').val() : null,
 					'barang': $(tr).find('select.barang').val(),
@@ -514,8 +497,8 @@ var pp = {
 			});
 
 			var data = {
-				'tgl_kirim': tgl_kirim,
-				'tgl_terima': tgl_terima,
+				'tgl_kirim' : tgl_kirim,
+				'tgl_terima' : tgl_terima,
 				'jenis_kirim': jenis_kirim,
 				'no_order': no_order,
 				'asal': asal,
@@ -530,7 +513,7 @@ var pp = {
 				'detail': detail
 			};
 
-			pp.cekStokPakan(function(_data) {
+			pp.cekStok(function(_data) {
 				if ( _data.status != 1 ) {
 					bootbox.alert(_data.message);
 				} else {
@@ -549,7 +532,7 @@ var pp = {
 		var tbody = $(table).find('tbody');
 
 		$.ajax({
-			url: 'transaksi/PengirimanPenerimaanPakan/save_pakan',
+			url: 'transaksi/PengirimanPenerimaanPakan/save',
 			data: {
 				'params': params
 			},
@@ -560,20 +543,9 @@ var pp = {
 			},
 			success: function(data) {
 				// hideLoading();
-				if ( data.status == 1 ) {
-					bootbox.alert(data.message, function() {
-						var div_riwayat = $('div#riwayat');
-				    	var start_date = $(div_riwayat).find('[name=startDate]').data('DateTimePicker').date();
-						var end_date = $(div_riwayat).find('[name=endDate]').data('DateTimePicker').date();
-						if ( !empty(start_date) && !empty(end_date) ) {
-							// pp.get_lists();
-						}
-
-						// var btn = '<button data-href="riwayat">';
-						// pp.changeTabActive(btn);
-						// pp.load_form();
-						pp.load_riwayat()
-					});
+				if ( data.status == 1 ) {					
+					// pp.hitungStokByTransaksi(data.content);
+					pp.execInsertKonfirmasi(data.content);
 				} else {
 					bootbox.alert(data.message);
 				};
@@ -582,59 +554,188 @@ var pp = {
 	}, // end - exec_save_kirim_pakan
 
 	
-	delete: function(elm) {
-		var id = $(elm).data('id');
+	
 
-		var params = { 'id': id };
+	edit_kirim_pakan: function(elm) {
+		var div_pengiriman = $('div#pengiriman');
 
-		bootbox.confirm({
-			message: 'Apakah anda yakin ingin menghapus data ?',
-			callback: function(result) {
-				if (result) {
-					$.ajax({
-						url: 'transaksi/PengirimanPenerimaanPakan/delete',
-						data: {
-							'params': params
-						},
-						type: 'POST',
-						dataType: 'JSON',
-						beforeSend: function() {
-							showLoading();
-						},
-						success: function(data) {
-							hideLoading();
-							console.log(data);
+		var err = 0;
+		$.map( $(div_pengiriman).find('[data-required=1]:not(.hide)'), function(ipt) {
+			var table = $(ipt).closest('table');
 
-							if (data.status == 1) {
-								bootbox.hideAll();
-
-								var dialog = bootbox.alert({
-									message: data.message
-								});
-
-								dialog.on('hidden.bs.modal', function () {
-									window.location.reload();
-								});
-
-							} else {
-								bootbox.alert({
-									message: data.message
-								});
-							}
-						},
-						error: function(xhr, status, error) {
-							hideLoading();
-							console.error(error);
-
-							bootbox.alert({
-								message: 'Terjadi kesalahan pada server.'
-							});
-						}
-					});
+			if ( $(table).length > 0 ) {
+				if ( !$(table).hasClass('hide') ) {
+					if ( empty($(ipt).val()) ) {
+						$(ipt).parent().addClass('has-error');
+						err++;
+					} else {
+						$(ipt).parent().removeClass('has-error');
+					}
+				}
+			} else {
+				if ( empty($(ipt).val()) ) {
+					$(ipt).parent().addClass('has-error');
+					err++;
+				} else {
+					$(ipt).parent().removeClass('has-error');
 				}
 			}
 		});
-	},
+
+		if ( err > 0 ) {
+			bootbox.alert('Harap lengkapi data terlebih dahulu.');
+		} else {
+			var id 				= $(elm).data('id');
+			var tgl_kirim 		= dateSQL( $('[name=tgl_kirim]').data('DateTimePicker').date() );
+			var tgl_terima 		= dateSQL( $('[name=tgl_terima]').data('DateTimePicker').date() );
+			var jenis_kirim 	= $('.jenis_kirim').val();
+			var no_order 		= null;
+			var asal 			= null;
+			if ( jenis_kirim == 'opks' ) {
+				no_order 		= $('select.no_order').val();
+				asal 			= $('input.asal').data('id');
+			} else {
+				no_order 		= $('input.no_order').val();
+				if ( jenis_kirim == 'opkp' ) {
+					asal 		= $('select.peternak_asal').select2('val');
+				} else if ( jenis_kirim == 'opkg' ) {
+					asal 		= $('select.gudang_asal').select2('val');
+				}
+			}
+			var jenis_tujuan 	= $('select.tujuan').val();
+			var tujuan 			= null;
+			if ( jenis_tujuan == 'peternak' ) {
+				tujuan 			= $('select.peternak').select2('val')
+			} else {
+				tujuan 			= $('select.gudang').select2('val')
+			}
+			var ekspedisi_id 	= empty($('.ekspedisi').select2('val')) ? $('.ekspedisi').select2('val') : $('.ekspedisi').val()
+			var ekspedisi 		= $('.ekspedisi option:selected').attr('data-nama');
+			var nopol 			= $('input.no_pol').val();
+			var sopir 			= $('input.sopir').val();
+			var no_sj 			= $('input.no_sj').val();
+			var ongkos_angkut 	= numeral.unformat($('input.ongkos_angkut').val());
+
+			var detail = $.map( $('table.tbl_detail_brg:not(.hide) tbody tr'), function(tr) {
+				var _data = {
+					'no_sj_asal': ($(tr).find('select.no_sj_asal').length > 0) ? $(tr).find('select.no_sj_asal').val() : null,
+					'barang': $(tr).find('select.barang').val(),
+					'jumlah': numeral.unformat( $(tr).find('input.jumlah').val() ),
+					'kondisi': $(tr).find('input.kondisi').val()
+				}
+
+				return _data;
+			});
+
+			var data = {
+				'id': id,
+				'tgl_kirim': tgl_kirim,
+				'tgl_terima': tgl_terima,
+				'jenis_kirim': jenis_kirim,
+				'no_order': no_order,
+				'asal': asal,
+				'jenis_tujuan': jenis_tujuan,
+				'tujuan': tujuan,
+				'ekspedisi_id': ekspedisi_id,
+				'ekspedisi': ekspedisi,
+				'nopol': nopol,
+				'sopir': sopir,
+				'no_sj': no_sj,
+				'ongkos_angkut': ongkos_angkut,
+				'detail': detail
+			};
+
+			pp.cekStok(function(_data) {
+				if ( _data.status != 1 ) {
+					bootbox.alert(_data.message);
+				} else {
+					bootbox.confirm('Apakah anda yakin ingin mengubah data ?', function(result) {
+						if (result) {
+							pp.exec_edit_kirim_pakan(data);
+						}
+					});
+				}
+			}, data);
+
+			// bootbox.confirm('Apakah anda yakin ingin mengubah data ?', function(result) {
+			// 	if (result) {
+
+			// 		pp.exec_edit_kirim_pakan(data);
+			// 	}
+			// });
+		}
+	}, // end - edit_kirim_pakan
+
+	exec_edit_kirim_pakan: function(params = null) {
+		var table = $('table');
+		var tbody = $(table).find('tbody');
+
+		$.ajax({
+			url: 'transaksi/PengirimanPenerimaanPakan/edit',
+			data: {
+				'params': params
+			},
+			type: 'POST',
+			dataType: 'JSON',
+			beforeSend: function() {
+				showLoading();
+			},
+			success: function(data) {
+				// hideLoading();
+				// if ( data.status == 1 ) {
+				// 	bootbox.alert(data.message, function() {
+				// 		var btn = '<button data-href="riwayat">';
+				// 		pp.changeTabActive(btn);
+				// 		pp.load_form();
+				// 	});
+				// } else {
+				// 	bootbox.alert(data.message);
+				// };
+
+				if ( data.status == 1 ) {
+					// pp.hitungStokByTransaksi(data.content);
+					pp.execInsertKonfirmasi(data.content);
+				} else {
+					hideLoading();
+					bootbox.alert(data.message);
+				};
+			},
+	    });
+	}, // end - exec_edit_kirim_pakan
+
+	delete: function(elm) {
+		var id = $(elm).data('id');
+
+		var params = {'id': id};
+
+		bootbox.confirm('Apakah anda yakin ingin menghapus data ?', function(result) {
+			if ( result ) {
+				$.ajax({
+					url: 'transaksi/PengirimanPenerimaanPakan/delete',
+					data: {
+						'params': params
+					},
+					type: 'POST',
+					dataType: 'JSON',
+					beforeSend: function() {
+						showLoading();
+					},
+					success: function(data) {
+						hideLoading();
+						if ( data.status == 1 ) {
+							bootbox.alert(data.message, function() {
+								// pp.get_lists();
+								// pp.load_form();
+								pp.execInsertKonfirmasi(data.content);
+							});
+						} else {
+							bootbox.alert(data.message);
+						};
+					},
+			    });
+			}
+		});
+	}, // end - delete
 
 	cek_gudang: function(elm) {
 		var gudang = $(elm).val();
@@ -694,13 +795,12 @@ var pp = {
 		let tr = $(elm).closest('tr');
 
         let params = {
-            'id' 		      : $(elm).data('id'),
-            'no_order' 	      : $(tr).find('td.no_order').text(),
-            'tgl_kirim'       : $(tr).find('td.tgl_kirim').text(),
-            'asal' 			  : $(tr).find('td.asal').text(),
-            'tujuan' 		  : $(tr).find('td.tujuan').text(),
-            'nopol' 		  : $(tr).find('td.nopol').text(),
-			'jenis_transaksi' : $("#jenis_transaksi").val(),
+            'id' : $(elm).data('id'),
+            'no_order' : $(tr).find('td.no_order').text(),
+            'tgl_kirim' : $(tr).find('td.tgl_kirim').text(),
+            'asal' : $(tr).find('td.asal').text(),
+            'tujuan' : $(tr).find('td.tujuan').text(),
+            'nopol' : $(tr).find('td.nopol').text(),
         }
 
         $.get('transaksi/PengirimanPenerimaanPakan/listActivity',{
@@ -805,126 +905,177 @@ var pp = {
 		}
 	}, // end - cekJmlPindah
 
+	execInsertKonfirmasi: function(content) {
+        var params = content;
 
-	edit_kirim_pakan: function(elm) {
-		var div_pengiriman = $('div#pengiriman_pakan');
+        $.ajax({
+            url: 'transaksi/PengirimanPenerimaanPakan/execInsertKonfirmasi',
+            data: {
+                'params': params
+            },
+            type: 'POST',
+            dataType: 'JSON',
+            beforeSend: function() {
+                $('span.txt-msg-loading').text('Cek konfirmasi . . .');
+            },
+            success: function(data) {
+                if ( data.status == 1 ) {
+                    pp.hitungStokByTransaksi(data.content);
+                } else {
+                    hideLoading();
+                    bootbox.alert(data.message);
+                };
+            },
+        });
+    }, // end - execInsertKonfirmasi
 
-		var err = 0;
-		$.map( $(div_pengiriman).find('[data-required=1]:not(.hide)'), function(ipt) {
-			var table = $(ipt).closest('table');
-
-			if ( $(table).length > 0 ) {
-				if ( !$(table).hasClass('hide') ) {
-					if ( empty($(ipt).val()) ) {
-						$(ipt).parent().addClass('has-error');
-						err++;
-					} else {
-						$(ipt).parent().removeClass('has-error');
-					}
-				}
-			} else {
-				if ( empty($(ipt).val()) ) {
-					$(ipt).parent().addClass('has-error');
-					err++;
-				} else {
-					$(ipt).parent().removeClass('has-error');
-				}
-			}
-		});
-
-		if ( err > 0 ) {
-			bootbox.alert('Harap lengkapi data terlebih dahulu.');
-		} else {
-			var id 			= div_pengiriman.find(elm).data('id');
-			var tgl_kirim 	= dateSQL( div_pengiriman.find('[name=tgl_kirim]').data('DateTimePicker').date() );
-			var tgl_terima 	= dateSQL( div_pengiriman.find('[name=tgl_terima]').data('DateTimePicker').date() );
-			var jenis_kirim = div_pengiriman.find('.jenis_kirim').val();
-			var no_order	= null;
-			var asal 		= null;
-			if ( jenis_kirim == 'opks' ) {
-				no_order 	= div_pengiriman.find('select.no_order').val();
-				asal 		= div_pengiriman.find('input.asal').data('id');
-			} else {
-				no_order 	= div_pengiriman.find('input.no_order').val();
-				if ( jenis_kirim == 'opkp' ) {
-					asal 	= div_pengiriman.find('select.peternak_asal').select2('val');
-				} else if ( jenis_kirim == 'opkg' ) {
-					asal 	= div_pengiriman.find('select.gudang_asal').select2('val');
-				}
-			}
-			var jenis_tujuan = $('select.tujuan').val();
-			var tujuan 	     = null;
-			if ( jenis_tujuan == 'peternak' ) {
-				tujuan 		= div_pengiriman.find('select.peternak').select2('val')
-			} else {
-				tujuan 		= div_pengiriman.find('select.gudang').select2('val')
-			}
-			var ekspedisi_id	= empty(div_pengiriman.find('.ekspedisi').select2('val')) ? div_pengiriman.find('.ekspedisi').select2('val') : div_pengiriman.find('.ekspedisi').val()
-			var ekspedisi		= div_pengiriman.find('.ekspedisi option:selected').attr('data-nama');
-			var nopol 			= div_pengiriman.find('input.no_pol').val();
-			var sopir 			= div_pengiriman.find('input.sopir').val();
-			var no_sj 			= div_pengiriman.find('input.no_sj').val();
-			var ongkos_angkut 	= numeral.unformat($('input.ongkos_angkut').val());
-
-			var detail = $.map( $('table.tbl_detail_brg_pakan_edit:not(.hide) tbody tr'), function(tr) {
-				var _data = {
-					'no_sj_asal': ($(tr).find('select.no_sj_asal').length > 0) ? $(tr).find('select.no_sj_asal').val() : null,
-					'barang': $(tr).find('select.barang').val(),
-					'jumlah': numeral.unformat( $(tr).find('input.jumlah').val() ),
-					'kondisi': $(tr).find('input.kondisi').val()
-				}
-
-				return _data;
-			});
-
-			var data = {
-				'id': id,
-				'tgl_kirim': tgl_kirim,
-				'tgl_terima': tgl_terima,
-				'jenis_kirim': jenis_kirim,
-				'no_order': no_order,
-				'asal': asal,
-				'jenis_tujuan': jenis_tujuan,
-				'tujuan': tujuan,
-				'ekspedisi_id': ekspedisi_id,
-				'ekspedisi': ekspedisi,
-				'nopol': nopol,
-				'sopir': sopir,
-				'no_sj': no_sj,
-				'ongkos_angkut': ongkos_angkut,
-				'detail': detail
-			};
-
-			pp.cekStokPakan(function(_data) {
-				if ( _data.status != 1 ) {
-					bootbox.alert(_data.message);
-				} else {
-					bootbox.confirm('Apakah anda yakin ingin mengubah data ?', function(result) {
-						if (result) {
-							pp.exec_edit_kirim_pakan(data);
-						}
-					});
-				}
-			}, data);
-
-			// bootbox.confirm('Apakah anda yakin ingin mengubah data ?', function(result) {
-			// 	if (result) {
-
-			// 		pp.exec_edit_kirim_pakan(data);
-			// 	}
-			// });
-		}
-	}, // end - edit_kirim_pakan
-
-	exec_edit_kirim_pakan: function(params = null) {
-		var table = $('table');
-		var tbody = $(table).find('tbody');
+	hitungStokByTransaksi:(content) => {
+		var params = content;
 
 		$.ajax({
-			url: 'transaksi/PengirimanPenerimaanPakan/edit_pakan',
+			url: 'transaksi/PengirimanPenerimaanPakan/hitungStokByTransaksi',
 			data: {
 				'params': params
 			},
+			type: 'POST',
+			dataType: 'JSON',
+			beforeSend: function() {
+				$('span.txt-msg-loading').text('Hitung stok di gudang . . .');
+			},
+			success: function(data) {
+				if ( data.status == 1 ) {
+					// bootbox.alert(content.message, function() {
+					// 	pp.get_lists();
+					// 	pp.load_form();
+					// });
+					pp.execHitStokSiklus(data.content);
+				} else {
+					hideLoading();
+					bootbox.alert(data.message);
+				};
+			},
+	    });
+	}, // end - hitungStokByTransaksi
+
+	execHitStokSiklus: (content) => {
+        var params = content;
+
+        $.ajax({
+            url: 'transaksi/PengirimanPenerimaanPakan/execHitStokSiklus',
+            data: {
+                'params': params
+            },
+            type: 'POST',
+            dataType: 'JSON',
+            beforeSend: function() {
+                $('span.txt-msg-loading').text('Hitung stok di kandang . . .');
+            },
+            success: function(data) {
+                if ( data.status == 1 ) {
+                    pp.execInsertJurnal(data.content);
+                } else {
+                    hideLoading();
+                    bootbox.alert(data.message);
+                };
+            },
+        });
+    }, // end - execHitStokSiklus
+
+	execHitStokSiklus: (content) => {
+        var params = content;
+
+        $.ajax({
+            url: 'transaksi/PengirimanPenerimaanPakan/execHitStokSiklus',
+            data: {
+                'params': params
+            },
+            type: 'POST',
+            dataType: 'JSON',
+            beforeSend: function() {
+                $('span.txt-msg-loading').text('Hitung stok di kandang . . .');
+            },
+            success: function(data) {
+                if ( data.status == 1 ) {
+                    pp.execInsertJurnal(data.content);
+                } else {
+                    hideLoading();
+                    bootbox.alert(data.message);
+                };
+            },
+        });
+    }, // end - execHitStokSiklus
+
+	execInsertJurnal: function(content) {
+        var params = content;
+
+        $.ajax({
+            url: 'transaksi/PengirimanPenerimaanPakan/execInsertJurnal',
+            data: {
+                'params': params
+            },
+            type: 'POST',
+            dataType: 'JSON',
+            beforeSend: function() {
+                $('span.txt-msg-loading').text('Insert jurnal . . .');
+            },
+            success: function(data) {
+                hideLoading();
+				console.log("iki", data)
+                if ( data.status == 1 ) {
+                    // bootbox.alert(data.content.message, function() {
+                    //     ppm.load_form(data.content.no_sj, null, 'transaksi');
+                    // });
+					bootbox.alert(data.content.message, function() {
+						var start_date = $('[name=startDate]').data('DateTimePicker').date();
+						var end_date = $('[name=endDate]').data('DateTimePicker').date();
+
+						if ( !empty(start_date) || !empty(end_date) ) {
+							pp.get_lists();
+						}
+
+						if ( data.content.status == 3 ) {
+							// pp.load_form();
+							pp.load_riwayat(data.content.tanggal)
+						} else {
+							// pp.load_form(data.content.id);
+							pp.load_riwayat(data.content.tanggal)
+						}
+					});
+                } else {
+                    bootbox.alert(data.message);
+					pp.load_riwayat(data.content.tanggal)
+                };
+            },
+        });
+    }, // end - execInsertJurnal
+
+
+	load_riwayat: (params) => {
+		var div_riwayat = $('div#riwayat');
+		var kode_unit 	= $(div_riwayat).find('select.unit').val();
+
+		let tgl	 		= new Date(params);
+		let startdate 	= new Date(tgl.getFullYear(), tgl.getMonth(), 1);
+		let enddate 	= new Date(tgl.getFullYear(), tgl.getMonth() + 1, 0);
+
+		let format = (date) => {
+			let y = date.getFullYear();
+			let m = String(date.getMonth() + 1).padStart(2, '0');
+			let d = String(date.getDate()).padStart(2, '0');
+			return `${y}-${m}-${d}`;
+		};
+
+		var params = {
+			'start_date': format(startdate),
+			'end_date'	: format(enddate),
+			'kode_unit'	: kode_unit
+		};
+
+		// console.log(params)
+
+		$.ajax({
+			url: 'transaksi/PengirimanPenerimaanPakan/get_lists',
+			data: {'params': params},
 			type: 'POST',
 			dataType: 'JSON',
 			beforeSend: function() {
@@ -933,39 +1084,36 @@ var pp = {
 			success: function(data) {
 				hideLoading();
 				if ( data.status == 1 ) {
-					bootbox.alert(data.message, function() {
-						// pp.get_lists();
+					$(div_riwayat).find('table.tbl_pengiriman tbody').html( data.content );
 
-						// var btn = '<button data-href="riwayat">';
-						// pp.changeTabActive(btn);
-						pp.load_form();
-						pp.load_riwayat();
+					$(div_riwayat).find('[name=startDate]').data('DateTimePicker').date(startdate);
+					$(div_riwayat).find('[name=endDate]').data('DateTimePicker').date(enddate);
+					$(div_riwayat).find('.unit option').each(function(){
+						if ($(this).val() == kode_unit) {
+							$(this).attr('selected', 'selected');
+						}
 					});
-				} else {
-					bootbox.alert(data.message);
+
+					// change tab-menu
+					let vhref ="riwayat";
+					$('.nav-tabs').find('a').removeClass('active');
+					$('.nav-tabs').find('a').removeClass('show');
+					$('.nav-tabs').find('li a[data-tab='+vhref+']').addClass('show');
+					$('.nav-tabs').find('li a[data-tab='+vhref+']').addClass('active');
+
+					// change tab-content
+					$('.tab-pane').removeClass('show');
+					$('.tab-pane').removeClass('active');
+					$('div#'+vhref).addClass('show');
+					$('div#'+vhref).addClass('active');
+
 				};
 			},
-	    });
-	}, // end - exec_edit_kirim_pakan
-
-
-	load_riwayat:() =>{
-		let tab_selected = 'riwayat';
-		$('.nav-tabs').find('a').removeClass('active');
-        $('.nav-tabs').find('a').removeClass('show');
-        $('.nav-tabs').find('li a[data-tab='+tab_selected+']').addClass('show');
-        $('.nav-tabs').find('li a[data-tab='+tab_selected+']').addClass('active');
-
-        // change tab-content
-        $('.tab-pane').removeClass('show');
-        $('.tab-pane').removeClass('active');
-        $('div#'+tab_selected).addClass('show');
-        $('div#'+tab_selected).addClass('active');
-
-		hideLoading();
-	},
-
+		});
 	
+	}
+	
+
 };
 
 pp.start_up()

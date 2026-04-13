@@ -1,7 +1,8 @@
 var jenis_pengiriman = null;
-var pp = {
+
+var pv = {
 	start_up: function() {
-		pp.setting_up();
+		pv.setting_up();
 	}, // end - start_up
 
 	setting_up: function(){
@@ -11,7 +12,7 @@ var pp = {
 
         $('.date').datetimepicker({
 			locale: 'id',
-            format: 'DD MMM Y'
+            format: 'DD MMM YYYY'
 		});
 
 		$('[name=bulan_docin]').datetimepicker({
@@ -29,7 +30,7 @@ var pp = {
             $(ipt).data("DateTimePicker").date(new Date(tgl));
         });
 
-        $.map( $('[name=bulan_docin]'), function(ipt) {
+		$.map( $('[name=bulan_docin]'), function(ipt) {
             var tgl = $(ipt).data('tgl');
             if ( !empty(tgl) ) {
                 $(ipt).data('DateTimePicker').date(new Date(tgl));
@@ -40,7 +41,6 @@ var pp = {
         $('select.gudang_asal').select2();
         $('select.peternak').select2();
         $('select.gudang').select2();
-        $('select.ekspedisi').select2();
 
 		App.setTutupBulan();
 	}, // end - setting_up
@@ -86,60 +86,55 @@ var pp = {
     }, // end - removeRowChild
 
     changeTabActive: function(elm) {
-		event.preventDefault();
-        var jenis = $("#jenis_transaksi").val();
-
-		let tab_selected = 'pengiriman_ovk';
-
+		$("#pengiriman").html("<div style='width:100%; text-align:center;'> <div class='spinner-load'></div> Proses load data</div>");
+        var vhref = $(elm).data('href');
+        // change tab-menu
         $('.nav-tabs').find('a').removeClass('active');
         $('.nav-tabs').find('a').removeClass('show');
-        $('.nav-tabs').find('li a[data-tab='+tab_selected+']').addClass('show');
-        $('.nav-tabs').find('li a[data-tab='+tab_selected+']').addClass('active');
+        $('.nav-tabs').find('li a[data-tab='+vhref+']').addClass('show');
+        $('.nav-tabs').find('li a[data-tab='+vhref+']').addClass('active');
 
+        // change tab-content
         $('.tab-pane').removeClass('show');
         $('.tab-pane').removeClass('active');
-        $('div#'+tab_selected).addClass('show');
-        $('div#'+tab_selected).addClass('active');
+        $('div#'+vhref).addClass('show');
+        $('div#'+vhref).addClass('active');
 
-		
-		var v_id = $(elm).attr('data-id');
-		var v_resubmit = $(elm).attr('data-resubmit');
+        if ( vhref == 'pengiriman' ) {
+            var v_id = $(elm).attr('data-id');
+            var v_resubmit = $(elm).attr('data-resubmit');
 
-		pp.load_form(v_id, v_resubmit);
-  
+            pv.load_form(v_id, v_resubmit);
+        };
     }, // end - changeTabActive
 
     load_form: function(v_id = null, v_resubmit = null) {
-	
-        var dcontent = $('div#pengiriman_ovk');
-
-		 $(dcontent).html('<div style="width:100%; text-align:center;"><i>Proses Load Data.. </i></div>');
+        var dcontent = $('div#pengiriman');
 
         $.ajax({
-            url : 'transaksi/PengirimanPenerimaanOvk/load_form_ovk',
+            url : 'transaksi/PengirimanPenerimaanOvk/load_form',
             data : {
                 'id' :  v_id,
-                'resubmit': v_resubmit,
+                'resubmit': v_resubmit
             },
             type : 'GET',
             dataType : 'HTML',
             beforeSend : function(){ showLoading(); },
             success : function(html){
+                hideLoading();
                 $(dcontent).html(html);
-                pp.setting_up();
+                pv.setting_up();
 
                 if ( !empty(v_id) ) {
                 	$.map( $(dcontent).find('[name=bulan_docin]'), function(ipt) {
-                		pp.get_peternak(ipt);
+                		pv.get_peternak(ipt);
                 	});
-
+                	
                 	if ( empty(v_resubmit) ) {
                 		hideLoading();
                 	}
                 } else {
-                		hideLoading();
-                	
-					
+                	hideLoading();
                 }
             },
         });
@@ -161,7 +156,7 @@ var pp = {
 			var params = {
 				'start_date': start_date,
 				'end_date': end_date,
-				'kode_unit': kode_unit,
+				'kode_unit': kode_unit
 			};
 
 			$.ajax({
@@ -175,12 +170,62 @@ var pp = {
 				success: function(data) {
 					hideLoading();
 					if ( data.status == 1 ) {
-						$(div_riwayat).find('table.tbl_data tbody').html( data.content );
+						$(div_riwayat).find('table.tbl_pengiriman tbody').html( data.content );
 					};
 				},
 		    });
 		}
     }, // end - get_lists
+
+    get_op_not_kirim: function(elm) {
+    	var div_filter = $(elm).closest('div.filter');
+    	var div_action = $(div_filter).closest('div#pengiriman');
+
+    	var unit = $(div_filter).find('.unit').val();
+    	var tgl_kirim = $(div_filter).find('div#tgl_kirim_ov input').val();
+
+    	if ( empty(unit) || empty(tgl_kirim) ) {
+    		bootbox.alert('Harap isi data filter terlebih dahulu.');
+    	} else {
+    		var params = {
+    			'unit': unit,
+    			'tgl_kirim': dateSQL( $(div_filter).find('[name=tgl_kirim_ov]').data('DateTimePicker').date() )
+    		};
+
+    		$.ajax({
+				url: 'transaksi/PengirimanPenerimaanOvk/get_op_not_kirim',
+				data: {
+					'params': params
+				},
+				type: 'POST',
+				dataType: 'JSON',
+				beforeSend: function() {
+					showLoading();
+				},
+				success: function(data) {
+					var id = $(div_action).find('select.no_order').data('id');
+
+					var option = '<option value="">-- Pilih No. Order --</option>';
+					if ( data.content.length > 0 ) {
+						for (var i = 0; i < data.content.length; i++) {
+							var selected = '';
+							if ( !empty(id) ) {
+								if ( id == data.content[i].id ) {
+									selected = 'selected';
+								}
+							}
+							option += '<option value="'+data.content[i].no_order+'" data-supplier="'+data.content[i].supl_nama+'" data-idsupplier="'+data.content[i].supl_nomor+'" data-namaprs="'+data.content[i].nama_prs+'" '+selected+' >'+data.content[i].no_order+'</option>';
+						}
+					}
+
+					// $(div_action).find('select.no_order').removeAttr('disabled');
+					$(div_action).find('select.no_order').html(option);
+
+					hideLoading();
+				},
+		    });
+    	}
+    }, // end - get_op_not_kirim
 
 	cek_jenis: function(elm) {
 		var div = $(elm).closest('div.detailed');
@@ -204,14 +249,13 @@ var pp = {
 			$(div).find('div.opks').removeClass('hide');
 			$(div).find('div.opks input').attr('data-required', 1);
 
-			$('table.tbl_detail_brg:not(.hide)').find('select.barang').attr('disabled', false);
-			$('table.tbl_detail_brg:not(.hide)').find('input.jumlah').attr('disabled', false);
-			$('table.tbl_detail_brg:not(.hide)').find('input.kondisi').attr('disabled', false);
-			$(div).find('table.opkp').addClass('hide');
-			$(div).find('table.non_opkp').removeClass('hide');
-
-			$(div).find('input.ongkos_angkut').val('');
-			$(div).find('input.ongkos_angkut').removeAttr('disabled');
+			$('table.tbl_detail_brg').find('select.barang').attr('disabled', false);
+			$('table.tbl_detail_brg').find('input.jumlah').attr('disabled', false);
+			$('table.tbl_detail_brg').find('input.kondisi').attr('disabled', false);
+			// $(div).find('div.opkp').addClass('hide');
+			// $(div).find('div.opkp select').removeAttr('data-required');
+			// $(div).find('div.opkg').addClass('hide');
+			// $(div).find('div.opkg select').removeAttr('data-required');
 		} else {
 			$(div).find('input[data-jenis=opks], select[data-jenis=opks]').addClass('hide');
 			$(div).find('input[data-jenis=opks], select[data-jenis=opks]').removeAttr('data-required', 1);
@@ -227,29 +271,20 @@ var pp = {
 				$(div).find('div.opkp').removeClass('hide');
 				$(div).find('div.opkp select').attr('data-required', 1);
 				$(div).find('div.opkg').addClass('hide');
-
-				$(div).find('table.opkp').removeClass('hide');
-				$(div).find('table.non_opkp').addClass('hide');
-
-				$(div).find('input.ongkos_angkut').val( numeral.formatDec(0) );
-				$(div).find('input.ongkos_angkut').attr('disabled', 'disabled');
 			} else if ( jenis_pengiriman == 'opkg' ) {
 				$(div).find('div.opkp').addClass('hide');
 				$(div).find('div.opkg').removeClass('hide');
 				$(div).find('div.opkg select').attr('data-required', 1);
-
-				$(div).find('table.opkp').addClass('hide');
-				$(div).find('table.non_opkp').removeClass('hide');
-
-				$(div).find('input.ongkos_angkut').val('');
-				$(div).find('input.ongkos_angkut').removeAttr('disabled');
-
-				pp.get_list_table(null);
 			}
+
+			pv.get_list_table(null);
 		}
 	}, // end - cek_jenis
 
 	cek_tujuan: function(elm) {
+		var div = $(elm).closest('div.detailed');
+		var tujuan = $(elm).val();
+
 		var div = $(elm).closest('div.detailed');
 		var tujuan = $(elm).val();
 
@@ -271,13 +306,13 @@ var pp = {
 		var asal = $(elm).find('option:selected').data('supplier');
 		var id_supplier = $(elm).find('option:selected').data('idsupplier');
 		var nama_prs = $(elm).find('option:selected').data('namaprs');
-		var no_order = $(elm).find('option:selected').text();
+		var no_order = $(elm).val();
 
 		$(div).find('input.asal').val(asal);
 		$(div).find('input.asal').attr('data-id', id_supplier);
 		$(div).find('input.perusahaan').val(nama_prs);
 
-		pp.get_list_table(no_order);
+		pv.get_list_table(no_order);
 	}, // end - get_asal
 
 	get_peternak: function(elm) {
@@ -299,7 +334,7 @@ var pp = {
 			success: function(data) {
 				var option = '<option value="">-- Pilih Peternak --</option>';
 				if ( data.status == 1 ) {
-					var idx = 1;
+					var idx = 0;
 					for (var i = 0; i < data.content.length; i++) {
 						var selected = '';
 						if ( !empty(noreg) ) {
@@ -310,13 +345,17 @@ var pp = {
 						option += '<option value="'+data.content[i].noreg+'" '+selected+'>'+data.content[i].kode_unit.toUpperCase()+' | '+data.content[i].tgl_terima+' | '+data.content[i].nama.toUpperCase()+' ('+data.content[i].noreg.toUpperCase()+')</option>';
 
 						idx++;
+
+						// console.log(idx);
+						// console.log(data.content.length);
+
 						if ( idx == data.content.length ) {
 							hideLoading();
 						}
 					}
 				} else {
 					hideLoading();
-				};
+				}
 				$(div).find('select').html(option);
 
 			},
@@ -324,10 +363,10 @@ var pp = {
 	}, // end - get_peternak
 
 	get_list_table: function(no_order = null) {
-		var table = $('table');
-
-		var table = $('table.tbl_detail_brg:not(.hide)');
+		var table = $('table.tbl_detail_brg');
 		var tbody = $(table).find('tbody');
+
+		var jenis_pengiriman = $('select.jenis_kirim').val();
 
 		$.ajax({
 			url: 'transaksi/PengirimanPenerimaanOvk/get_list_table',
@@ -344,22 +383,26 @@ var pp = {
 				if ( data.status == 1 ) {
 					App.hideLoaderInContent(tbody, data.content);
 
-					if ( jenis_pengiriman == 'opkg' ) {
+					if ( jenis_pengiriman == 'opks' ) {
 						$(tbody).find('select.barang').attr('disabled', true);
-						$(tbody).find('input.jumlah').attr('disabled', true);
-						$(tbody).find('input.kondisi').attr('disabled', true);
-					}
+						$(tbody).find('input.jumlah').attr('disabled', false);
+						$(tbody).find('input.kondisi').attr('disabled', false);
+					} 
+					// else {
+					// 	$(tbody).find('select.barang').attr('disabled', true);
+					// 	$(tbody).find('input.jumlah').attr('disabled', true);
+					// 	$(tbody).find('input.kondisi').attr('disabled', true);
+					// }
 
-					pp.setting_up();
+					pv.setting_up();
 				};
 			},
 	    });
 	}, // end - get_list_table
 
-
-	cekStokOvk: function(callback, params) {
+	cekStok: function(callback, params) {
 		$.ajax({
-			url: 'transaksi/PengirimanPenerimaanOvk/cekStokOvk',
+			url: 'transaksi/PengirimanPenerimaanOvk/cekStok',
 			data: {
 				'params': params
 			},
@@ -371,13 +414,270 @@ var pp = {
 			success: function(data) {
 				hideLoading();
 
-				// console.log( data );
+				console.log( data );
 				
 				callback({'status': data.status, 'message': data.message});
 			},
 	    });
 	}, // end - cekStok
 
+	save_kirim_voadip: function() {
+		var div_pengiriman = $('div#pengiriman');
+
+		var err = 0;
+		$.map( $(div_pengiriman).find('[data-required=1]:not(.hide)'), function(ipt) {
+			if ( empty($(ipt).val()) ) {
+				$(ipt).parent().addClass('has-error');
+				err++;
+			} else {
+				$(ipt).parent().removeClass('has-error');
+			}
+		});
+
+		if ( err > 0 ) {
+			bootbox.alert('Harap lengkapi data terlebih dahulu.');
+		} else {
+			var tgl_kirim = dateSQL( $('[name=tgl_kirim]').data('DateTimePicker').date() );
+			var tgl_terima = dateSQL( $('[name=tgl_terima]').data('DateTimePicker').date() );
+			var jenis_kirim = $('.jenis_kirim').val();
+			var no_order = null;
+			var asal = null;
+			if ( jenis_kirim == 'opks' ) {
+				no_order = $('select.no_order').val();
+				asal = $('input.asal').data('id');
+			} else {
+				no_order = $('input.no_order').val();
+				if ( jenis_kirim == 'opkp' ) {
+					asal = $('select.peternak_asal').select2('val');
+				} else if ( jenis_kirim == 'opkg' ) {
+					asal = $('select.gudang_asal').select2('val');
+				}
+			}
+			var jenis_tujuan = $('select.tujuan').val();
+			var tujuan = null;
+			if ( jenis_tujuan == 'peternak' ) {
+				tujuan = $('select.peternak').select2('val');
+			} else {
+				tujuan = $('select.gudang').select2('val');
+			}
+			var ekspedisi = $('input.ekspedisi').val();
+			var nopol = $('input.no_pol').val();
+			var sopir = $('input.sopir').val();
+			var no_sj = $('input.no_sj').val();
+			var ongkos_angkut = numeral.unformat($('input.ongkos_angkut').val());
+
+			var detail = $.map( $('table.tbl_detail_brg tbody tr'), function(tr) {
+				var _data = {
+					'barang': $(tr).find('select.barang').val(),
+					'jumlah': numeral.unformat( $(tr).find('input.jumlah').val() ),
+					'kondisi': $(tr).find('input.kondisi').val()
+				}
+
+				return _data;
+			});
+
+			var data = {
+				'tgl_kirim': tgl_kirim,
+				'tgl_terima': tgl_terima,
+				'jenis_kirim': jenis_kirim,
+				'no_order': no_order,
+				'asal': asal,
+				'jenis_tujuan': jenis_tujuan,
+				'tujuan': tujuan,
+				'ekspedisi': ekspedisi,
+				'nopol': nopol,
+				'sopir': sopir,
+				'no_sj': no_sj,
+				'ongkos_angkut': ongkos_angkut,
+				'detail': detail
+			};
+
+			pv.cekStok(function(_data) {
+				if ( _data.status != 1 ) {
+					bootbox.alert(_data.message);
+				} else {
+					bootbox.confirm('Apakah anda yakin ingin menyimpan data ?', function(result) {
+						if (result) {
+							$('select.peternak_asal').select2();
+							$('select.gudang_asal').select2();
+							$('select.peternak').select2();
+							$('select.gudang').select2();
+
+							pv.exec_save_kirim_voadip(data);
+						}
+					});
+				}
+			}, data);
+		}
+	}, // end - save_kirim_voadip
+
+	exec_save_kirim_voadip: function(data = null) {
+		var table = $('table');
+		var tbody = $(table).find('tbody');
+
+		$.ajax({
+			url: 'transaksi/PengirimanPenerimaanOvk/save',
+			data: {
+				'params': data
+			},
+			type: 'POST',
+			dataType: 'JSON',
+			beforeSend: function() {
+				showLoading();
+			},
+			success: function(data) {
+				hideLoading();
+				// if ( data.status == 1 ) {
+				// 	bootbox.alert(data.message, function() {
+				// 		var div_riwayat = $('div#riwayat');
+				//     	var start_date = $(div_riwayat).find('[name=startDate]').data('DateTimePicker').date();
+				// 		var end_date = $(div_riwayat).find('[name=endDate]').data('DateTimePicker').date();
+				// 		if ( !empty(start_date) && !empty(end_date) ) {
+				// 			// pv.get_lists();
+				// 		}
+
+				// 		var btn = '<button data-href="riwayat">';
+				// 		pv.changeTabActive(btn);
+				// 		pv.load_form();
+				// 	});
+				// } else {
+				// 	bootbox.alert(data.message);
+				// };
+
+				if ( data.status == 1 ) {
+					// pv.hitungStokAwal( data.content.id_terima );
+					pv.hitungStokByTransaksi(data.content);
+				} else {
+					bootbox.alert(data.message);
+				};
+			},
+	    });
+	}, // end - exec_save_kirim_voadip
+
+	edit_kirim_voadip: function(elm) {
+		var div_pengiriman = $('div#pengiriman');
+
+		var err = 0;
+		$.map( $(div_pengiriman).find('[data-required=1]:not(.hide)'), function(ipt) {
+			if ( empty($(ipt).val()) ) {
+				$(ipt).parent().addClass('has-error');
+				err++;
+			} else {
+				$(ipt).parent().removeClass('has-error');
+			}
+		});
+
+		if ( err > 0 ) {
+			bootbox.alert('Harap lengkapi data terlebih dahulu.');
+		} else {
+			var id = $(elm).data('id');
+			var tgl_kirim = dateSQL( $('[name=tgl_kirim]').data('DateTimePicker').date() );
+			var tgl_terima = dateSQL( $('[name=tgl_terima]').data('DateTimePicker').date() );
+			var jenis_kirim = $('.jenis_kirim').val();
+			var no_order = null;
+			var asal = null;
+			if ( jenis_kirim == 'opks' ) {
+				no_order = $('select.no_order').val();
+				asal = $('input.asal').data('id');
+			} else {
+				no_order = $('input.no_order').val();
+				if ( jenis_kirim == 'opkp' ) {
+					asal = $('select.peternak_asal').select2('val');
+				} else if ( jenis_kirim == 'opkg' ) {
+					asal = $('select.gudang_asal').select2('val');
+				}
+			}
+			var jenis_tujuan = $('select.tujuan').val();
+			var tujuan = null;
+			if ( jenis_tujuan == 'peternak' ) {
+				tujuan = $('select.peternak').select2('val');
+			} else {
+				tujuan = $('select.gudang').select2('val');
+			}
+			var ekspedisi = $('input.ekspedisi').val();
+			var nopol = $('input.no_pol').val();
+			var sopir = $('input.sopir').val();
+			var no_sj = $('input.no_sj').val();
+			var ongkos_angkut = numeral.unformat($('input.ongkos_angkut').val());
+
+			var detail = $.map( $('table.tbl_detail_brg tbody tr'), function(tr) {
+				var _data = {
+					'barang': $(tr).find('select.barang').val(),
+					'jumlah': numeral.unformat( $(tr).find('input.jumlah').val() ),
+					'kondisi': $(tr).find('input.kondisi').val()
+				}
+
+				return _data;
+			});
+
+			var data = {
+				'id': id,
+				'tgl_kirim': tgl_kirim,
+				'tgl_terima':tgl_terima,
+				'jenis_kirim': jenis_kirim,
+				'no_order': no_order,
+				'asal': asal,
+				'jenis_tujuan': jenis_tujuan,
+				'tujuan': tujuan,
+				'ekspedisi': ekspedisi,
+				'nopol': nopol,
+				'sopir': sopir,
+				'no_sj': no_sj,
+				'ongkos_angkut': ongkos_angkut,
+				'detail': detail
+			};
+
+			pv.cekStok(function(_data) {
+				if ( _data.status != 1 ) {
+					bootbox.alert(_data.message);
+				} else {
+					bootbox.confirm('Apakah anda yakin ingin menyimpan data ?', function(result) {
+						if (result) {
+							pv.exec_edit_kirim_voadip(data);
+						}
+					});
+				}
+			}, data);
+		}
+	}, // end - edit_kirim_voadip
+
+	exec_edit_kirim_voadip: function(params = null) {
+		var table = $('table');
+		var tbody = $(table).find('tbody');
+
+		$.ajax({
+			url: 'transaksi/PengirimanPenerimaanOvk/edit',
+			data: {
+				'params': params
+			},
+			type: 'POST',
+			dataType: 'JSON',
+			beforeSend: function() {
+				showLoading();
+			},
+			success: function(data) {
+				hideLoading();
+				// if ( data.status == 1 ) {
+				// 	bootbox.alert(data.message, function() {
+				// 		pv.get_lists();
+
+				// 		var btn = '<button data-href="riwayat">';
+				// 		pv.changeTabActive(btn);
+				// 		pv.load_form();
+				// 	});
+				// } else {
+				// 	bootbox.alert(data.message);
+				// };
+
+
+				if ( data.status == 1 ) {
+					pv.hitungStokByTransaksi(data.content);
+				} else {
+					bootbox.alert(data.message);
+				};
+			},
+	    });
+	}, // end - exec_edit_kirim_voadip
 
 	delete: function(elm) {
 		var id = $(elm).data('id');
@@ -398,14 +698,21 @@ var pp = {
 					},
 					success: function(data) {
 						hideLoading();
-						console.log(data)
-						if ( data.status == 1 ) {
-							bootbox.alert(data.message, function() {
-								pp.get_lists();
-								pp.load_form();
+						// if ( data.status == 1 ) {
+						// 	bootbox.alert(data.message, function() {
+						// 		pv.get_lists();
+						// 		pv.load_form();
+						// 	});
+						// } else {
+						// 	bootbox.alert(data.message);
+						// };
 
-								window.location.reload();
-							});
+						if ( data.status == 1 ) {
+							pv.hitungStokByTransaksi(data.content);
+							// bootbox.alert(data.message, function() {
+							// 	pv.get_lists();
+							// 	pv.load_form();
+							// });
 						} else {
 							bootbox.alert(data.message);
 						};
@@ -419,13 +726,13 @@ var pp = {
 		var gudang = $(elm).val();
 
 		if ( !empty(gudang) ) {
-			$('table.tbl_detail_brg:not(.hide)').find('select.barang').attr('disabled', false);
-			$('table.tbl_detail_brg:not(.hide)').find('input.jumlah').attr('disabled', false);
-			$('table.tbl_detail_brg:not(.hide)').find('input.kondisi').attr('disabled', false);
+			$('table.tbl_detail_brg').find('select.barang').attr('disabled', false);
+			$('table.tbl_detail_brg').find('input.jumlah').attr('disabled', false);
+			$('table.tbl_detail_brg').find('input.kondisi').attr('disabled', false);
 		} else {
-			$('table.tbl_detail_brg:not(.hide)').find('select.barang').attr('disabled', true);
-			$('table.tbl_detail_brg:not(.hide)').find('input.jumlah').attr('disabled', true);
-			$('table.tbl_detail_brg:not(.hide)').find('input.kondisi').attr('disabled', true);
+			$('table.tbl_detail_brg').find('select.barang').attr('disabled', true);
+			$('table.tbl_detail_brg').find('input.jumlah').attr('disabled', true);
+			$('table.tbl_detail_brg').find('input.kondisi').attr('disabled', true);
 		}
 	}, // end - cek_gudang
 
@@ -453,8 +760,11 @@ var pp = {
 				},
 				type: 'POST',
 				dataType: 'JSON',
-				beforeSend: function() {},
+				beforeSend: function() {
+					showLoading();
+				},
 				success: function(data) {
+					hideLoading();
 					if ( data.status == 1 ) {
 						if ( data.status_stok == 0 ) {
 							bootbox.alert( data.message, function() {
@@ -473,13 +783,12 @@ var pp = {
 		let tr = $(elm).closest('tr');
 
         let params = {
-            'id' 		      : $(elm).data('id'),
-            'no_order' 	      : $(tr).find('td.no_order').text(),
-            'tgl_kirim'       : $(tr).find('td.tgl_kirim').text(),
-            'asal' 			  : $(tr).find('td.asal').text(),
-            'tujuan' 		  : $(tr).find('td.tujuan').text(),
-            'nopol' 		  : $(tr).find('td.nopol').text(),
-			'jenis_transaksi' : $("#jenis_transaksi").val(),
+            'id' : $(elm).data('id'),
+            'no_order' : $(tr).find('td.no_order').text(),
+            'tgl_kirim' : $(tr).find('td.tgl_kirim').text(),
+            'asal' : $(tr).find('td.asal').text(),
+            'tujuan' : $(tr).find('td.tujuan').text(),
+            'nopol' : $(tr).find('td.nopol').text(),
         }
 
         $.get('transaksi/PengirimanPenerimaanOvk/listActivity',{
@@ -501,242 +810,61 @@ var pp = {
         },'html');
 	}, // end - listActivity
 
-	getSjAsal: function(elm) {
-		var noreg = $(elm).val();
+	hitungStokByTransaksi: function(content) {
+		var params = content;
 
-		var option_no_sj = "<option value=''>No. SJ Awal</option>";
-		if ( !empty(noreg) ) {
-			var params = {
-				'noreg': noreg
-			};
+		$.ajax({
+			url: 'transaksi/PengirimanPenerimaanOvk/hitungStokByTransaksi',
+			data: {
+				'params': params
+			},
+			type: 'POST',
+			dataType: 'JSON',
+			beforeSend: function() {
+				showLoading('Hitung Stok Ulang . . .');
+			},
+			success: function(data) {
+				hideLoading();
 
-			$.ajax({
-				url: 'transaksi/PengirimanPenerimaanOvk/getSjAsal',
-				data: {
-					'params': params
-				},
-				type: 'POST',
-				dataType: 'JSON',
-				beforeSend: function() { showLoading(); },
-				success: function(data) {
-					hideLoading();
-					if ( data.status == 1 ) {
-						if ( data.content.data.length > 0 ) {
-							for (var i = 0; i < data.content.data.length; i++) {
-								var _data = data.content.data[i];
-								var barang = data.content.data[i].barang;
-
-								option_no_sj += "<option value='"+_data.no_sj+"' data-barang='"+JSON.stringify(barang)+"'>"+_data.text_tgl+" | "+_data.no_sj+"</option>";
-							}
-						}
-					} else {
-						bootbox.alert( data.message );
-					}
-					$('.no_sj_asal').html( option_no_sj );
-				},
-		    });
-		} else {
-			$('.no_sj_asal').html( option_no_sj );
-		}
-	}, // end - get_sj_asal
-
-	getBarang: function(elm) {
-		var tr = $(elm).closest('tr');
-		var no_sj = $(elm).val();
-
-		var option_barang = '<option value="">Pilih Barang</option>';
-
-		if ( !empty(no_sj) ) {
-			var barang = JSON.parse( $(elm).find('option:selected').attr('data-barang') );
-
-			if ( barang.length > 0 ) {
-				for (var j = 0; j < barang.length; j++) {
-					var _barang = barang[j];
-
-					option_barang += '<option value="'+_barang.kode+'" data-jmlmax="'+_barang.jumlah+'">'+_barang.nama.toUpperCase()+' ('+numeral.formatInt(_barang.jumlah)+')</option>';
-				}
-			}
-		}
-		$(tr).find('.barang').html( option_barang );
-	}, // end - getBarang
-
-	pilihBarang: function(elm) {
-		var tr = $(elm).closest('tr');
-		var kode_barang = $(elm).val();
-
-		if ( !empty(kode_barang) ) {
-			$(tr).find('input.jumlah').removeAttr('disabled');
-		} else {
-			$(tr).find('input.jumlah').attr('disabled', 'disabled');
-		}
-	}, // end - pilihBarang
-
-	cekJmlPindah: function(elm) {
-		var tr = $(elm).closest('tr');
-
-		var jml_pindah = numeral.unformat($(elm).val());
-		var jml_max = $(tr).find('.barang option:selected').attr('data-jmlmax');
-
-		if ( jml_pindah > jml_max ) {
-			bootbox.alert('Jumlah yang anda masukkan melebihi jumlah terima.', function() {
-				$(elm).val( 0 );
-			});
-		}
-	}, // end - cekJmlPindah
-
-
-	get_op_not_kirim_ovk: function(elm) {
-    	var div_filter = $(elm).closest('div.filter');
-    	var div_action = $(div_filter).closest('div#pengiriman_ovk');
-
-    	var unit = $(div_filter).find('.unit').val();
-    	var tgl_kirim = $(div_filter).find('div#tgl_kirim_ov input').val();
-
-    	if ( empty(unit) || empty(tgl_kirim) ) {
-    		bootbox.alert('Harap isi data filter terlebih dahulu.');
-    	} else {
-    		var params = {
-    			'unit': unit,
-    			'tgl_kirim': dateSQL( $(div_filter).find('[name=tgl_kirim_ov]').data('DateTimePicker').date() )
-    		};
-
-    		$.ajax({
-				url: 'transaksi/PengirimanPenerimaanOvk/get_op_not_kirim_ovk',
-				data: {
-					'params': params
-				},
-				type: 'POST',
-				dataType: 'JSON',
-				beforeSend: function() {
-					showLoading();
-				},
-				success: function(data) {
-					var id = $(div_action).find('select.no_order_ovk').data('id');
-
-					var option = '<option value="">-- Pilih No. Order --</option>';
-					if ( data.content.length > 0 ) {
-						for (var i = 0; i < data.content.length; i++) {
-							var selected = '';
-							if ( !empty(id) ) {
-								if ( id == data.content[i].id ) {
-									selected = 'selected';
-								}
-							}
-							option += '<option value="'+data.content[i].no_order+'" data-supplier="'+data.content[i].supl_nama+'" data-idsupplier="'+data.content[i].supl_nomor+'" data-namaprs="'+data.content[i].nama_prs+'" '+selected+' >'+data.content[i].no_order+'</option>';
-						}
-					}
-
-					// $(div_action).find('select.no_order').removeAttr('disabled');
-					$(div_action).find('select.no_order_ovk').html(option);
-
-					hideLoading();
-				},
-		    });
-    	}
-    }, // end - get_op_not_kirim
-
-
-
-	save_kirim_voadip: function() {
-		var div_pengiriman = $('div#pengiriman_ovk');
-
-		var err = 0;
-		$.map( $(div_pengiriman).find('[data-required=1]:not(.hide)'), function(ipt) {
-			if ( empty($(ipt).val()) ) {
-				$(ipt).parent().addClass('has-error');
-				err++;
-			} else {
-				$(ipt).parent().removeClass('has-error');
-			}
-		});
-
-		if ( err > 0 ) {
-			bootbox.alert('Harap lengkapi data terlebih dahulu.');
-		} else {
-			var tgl_kirim 		= dateSQL( div_pengiriman.find('[name=tgl_kirim]').data('DateTimePicker').date() );
-			var tgl_terima 		= dateSQL( div_pengiriman.find('[name=tgl_terima]').data('DateTimePicker').date() );
-			var jenis_kirim 	= div_pengiriman.find('.jenis_kirim').val();
-			var no_order		= null;
-			var asal 			= null;
-			if ( jenis_kirim == 'opks' ) {
-				no_order 		= div_pengiriman.find('select.no_order_ovk').val();
-				asal 			= div_pengiriman.find('input.asal').data('id');
-			} else {
-				no_order = div_pengiriman.find('input.no_order_ovk').val();
-				if ( jenis_kirim == 'opkp' ) {
-					asal 		= div_pengiriman.find('select.peternak_asal').select2('val');
-				} else if ( jenis_kirim == 'opkg' ) {
-					asal 		= div_pengiriman.find('select.gudang_asal').select2('val');
-				}
-			}
-			var jenis_tujuan 	= div_pengiriman.find('select.tujuan').val();
-			var tujuan 			= null;
-			if ( jenis_tujuan == 'peternak' ) {
-				tujuan 			= div_pengiriman.find('select.peternak').select2('val');
-			} else {
-				tujuan 			= div_pengiriman.find('select.gudang').select2('val');
-			}
-			var ekspedisi 		= div_pengiriman.find('input.ekspedisi').val();
-			var nopol 			= div_pengiriman.find('input.no_pol').val();
-			var sopir 			= div_pengiriman.find('input.sopir').val();
-			var no_sj 			= div_pengiriman.find('input.no_sj').val();
-			var ongkos_angkut 	= numeral.unformat(div_pengiriman.find('input.ongkos_angkut').val());
-
-			var detail = $.map( $('table.tbl_detail_brg_ovk tbody tr'), function(tr) {
-				var _data = {
-					'barang': $(tr).find('select.barang').val(),
-					'jumlah': numeral.unformat( $(tr).find('input.jumlah').val() ),
-					'kondisi': $(tr).find('input.kondisi').val()
-				}
-
-				return _data;
-			});
-
-			var data = {
-				'tgl_kirim': tgl_kirim,
-				'tgl_terima':tgl_terima,
-				'jenis_kirim': jenis_kirim,
-				'no_order': no_order,
-				'asal': asal,
-				'jenis_tujuan': jenis_tujuan,
-				'tujuan': tujuan,
-				'ekspedisi': ekspedisi,
-				'nopol': nopol,
-				'sopir': sopir,
-				'no_sj': no_sj,
-				'ongkos_angkut': ongkos_angkut,
-				'detail': detail
-			};
-
-			pp.cekStokOvk(function(_data) {
-				if ( _data.status != 1 ) {
-					bootbox.alert(_data.message);
-				} else {
-					bootbox.confirm('Apakah anda yakin ingin menyimpan data ?', function(result) {
-						if (result) {
-							$('select.peternak_asal').select2();
-							$('select.gudang_asal').select2();
-							$('select.peternak').select2();
-							$('select.gudang').select2();
-
-							pp.exec_save_kirim_voadip(data);
-						}
+				if ( data.status == 1 ) {
+					bootbox.alert(content.message, function() {
+						// pv.get_lists();
+						// pv.load_form();
+						pv.load_riwayat(data);
 					});
-				}
-			}, data);
-		}
-	}, // end - save_kirim_voadip
+				} else {
+					bootbox.alert(data.message);
+				};
+			},
+	    });
+	}, // end - hitungStokByTransaksi
 
-	exec_save_kirim_voadip: function(data = null) {
-		var table = $('table');
-		var tbody = $(table).find('tbody');
+
+	load_riwayat: (params) => {
+		var div_riwayat = $('div#riwayat');
+		var kode_unit 	= $(div_riwayat).find('select.unit').val();
+
+		let tgl	 		= new Date(params.data_params.tanggal);
+		let startdate 	= new Date(tgl.getFullYear(), tgl.getMonth(), 1);
+		let enddate 	= new Date(tgl.getFullYear(), tgl.getMonth() + 1, 0);
+
+		let format = (date) => {
+			let y = date.getFullYear();
+			let m = String(date.getMonth() + 1).padStart(2, '0');
+			let d = String(date.getDate()).padStart(2, '0');
+			return `${y}-${m}-${d}`;
+		};
+
+		var params = {
+			'start_date': format(startdate),
+			'end_date'	: format(enddate),
+			'kode_unit'	: kode_unit
+		};
 
 
 		$.ajax({
-			url: 'transaksi/PengirimanPenerimaanOvk/save_ovk',
-			data: {
-				'params': data
-			},
+			url: 'transaksi/PengirimanPenerimaanOvk/get_lists',
+			data: {'params': params},
 			type: 'POST',
 			dataType: 'JSON',
 			beforeSend: function() {
@@ -745,165 +873,36 @@ var pp = {
 			success: function(data) {
 				hideLoading();
 				if ( data.status == 1 ) {
-					bootbox.alert(data.message, function() {
-						var div_riwayat = $('div#riwayat');
-				    	var start_date = $(div_riwayat).find('[name=startDate]').data('DateTimePicker').date();
-						var end_date = $(div_riwayat).find('[name=endDate]').data('DateTimePicker').date();
-						if ( !empty(start_date) && !empty(end_date) ) {
-							// pv.get_lists();
-						}
+					$(div_riwayat).find('table.tbl_pengiriman tbody').html( data.content );
 
-						// var btn = '<button data-href="riwayat">';
-						// pp.changeTabActive(btn);
-						pp.load_form();
-						pp.load_riwayat();
+					$(div_riwayat).find('[name=startDate]').data('DateTimePicker').date(startdate);
+					$(div_riwayat).find('[name=endDate]').data('DateTimePicker').date(enddate);
+					$(div_riwayat).find('.unit option').each(function(){
+						if ($(this).val() == kode_unit) {
+							$(this).attr('selected', 'selected');
+						}
 					});
-				} else {
-					bootbox.alert(data.message);
+
+					// change tab-menu
+					let vhref ="riwayat";
+					$('.nav-tabs').find('a').removeClass('active');
+					$('.nav-tabs').find('a').removeClass('show');
+					$('.nav-tabs').find('li a[data-tab='+vhref+']').addClass('show');
+					$('.nav-tabs').find('li a[data-tab='+vhref+']').addClass('active');
+
+					// change tab-content
+					$('.tab-pane').removeClass('show');
+					$('.tab-pane').removeClass('active');
+					$('div#'+vhref).addClass('show');
+					$('div#'+vhref).addClass('active');
+
 				};
 			},
-	    });
-	}, // end - exec_save_kirim_voadip
-
-
-
-	edit_kirim_voadip: function(elm) {
-		var div_pengiriman = $('div#pengiriman_ovk');
-
-		var err = 0;
-		$.map( $(div_pengiriman).find('[data-required=1]:not(.hide)'), function(ipt) {
-			if ( empty($(ipt).val()) ) {
-				$(ipt).parent().addClass('has-error');
-				err++;
-			} else {
-				$(ipt).parent().removeClass('has-error');
-			}
 		});
-
-		if ( err > 0 ) {
-			bootbox.alert('Harap lengkapi data terlebih dahulu.');
-		} else {
-			var id 			= $(elm).data('id');
-			var tgl_kirim 	= dateSQL( div_pengiriman.find('[name=tgl_kirim]').data('DateTimePicker').date() );
-			var tgl_terima 	= dateSQL( div_pengiriman.find('[name=tgl_terima]').data('DateTimePicker').date() );
-			var jenis_kirim = div_pengiriman.find('.jenis_kirim').val();
-			var no_order 	= null;
-			var asal 		= null;
-			if ( jenis_kirim == 'opks' ) {
-				no_order 	= div_pengiriman.find('select.no_order').val();
-				asal 		= div_pengiriman.find('input.asal').data('id');
-			} else {
-				no_order = div_pengiriman.find('input.no_order').val();
-				if ( jenis_kirim == 'opkp' ) {
-					asal = div_pengiriman.find('select.peternak_asal').select2('val');
-				} else if ( jenis_kirim == 'opkg' ) {
-					asal = div_pengiriman.find('select.gudang_asal').select2('val');
-				}
-			}
-			var jenis_tujuan = div_pengiriman.find('select.tujuan').val();
-			var tujuan = null;
-			if ( jenis_tujuan == 'peternak' ) {
-				tujuan = div_pengiriman.find('select.peternak').select2('val');
-			} else {
-				tujuan = div_pengiriman.find('select.gudang').select2('val');
-			}
-			var ekspedisi 	= div_pengiriman.find('input.ekspedisi').val();
-			var nopol = div_pengiriman.find('input.no_pol').val();
-			var sopir = div_pengiriman.find('input.sopir').val();
-			var no_sj = div_pengiriman.find('input.no_sj').val();
-			var ongkos_angkut = numeral.unformat(div_pengiriman.find('input.ongkos_angkut').val());
-
-			var detail = $.map( $('table.tbl_detail_brg_ovk_edit tbody tr'), function(tr) {
-				var _data = {
-					'barang': $(tr).find('select.barang').val(),
-					'jumlah': numeral.unformat( $(tr).find('input.jumlah').val() ),
-					'kondisi': $(tr).find('input.kondisi').val()
-				}
-
-				return _data;
-			});
-
-			var data = {
-				'id': id,
-				'tgl_kirim': tgl_kirim,
-				'tgl_terima' : tgl_terima,
-				'jenis_kirim': jenis_kirim,
-				'no_order': no_order,
-				'asal': asal,
-				'jenis_tujuan': jenis_tujuan,
-				'tujuan': tujuan,
-				'ekspedisi': ekspedisi,
-				'nopol': nopol,
-				'sopir': sopir,
-				'no_sj': no_sj,
-				'ongkos_angkut': ongkos_angkut,
-				'detail': detail
-			};
-
-			pp.cekStokOvk(function(_data) {
-				if ( _data.status != 1 ) {
-					bootbox.alert(_data.message);
-				} else {
-					bootbox.confirm('Apakah anda yakin ingin menyimpan data ?', function(result) {
-						if (result) {
-							pp.exec_edit_kirim_voadip(data);
-						}
-					});
-				}
-			}, data);
-		}
-	}, // end - edit_kirim_voadip
-
-	exec_edit_kirim_voadip: function(params = null) {
-		var table = $('table');
-		var tbody = $(table).find('tbody');
-
-		$.ajax({
-			url: 'transaksi/PengirimanPenerimaanOvk/edit_ovk',
-			data: {
-				'params': params
-			},
-			type: 'POST',
-			dataType: 'JSON',
-			beforeSend: function() {
-				showLoading();
-			},
-			success: function(data) {
-				// hideLoading();
-				if ( data.status == 1 ) {
-					bootbox.alert(data.message, function() {
-						pp.get_lists();
-
-						// var btn = '<button data-href="riwayat">';
-						// pp.changeTabActive(btn);
-						// pp.load_form();
-
-						pp.load_riwayat()
-					});
-				} else {
-					bootbox.alert(data.message);
-				};
-			},
-	    });
-	}, // end - exec_edit_kirim_voadip
-
-
-	load_riwayat:() =>{
-		let tab_selected = 'riwayat';
-		$('.nav-tabs').find('a').removeClass('active');
-        $('.nav-tabs').find('a').removeClass('show');
-        $('.nav-tabs').find('li a[data-tab='+tab_selected+']').addClass('show');
-        $('.nav-tabs').find('li a[data-tab='+tab_selected+']').addClass('active');
-
-        // change tab-content
-        $('.tab-pane').removeClass('show');
-        $('.tab-pane').removeClass('active');
-        $('div#'+tab_selected).addClass('show');
-        $('div#'+tab_selected).addClass('active');
-
-		hideLoading();
-	},
 	
+	}
+
+
 };
 
-pp.start_up()
+pv.start_up()
