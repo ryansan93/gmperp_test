@@ -40,7 +40,7 @@
 							<div class="col-sm-1 text-center no-padding" style="max-width: 4%;">Unit</div>
                             <div class="col-sm-3">
                                 <select class="form-control unit">
-                                    <!-- <option value="all">All</option> -->
+                                    <option value="all">All</option>
                                     <?php if ( !empty($unit) ): ?>
                                         <?php foreach ($unit as $k_unit => $v_unit): ?>
                                             <option value="<?php echo $v_unit['kode']; ?>"><?php echo strtoupper($v_unit['nama']); ?></option>
