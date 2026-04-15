@@ -859,21 +859,48 @@ class PengirimanPenerimaanPakan extends Public_Controller {
                     $m_conf = new \Model\Storage\Conf();
                     $sql = "
                         select
-                            ds.kode_gudang,
-                            ds.kode_barang,
-                            sum(isnull(ds.jml_stok, 0)) as jumlah
-                        from det_stok ds
-                        left join
-                            stok s
-                            on
-                                ds.id_header = s.id
-                        where
-                            s.periode = '".$tgl_kirim."' and
-                            ds.kode_gudang = '".$asal."' and
-                            ds.kode_barang = '".$kode_brg."'
+                            data.kode_gudang,
+                            data.kode_barang,
+                            sum(isnull(data.jumlah, 0)) as jumlah
+                        from
+                        (
+                            select
+                                ds.kode_gudang,
+                                ds.kode_barang,
+                                sum(isnull(ds.jml_stok, 0)) as jumlah
+                            from det_stok ds
+                            left join
+                                stok s
+                                on
+                                    ds.id_header = s.id
+                            where
+                                s.periode = '".$tgl_kirim."' and
+                                ds.kode_gudang = '".$asal."' and
+                                ds.kode_barang = '".$kode_brg."'
+                            group by
+                                ds.kode_gudang,
+                                ds.kode_barang
+
+                            union all
+
+                            select
+                                kp.asal as kode_gudang,
+                                dkp.item as kode_barang,
+                                sum(isnull(dkp.jumlah, 0)) as jumlah
+                            from det_kirim_pakan dkp
+                            left join
+                                kirim_pakan kp
+                                on
+                                    dkp.id_header = kp.id
+                            where
+                                kp.id = '".$id."'
+                            group by
+                                kp.asal,
+                                dkp.item
+                        ) data
                         group by
-                            ds.kode_gudang,
-                            ds.kode_barang
+                            data.kode_gudang,
+                            data.kode_barang
                     ";
                     $d_conf = $m_conf->hydrateRaw( $sql );
 
@@ -1354,10 +1381,6 @@ class PengirimanPenerimaanPakan extends Public_Controller {
 
         try {
             $sql = "EXEC hitung_stok_pakan_by_transaksi 'terima_pakan', '".$id."', '".$tanggal."', ".$delete.", ".$status_jurnal."";
-
-            // echo "<pre>";
-            // print_r($sql);
-            // die;
             $return = Modules::run( 'base/ExecStoredProcedure/exec', $sql);
 
             $this->result['status'] = $return['status'];
@@ -1539,6 +1562,8 @@ class PengirimanPenerimaanPakan extends Public_Controller {
             $m_terima_pakan                 = new \Model\Storage\TerimaPakan_model();
             $now                            = $m_terima_pakan->getDate();
 
+            $d_terima_old = $m_terima_pakan->where('id_kirim_pakan', $params['id'])->first();
+
             $m_terima_pakan->where('id_kirim_pakan', $params['id'])->update(
                 array(
                     'tgl_trans'     => $now['waktu'],
@@ -1580,8 +1605,8 @@ class PengirimanPenerimaanPakan extends Public_Controller {
             // End Log Update
 
             $tgl_trans = $d_terima_pakan->tgl_terima;
-            if ( $d_terima_pakan_old->tgl_terima < $tgl_trans ) {
-                $tgl_trans = $d_terima_pakan_old->tgl_terima;
+            if ( $d_terima_old->tgl_terima < $tgl_trans ) {
+                $tgl_trans = $d_terima_old->tgl_terima;
             }
 
             $noreg1 = null;
@@ -1594,7 +1619,7 @@ class PengirimanPenerimaanPakan extends Public_Controller {
                     on
                         tp.id_kirim_pakan = kp.id
                 where
-                    tp.id = '".$params['id']."'
+                    tp.id = '".$id_terima."'
             ";
             $d_conf = $m_conf->hydrateRaw( $sql );
             if ( $d_conf->count() > 0 ) {
@@ -1616,7 +1641,7 @@ class PengirimanPenerimaanPakan extends Public_Controller {
             $this->result['message'] = 'Data Pengiriman Pakan berhasil di ubah.';
             $this->result['content'] = array(
                     'id' => $d_terima_pakan->id,
-                    'tanggal' => $params['tgl_terima'],
+                    'tanggal' => $tgl_trans,
                     'delete' => 0,
                     'message' => 'Data Penerimaan Pakan berhasil di ubah.',
                     'status_jurnal' => 2,
