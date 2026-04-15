@@ -368,6 +368,7 @@ class SisaStokAyamMinMax extends Public_Controller {
                 data.kode,
                 data.noreg,
                 data.tanggal,
+                data.tgl_docin,
                 data.umur,
                 data.jml_ekor,
                 data.ekor_mati,
@@ -378,6 +379,7 @@ class SisaStokAyamMinMax extends Public_Controller {
             (
                 select
                     l.tanggal,
+                    l.tgl_docin,
                     w.kode,
                     l.noreg,
                     (td.jml_ekor+isnull(ad.jumlah, 0)) as jml_ekor,
@@ -475,7 +477,7 @@ class SisaStokAyamMinMax extends Public_Controller {
         $content['unit']        = $m_wil->getDataUnit(1, $this->userid);
 
         // echo "<pre>";
-        // print_r($content);
+        // print_r($sql);
         // die;
         
         echo $this->load->view($this->pathView.'list_detail', $content, TRUE);
