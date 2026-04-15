@@ -1147,7 +1147,33 @@ class PengirimanPenerimaanPakan extends Public_Controller {
 
                     $id_terima = $m_terima_pakan->id;
 
-                    foreach ($params['detail'] as $k_detail => $v_detail) {
+                    $detail_merge = [];
+
+                    foreach ($params['detail'] as $v_detail) {
+                        $key = $v_detail['barang'].'|'.$v_detail['no_sj_asal'];
+
+                        if ( isset($detail_merge[$key]) ) {
+                            $detail_merge[$key]['jumlah'] += $v_detail['jumlah'];
+                        } else {
+                            $detail_merge[$key] = [
+                                'barang' => $v_detail['barang'],
+                                'jumlah' => $v_detail['jumlah'],
+                                'kondisi' => $v_detail['kondisi'],
+                                'no_sj_asal' => $v_detail['no_sj_asal']
+                            ];
+                        }
+                    }
+
+                    // foreach ($params['detail'] as $k_detail => $v_detail) {
+                    //     $m_terima_pakan_detail              = new \Model\Storage\TerimaPakanDetail_model();
+                    //     $m_terima_pakan_detail->id_header   = $id_terima;
+                    //     $m_terima_pakan_detail->item        = $v_detail['barang'];
+                    //     $m_terima_pakan_detail->jumlah      = $v_detail['jumlah'];
+                    //     $m_terima_pakan_detail->kondisi     = $v_detail['kondisi'];
+                    //     $m_terima_pakan_detail->save();
+                    // }
+
+                    foreach ($detail_merge as $v_detail) {
                         $m_terima_pakan_detail              = new \Model\Storage\TerimaPakanDetail_model();
                         $m_terima_pakan_detail->id_header   = $id_terima;
                         $m_terima_pakan_detail->item        = $v_detail['barang'];
@@ -1581,7 +1607,33 @@ class PengirimanPenerimaanPakan extends Public_Controller {
                 $m_terima_pakan_detail = new \Model\Storage\TerimaPakanDetail_model();
                 $m_terima_pakan_detail->where('id_header', $id_terima)->delete();
 
-                foreach ($params['detail'] as $k_detail => $v_detail) {
+                $detail_merge = [];
+
+                foreach ($params['detail'] as $v_detail) {
+                    $key = $v_detail['barang'].'|'.$v_detail['no_sj_asal'];
+
+                    if ( isset($detail_merge[$key]) ) {
+                        $detail_merge[$key]['jumlah'] += $v_detail['jumlah'];
+                    } else {
+                        $detail_merge[$key] = [
+                            'barang' => $v_detail['barang'],
+                            'jumlah' => $v_detail['jumlah'],
+                            'kondisi' => $v_detail['kondisi'],
+                            'no_sj_asal' => $v_detail['no_sj_asal']
+                        ];
+                    }
+                }
+
+                // foreach ($params['detail'] as $k_detail => $v_detail) {
+                //     $m_terima_pakan_detail              = new \Model\Storage\TerimaPakanDetail_model();
+                //     $m_terima_pakan_detail->id_header   = $id_terima;
+                //     $m_terima_pakan_detail->item        = $v_detail['barang'];
+                //     $m_terima_pakan_detail->jumlah      = $v_detail['jumlah'];
+                //     $m_terima_pakan_detail->kondisi     = $v_detail['kondisi'];
+                //     $m_terima_pakan_detail->save();
+                // }
+
+                foreach ($detail_merge as $v_detail) {
                     $m_terima_pakan_detail              = new \Model\Storage\TerimaPakanDetail_model();
                     $m_terima_pakan_detail->id_header   = $id_terima;
                     $m_terima_pakan_detail->item        = $v_detail['barang'];
