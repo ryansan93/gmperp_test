@@ -57,6 +57,7 @@
                     <tr>
                         <td><?php echo $d['noreg'] ?></td>
                         <td><?php echo $map_plasma[$d['noreg']] ?? '-'; ?></td>
+                        <td class="text-center"><?php echo tglIndonesia($d['tgl_docin'], "-", " ") ?></td>
                         <td class="text-right"><?php echo angkaRibuan($d['jml_ekor']) ?></td>
                         <td class="text-right"><?php echo angkaRibuan($d['ekor_mati']) ?></td>
                         <td class="text-right"><?php echo angkaRibuan($d['sisa_ekor']) ?></td>

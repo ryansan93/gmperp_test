@@ -10,6 +10,12 @@ var pv = {
             $(this).priceFormat(Config[$(this).data('tipe')]);
         });
 
+		
+		$('#tgl_kirim').on('dp.change', function(e) {
+			$('#tgl_terima').data("DateTimePicker").minDate(e.date);
+		});
+		
+
         $('.date').datetimepicker({
 			locale: 'id',
             format: 'DD MMM YYYY'
