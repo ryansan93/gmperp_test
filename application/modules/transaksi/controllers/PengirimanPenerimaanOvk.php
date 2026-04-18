@@ -53,6 +53,12 @@ class PengirimanPenerimaanOvk extends Public_Controller {
 
     public function get_unit()
     {
+        $m_unit = new \Model\Storage\Wilayah_model();
+        $data = $m_unit->getDataUnit(1, $this->userid);
+
+        /*
+        // cetak_r($d_unit, 1);
+
         $m_duser = new \Model\Storage\DetUser_model();
         $d_duser = $m_duser->where('id_user', $this->userid)->first();
 
@@ -144,6 +150,7 @@ class PengirimanPenerimaanOvk extends Public_Controller {
         if ( !empty($data) ) {
             ksort($data);
         }
+        */
 
         return $data;
     }
@@ -1266,14 +1273,13 @@ class PengirimanPenerimaanOvk extends Public_Controller {
             }
 
             $m_terima_voadip = new \Model\Storage\TerimaVoadip_model();
+            $d_terima_voadip_old = $m_terima_voadip->where('id_kirim_voadip', $id_header)->first();
 
-            $d_terima_voadip = $m_terima_voadip->where('id_kirim_voadip', $id_header)->first();
-
-            if (!$d_terima_voadip) {
+            if (!$d_terima_voadip_old) {
                 throw new \Exception("Data terima voadip tidak ditemukan.");
             }
 
-            $id_terima = $d_terima_voadip->id;
+            $id_terima = $d_terima_voadip_old->id;
             $now = $m_terima_voadip->getDate();
 
             $m_terima_voadip->where('id_kirim_voadip', $id_header)->update([
@@ -1321,16 +1327,25 @@ class PengirimanPenerimaanOvk extends Public_Controller {
                 $m_terima_voadip_detail->save();
             }
 
+            $m_terima_voadip = new \Model\Storage\TerimaVoadip_model();
+            $d_terima_voadip = $m_terima_voadip->where('id_kirim_voadip', $id_header)->first();
+
             $deskripsi_log_terima_voadip = 'di-update oleh ' . $this->userdata['detail_user']['nama_detuser'];
             Modules::run( 'base/event/update', $d_terima_voadip, $deskripsi_log_terima_voadip);
             // End Penerimaan
 
-       
+            $tgl_trans = $d_terima_voadip->tgl_terima;
+            if ( $d_terima_voadip_old->tgl_terima < $tgl_trans ) {
+                $tgl_trans = $d_terima_voadip_old->tgl_terima;
+            }
+
+            // cetak_r($id_terima);
+            // cetak_r($tgl_trans, 1);
 
             $this->result['status'] = 1;
             $this->result['content'] = array(
-                'id'        => $d_terima_voadip->id,
-                'tanggal'   => $params['tgl_terima'],
+                'id'        => $id_terima,
+                'tanggal'   => $tgl_trans,
                 'delete'    => 0,
                 'message'   => 'Data Penerimaan Voadip berhasil di ubah.',
                 'status_jurnal' => 2
@@ -1643,23 +1658,23 @@ class PengirimanPenerimaanOvk extends Public_Controller {
         echo $html;
     }
 
-    public function tes()
-    {
-        $m_kirim_voadip = new \Model\Storage\KirimVoadip_model();
-        $d_kirim_voadip = $m_kirim_voadip->where('no_order', 'OP/GSK/22/02098')->where('id', '<>', 8023)->get()->toArray();
+    // public function tes()
+    // {
+    //     $m_kirim_voadip = new \Model\Storage\KirimVoadip_model();
+    //     $d_kirim_voadip = $m_kirim_voadip->where('no_order', 'OP/GSK/22/02098')->where('id', '<>', 8023)->get()->toArray();
 
-        foreach ($d_kirim_voadip as $k_kv => $v_kv) {
-            $no_order = $m_kirim_voadip->getNextIdOrder('OP/GSK');
-            $no_sj = $m_kirim_voadip->getNextIdSj('SJ/GSK');
+    //     foreach ($d_kirim_voadip as $k_kv => $v_kv) {
+    //         $no_order = $m_kirim_voadip->getNextIdOrder('OP/GSK');
+    //         $no_sj = $m_kirim_voadip->getNextIdSj('SJ/GSK');
 
-            $m_kirim_voadip->where('id', $v_kv['id'])->update(
-                array(
-                    'no_order' => $no_order,
-                    'no_sj' => $no_sj
-                )
-            );
-        }
-    }
+    //         $m_kirim_voadip->where('id', $v_kv['id'])->update(
+    //             array(
+    //                 'no_order' => $no_order,
+    //                 'no_sj' => $no_sj
+    //             )
+    //         );
+    //     }
+    // }
     
     public function hitungStokByTransaksi()
     {
@@ -1880,5 +1895,9 @@ class PengirimanPenerimaanOvk extends Public_Controller {
                 Modules::run( 'base/event/save', $d_kpd, $deskripsi_log);
             }
         }
+    }
+
+    public function tes() {
+        $data = $this->get_unit();
     }
 }
