@@ -1150,7 +1150,7 @@ class PengirimanPenerimaanPakan extends Public_Controller {
                     $detail_merge = [];
 
                     foreach ($params['detail'] as $v_detail) {
-                        $key = $v_detail['barang'].'|'.$v_detail['no_sj_asal'];
+                        $key = $v_detail['barang'];
 
                         if ( isset($detail_merge[$key]) ) {
                             $detail_merge[$key]['jumlah'] += $v_detail['jumlah'];
