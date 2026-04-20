@@ -9,9 +9,6 @@ var pp = {
             $(this).priceFormat(Config[$(this).data('tipe')]);
         });
 
-		$('#tgl_kirim').on('dp.change', function(e) {
-			$('#tgl_terima').data("DateTimePicker").minDate(e.date);
-		});
 		
         $('.date').datetimepicker({
 			locale: 'id',
@@ -45,6 +42,13 @@ var pp = {
         $('select.peternak').select2();
         $('select.gudang').select2();
         $('select.ekspedisi').select2();
+
+		$('#tgl_terima').on('dp.show', function () {
+			let kirim = $('#tgl_kirim').data("DateTimePicker").date();
+			if (kirim) {
+				$(this).data("DateTimePicker").minDate(kirim);
+			}
+		});
 
 		App.setTutupBulan();
 	}, // end - setting_up
