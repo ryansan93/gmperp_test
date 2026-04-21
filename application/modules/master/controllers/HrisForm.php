@@ -1,0 +1,296 @@
+<?php defined('BASEPATH') OR exit('No direct script access allowed');
+
+class HrisForm extends Public_Controller {
+
+    private $pathView = 'master/hris_form/';
+    private $url;
+    private $hakAkses;
+
+    function __construct()
+    {
+        parent::__construct();
+        $this->url = $this->current_base_uri;
+        $this->hakAkses = hakAkses($this->url);
+    }
+
+    public function index($segment=0)
+    {
+
+        if ( $this->hakAkses['a_view'] == 1 ) {
+
+            $this->add_external_js(array(
+                "assets/jquery/easy-autocomplete/jquery.easy-autocomplete.min.js",
+                "assets/select2/js/select2.min.js",
+                "assets/master/hris_form/js/hris_form.js",
+            ));
+            $this->add_external_css(array(
+                "assets/jquery/easy-autocomplete/easy-autocomplete.min.css",
+                "assets/jquery/easy-autocomplete/easy-autocomplete.themes.min.css",
+                "assets/select2/css/select2.min.css",
+                "assets/master/hris_form/css/hris_form.css",
+            ));
+
+            $data                   = $this->includes;
+            $content['akses']       = $this->hakAkses;
+            $content['title_panel'] = 'HRIS - Master Form';
+
+            $kategori               = $this->get_list_data();
+            $kategori_unik          = [];
+            $hasil = [];
+
+            foreach ($kategori as $row) {
+                if (!in_array($row->kategori, $kategori_unik)) {
+                    $kategori_unik[] = $row->kategori;
+                    $hasil[] = $row;
+                }
+            }
+
+            $content['kategori']    = $hasil;
+                        // cetak_r($content, 1);
+
+            // Load Indexx
+            $data['title_menu']     = 'HRIS - Master Form';
+
+            $data['view'] = $this->load->view($this->pathView . 'v_index', $content, TRUE);
+            $this->load->view($this->template, $data);
+
+        } else {
+            showErrorAkses();
+        }
+    }
+
+    public function add_data()
+    {  
+        $this->add_external_js(array(
+            "assets/jquery/easy-autocomplete/jquery.easy-autocomplete.min.js",
+            "assets/select2/js/select2.min.js",
+            "assets/master/hris_form/js/hris_form.js",
+        ));
+        $this->add_external_css(array(
+            "assets/jquery/easy-autocomplete/easy-autocomplete.min.css",
+            "assets/jquery/easy-autocomplete/easy-autocomplete.themes.min.css",
+            "assets/select2/css/select2.min.css",
+            "assets/master/hris_form/css/hris_form.css",
+        ));
+
+        $data                 = $this->includes;
+
+        $data['view']         = $this->load->view($this->pathView . 'v_add_data', $content, TRUE);
+        $this->load->view($this->template, $data);
+    }
+
+    public function save()
+    {
+
+        $params = $_POST;
+        // cetak_r($params, 1);
+        
+        try {
+            // cetak_r( $params, 1 );
+            $m_form     = new \Model\Storage\HrisForm_model();
+
+            $m_form->title          = $params['header']['title'];
+            $m_form->keterangan     = $params['header']['keterangan'];
+            $m_form->urutan         = $params['header']['urutan'];
+            $m_form->kategori       = $params['header']['kategori'];
+            $m_form->save();
+
+            $id_form = $m_form->id;
+
+            foreach ($params['detail'] as $v_det) {
+
+                $m_kategori = new \Model\Storage\HrisKategori_model();
+                $m_kategori->id_form     = $id_form;
+                $m_kategori->nama        = $v_det['label'];
+                $m_kategori->urutan      = $v_det['urutan'];
+                $m_kategori->save();
+
+            }
+
+            // $deskripsi_log = 'di-submit oleh ' . $this->userdata['detail_user']['nama_detuser'];
+            // Modules::run( 'base/event/save', $m_mm, $deskripsi_log, null, $no_mm );
+
+            $this->result['status'] = 1;
+            $this->result['message'] = 'Data berhasil di simpan.';
+            // $this->result['content'] = array('id' => $no_mm);
+        } catch (Exception $e) {
+            $this->result['message'] = $e->getMessage();
+        }
+
+        display_json( $this->result );
+
+    }
+
+
+    public function load_form(){
+
+        $content['list'] =  $this->get_list_data();
+        // cetak_r($content, 1);
+
+
+        echo $this->load->view($this->pathView . 'v_list', $content, TRUE);
+    }
+
+     public function filter_data(){
+
+        $content['list'] =  $this->get_list_data($_POST['kategori']);
+        // cetak_r($_POST, 1);
+
+
+        echo $this->load->view($this->pathView . 'v_list', $content, TRUE);
+    }
+
+
+
+    public function get_list_data($kategori = null)
+    {
+         
+        $m_conf     = new \Model\Storage\Conf();
+        $sql        = " select * from hris_form ";
+
+        if (!empty($kategori)){
+            $sql .= " where kategori like '%".$kategori."%' ";
+        }
+
+        // cetak_r($sql, 1);
+
+        $d_conf     = $m_conf->hydrateRaw( $sql );
+        $data       = null;
+
+        if ( $d_conf->count() > 0 ) {
+            $data = $d_conf->toArray();
+        }
+
+        return $data;
+    }
+
+    public function show_detail()
+    {
+        $content['header']  = $this->get_list_data($_POST['id'])[0];
+        $content['detail']  = $this->get_list_data_ketegori($_POST['id']);
+        // cetak_r($content, 1);
+
+        echo $this->load->view($this->pathView . 'v_detail', $content, TRUE);
+    }
+
+    public function get_list_data_ketegori($id)
+    {
+
+        $m_conf     = new \Model\Storage\Conf();
+        $sql        = " select * from hris_kategori where id_form = " . $id;
+        $d_conf     = $m_conf->hydrateRaw( $sql );
+        $data       = null;
+
+        if ( $d_conf->count() > 0 ) {
+            $data = $d_conf->toArray();
+        }
+
+        return $data;
+    } 
+
+    public function edit_data()
+    {
+        
+
+        $this->add_external_js(array(
+            "assets/jquery/easy-autocomplete/jquery.easy-autocomplete.min.js",
+            "assets/select2/js/select2.min.js",
+            "assets/master/hris_form/js/hris_form.js",
+        ));
+        $this->add_external_css(array(
+            "assets/jquery/easy-autocomplete/easy-autocomplete.min.css",
+            "assets/jquery/easy-autocomplete/easy-autocomplete.themes.min.css",
+            "assets/select2/css/select2.min.css",
+            "assets/master/hris_form/css/hris_form.css",
+        ));
+
+        $data                 = $this->includes;
+
+        $content['header']  = $this->get_list_data($_GET['id_data'])[0];
+        $content['detail']  = $this->get_list_data_ketegori($_GET['id_data']);
+        //  cetak_r($content, 1);
+
+        $data['view']         = $this->load->view($this->pathView . 'v_edit_data', $content, TRUE);
+        $this->load->view($this->template, $data);
+    }
+
+    public function update()
+    {
+        $params = $_POST;
+
+        try {
+            $id_form = (int) $params['id_data'];
+
+            $m_form = new \Model\Storage\HrisForm_model();
+
+            $d_form = $m_form->where('id', $id_form)->first();
+            if (!$d_form) {
+                throw new \Exception("Data form tidak ditemukan.");
+            }
+
+
+            $m_form->where('id', $id_form)->update([
+                'title'        => $params['header']['title'],
+                'keterangan'   => $params['header']['keterangan'],
+                'urutan'       => $params['header']['urutan'],
+                'kategori'     => $params['header']['kategori']
+            ]);
+
+          
+            $m_kategori = new \Model\Storage\HrisKategori_model();
+            $m_kategori->where('id_form', $id_form)->delete();
+
+            if (!empty($params['detail'])) {
+                foreach ($params['detail'] as $v_det) {
+                    $m_kategori = new \Model\Storage\HrisKategori_model();
+
+                    $m_kategori->id_form = $id_form;
+                    $m_kategori->nama    = $v_det['label'];
+                    $m_kategori->urutan  = $v_det['urutan'];
+                    $m_kategori->save();
+                }
+            }
+
+            $this->result['status'] = 1;
+            $this->result['message'] = 'Data berhasil di update.';
+
+        } catch (\Exception $e) {
+            $this->result['status'] = 0;
+            $this->result['message'] = $e->getMessage();
+        }
+
+        display_json($this->result);
+    }
+
+
+    public function delete()
+    {
+        $params = $_POST;
+        // cetak_r($params, 1);
+        $id_form = (int) $params['id'];
+
+        $m_form = new \Model\Storage\HrisForm_model();
+        $m_kategori = new \Model\Storage\HrisKategori_model();
+
+        try {
+            // delete detail
+            $m_kategori = new \Model\Storage\HrisKategori_model();
+            $m_kategori->where('id_form', $id_form)->delete();
+
+            // delete header
+            $m_form->where('id', $id_form)->delete();
+
+    
+
+            $this->result['status'] = 1;
+            $this->result['message'] = 'Data berhasil di hapus.';
+
+        } catch (\Exception $e) {
+            $this->result['status'] = 0;
+            $this->result['message'] = $e->getMessage();
+        }
+
+        display_json($this->result);
+    }
+
+}
