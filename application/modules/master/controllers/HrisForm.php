@@ -141,6 +141,28 @@ class HrisForm extends Public_Controller {
     }
 
 
+    public function get_list($id )
+    {
+         
+        $m_conf     = new \Model\Storage\Conf();
+        $sql        = " select * from hris_form ";
+
+        if (!empty($id)){
+            $sql .= " where id = ". $id ;
+        }
+
+        // cetak_r($sql, 1);
+
+        $d_conf     = $m_conf->hydrateRaw( $sql );
+        $data       = null;
+
+        if ( $d_conf->count() > 0 ) {
+            $data = $d_conf->toArray();
+        }
+
+        return $data;
+    }
+
 
     public function get_list_data($kategori = null)
     {
@@ -166,7 +188,7 @@ class HrisForm extends Public_Controller {
 
     public function show_detail()
     {
-        $content['header']  = $this->get_list_data($_POST['id'])[0];
+        $content['header']  = $this->get_list($_POST['id'])[0];
         $content['detail']  = $this->get_list_data_ketegori($_POST['id']);
         // cetak_r($content, 1);
 
