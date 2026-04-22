@@ -35,7 +35,7 @@
     <hr>
     <div class="detail_area" style="display:flex; flex-direction:column; gap:10px; ">
 
-        <div style="display:flex; flex-direction:column; gap:10px; padding:10px; border-right: 2px solid #d2d2d2; border-top: 2px solid #d2d2d2; border-bottom: 2px solid #d2d2d2; border-left: 4px solid #ababab;">
+        <div class="detail_form" style="display:flex; flex-direction:column; gap:10px; padding:10px; border-right: 2px solid #d2d2d2; border-top: 2px solid #d2d2d2; border-bottom: 2px solid #d2d2d2; border-left: 4px solid #ababab;">
 
             <div style="display:flex; flex-direction:row; gap:10px; align-items:center;" class="detail_form">
                 <label style="width:10%;">Label</label>

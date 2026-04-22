@@ -2,7 +2,7 @@
 
 class HrisForm extends Public_Controller {
 
-    private $pathView = 'master/hris_form/';
+    private $pathView = 'hris/hris_form/';
     private $url;
     private $hakAkses;
 
@@ -21,35 +21,25 @@ class HrisForm extends Public_Controller {
             $this->add_external_js(array(
                 "assets/jquery/easy-autocomplete/jquery.easy-autocomplete.min.js",
                 "assets/select2/js/select2.min.js",
-                "assets/master/hris_form/js/hris_form.js",
+                "assets/hris/hris_form/js/hris_form.js",
             ));
             $this->add_external_css(array(
                 "assets/jquery/easy-autocomplete/easy-autocomplete.min.css",
                 "assets/jquery/easy-autocomplete/easy-autocomplete.themes.min.css",
                 "assets/select2/css/select2.min.css",
-                "assets/master/hris_form/css/hris_form.css",
+                "assets/hris/hris_form/css/hris_form.css",
             ));
 
-            $data                   = $this->includes;
-            $content['akses']       = $this->hakAkses;
-            $content['title_panel'] = 'HRIS - Master Form';
+            $data                       = $this->includes;
+            $content['akses']           = $this->hakAkses;
+            $content['title_panel']     = 'HRIS - Hris Form';
+            $content['add_kategori']    = $this->getKategori();
 
-            $kategori               = $this->get_list_data();
-            $kategori_unik          = [];
-            $hasil = [];
-
-            foreach ($kategori as $row) {
-                if (!in_array($row->kategori, $kategori_unik)) {
-                    $kategori_unik[] = $row->kategori;
-                    $hasil[] = $row;
-                }
-            }
-
-            $content['kategori']    = $hasil;
-                        // cetak_r($content, 1);
+            // cetak_r($content['kategori'], 1);
+            $content['kategori']        = $this->getKategori();
 
             // Load Indexx
-            $data['title_menu']     = 'HRIS - Master Form';
+            $data['title_menu']     = 'HRIS - hris Form';
 
             $data['view'] = $this->load->view($this->pathView . 'v_index', $content, TRUE);
             $this->load->view($this->template, $data);
@@ -59,18 +49,34 @@ class HrisForm extends Public_Controller {
         }
     }
 
+    public function getKategori()
+    {
+    
+        $m_conf = new \Model\Storage\Conf();
+        $sql    = " select * from hris_kategori ";
+
+        $d_conf = $m_conf->hydrateRaw( $sql );
+        $data   = null;
+
+        if ( $d_conf->count() > 0 ) {
+            $data = $d_conf->toArray();
+        }
+
+        return $data;
+    }
+
     public function add_data()
     {  
         $this->add_external_js(array(
             "assets/jquery/easy-autocomplete/jquery.easy-autocomplete.min.js",
             "assets/select2/js/select2.min.js",
-            "assets/master/hris_form/js/hris_form.js",
+            "assets/hris/hris_form/js/hris_form.js",
         ));
         $this->add_external_css(array(
             "assets/jquery/easy-autocomplete/easy-autocomplete.min.css",
             "assets/jquery/easy-autocomplete/easy-autocomplete.themes.min.css",
             "assets/select2/css/select2.min.css",
-            "assets/master/hris_form/css/hris_form.css",
+            "assets/hris/hris_form/css/hris_form.css",
         ));
 
         $data                 = $this->includes;
@@ -86,7 +92,6 @@ class HrisForm extends Public_Controller {
         // cetak_r($params, 1);
         
         try {
-            // cetak_r( $params, 1 );
             $m_form     = new \Model\Storage\HrisForm_model();
 
             $m_form->title          = $params['header']['title'];
@@ -99,11 +104,12 @@ class HrisForm extends Public_Controller {
 
             foreach ($params['detail'] as $v_det) {
 
-                $m_kategori = new \Model\Storage\HrisKategori_model();
-                $m_kategori->id_form     = $id_form;
-                $m_kategori->nama        = $v_det['label'];
-                $m_kategori->urutan      = $v_det['urutan'];
-                $m_kategori->save();
+                $m_form_detail = new \Model\Storage\HrisFormDetail_model();
+                $m_form_detail->id_form     = $id_form;
+                $m_form_detail->nama        = $v_det['label'];
+                $m_form_detail->urutan      = $v_det['urutan'];
+                $m_form_detail->kode_detail = 'DTL-'. $id_form;
+                $m_form_detail->save();
 
             }
 
@@ -145,7 +151,8 @@ class HrisForm extends Public_Controller {
     {
          
         $m_conf     = new \Model\Storage\Conf();
-        $sql        = " select * from hris_form ";
+        $sql        = " select * from hris_form hf 
+                        inner join hris_kategori hk on hf.kategori = hk.kode_kategori ";
 
         if (!empty($id)){
             $sql .= " where id = ". $id ;
@@ -168,11 +175,14 @@ class HrisForm extends Public_Controller {
     {
          
         $m_conf     = new \Model\Storage\Conf();
-        $sql        = " select * from hris_form ";
+        $sql        = " select * from hris_form hf 
+                        inner join hris_kategori hk on hf.kategori = hk.kode_kategori ";
 
         if (!empty($kategori)){
-            $sql .= " where kategori like '%".$kategori."%' ";
+            $sql .= " where hf.kategori = '".$kategori."' ";
         }
+
+        $sql .= " order by urutan asc ";
 
         // cetak_r($sql, 1);
 
@@ -197,10 +207,10 @@ class HrisForm extends Public_Controller {
 
     public function get_list_data_ketegori($id)
     {
-
         $m_conf     = new \Model\Storage\Conf();
-        $sql        = " select * from hris_kategori where id_form = " . $id;
+        $sql        = " select * from hris_form_detail where id_form = " . $id;
         $d_conf     = $m_conf->hydrateRaw( $sql );
+        // cetak_r(123, 1);
         $data       = null;
 
         if ( $d_conf->count() > 0 ) {
@@ -217,20 +227,21 @@ class HrisForm extends Public_Controller {
         $this->add_external_js(array(
             "assets/jquery/easy-autocomplete/jquery.easy-autocomplete.min.js",
             "assets/select2/js/select2.min.js",
-            "assets/master/hris_form/js/hris_form.js",
+            "assets/hris/hris_form/js/hris_form.js",
         ));
         $this->add_external_css(array(
             "assets/jquery/easy-autocomplete/easy-autocomplete.min.css",
             "assets/jquery/easy-autocomplete/easy-autocomplete.themes.min.css",
             "assets/select2/css/select2.min.css",
-            "assets/master/hris_form/css/hris_form.css",
+            "assets/hris/hris_form/css/hris_form.css",
         ));
 
-        $data                 = $this->includes;
-
-        $content['header']  = $this->get_list_data($_GET['id_data'])[0];
-        $content['detail']  = $this->get_list_data_ketegori($_GET['id_data']);
+        $data                       = $this->includes;
+        $content['header']          = $this->get_list($_GET['id_data'])[0];
+        $content['detail']          = $this->get_list_data_ketegori($_GET['id_data']);
+        $content['add_kategori']    = $this->getKategori();
         //  cetak_r($content, 1);
+        $content['title_panel']     = 'HRIS - Hris Form / Edit Data';
 
         $data['view']         = $this->load->view($this->pathView . 'v_edit_data', $content, TRUE);
         $this->load->view($this->template, $data);
@@ -239,6 +250,9 @@ class HrisForm extends Public_Controller {
     public function update()
     {
         $params = $_POST;
+
+        //  cetak_r($params, 1);
+
 
         try {
             $id_form = (int) $params['id_data'];
@@ -259,17 +273,18 @@ class HrisForm extends Public_Controller {
             ]);
 
           
-            $m_kategori = new \Model\Storage\HrisKategori_model();
-            $m_kategori->where('id_form', $id_form)->delete();
+            $m_form_detail = new \Model\Storage\HrisFormDetail_model();
+            $m_form_detail->where('id_form', $id_form)->delete();
 
             if (!empty($params['detail'])) {
                 foreach ($params['detail'] as $v_det) {
-                    $m_kategori = new \Model\Storage\HrisKategori_model();
+                    $m_form_detail = new \Model\Storage\HrisFormDetail_model();
 
-                    $m_kategori->id_form = $id_form;
-                    $m_kategori->nama    = $v_det['label'];
-                    $m_kategori->urutan  = $v_det['urutan'];
-                    $m_kategori->save();
+                    $m_form_detail->id_form = $id_form;
+                    $m_form_detail->nama    = $v_det['label'];
+                    $m_form_detail->urutan  = $v_det['urutan'];
+                    $m_form_detail->kode_detail      = 'DTL-'. $id_form;
+                    $m_form_detail->save();
                 }
             }
 
@@ -292,12 +307,12 @@ class HrisForm extends Public_Controller {
         $id_form = (int) $params['id'];
 
         $m_form = new \Model\Storage\HrisForm_model();
-        $m_kategori = new \Model\Storage\HrisKategori_model();
+        $m_form_detail = new \Model\Storage\HrisFormDetail_model();
 
         try {
             // delete detail
-            $m_kategori = new \Model\Storage\HrisKategori_model();
-            $m_kategori->where('id_form', $id_form)->delete();
+            $m_form_detail = new \Model\Storage\HrisFormDetail_model();
+            $m_form_detail->where('id_form', $id_form)->delete();
 
             // delete header
             $m_form->where('id', $id_form)->delete();

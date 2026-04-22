@@ -1,26 +1,36 @@
 let hf ={
 
-    add_row : (elm,e) =>{
+    add_row: (elm, e) => {
 
-        let html = ` <div style="display:flex; flex-direction:column; gap:10px; padding:10px; border-right: 2px solid #d2d2d2; border-top: 2px solid #d2d2d2; border-bottom: 2px solid #d2d2d2; border-left: 4px solid #ababab;">
+        let next_urutan = $(".detail_form").length + 1;
 
-                        <div style="display:flex; flex-direction:row; gap:10px; align-items:center;" class="detail_form">
-                            <label style="width:10%;">Label</label>
-                            <input type="text" class="form form-control label_dtl" style="width:40%;">
+        console.log(next_urutan)
+
+        let html = `
+        <div class="detail_form" style="display:flex; flex-direction:column; gap:10px; padding:10px; border-right: 2px solid #d2d2d2; border-top: 2px solid #d2d2d2; border-bottom: 2px solid #d2d2d2; border-left: 4px solid #ababab;">
+            <div style="display:flex; flex-direction:row; gap:10px; align-items:center;">
+                <label style="width:10%;">Label</label>
+                <input type="text" class="form form-control label_dtl" style="width:40%;">
                 
-                            <input type="text" placeholder="urutan" class="form form-control urutan_dtl" style="width:10%;">
-                            
-                            <div style="width:40%; text-align:right">
-                                <button class="btn btn-warning" onclick="hf.add_row(this, event);"><span class="fa fa-plus"></span></button>
-                                <button class="btn btn-danger" onclick="hf.delete_row(this, event);"><span class="fa fa-close"></span></button>   
-                            </div>
-                        </div>
-                    </div> `;
+                <input type="text" placeholder="urutan" 
+                    class="form form-control urutan_dtl" 
+                    value="${next_urutan}" 
+                    style="width:10%;">
+                
+                <div style="width:40%; text-align:right">
+                    <button class="btn btn-warning" onclick="hf.add_row(this, event);">
+                        <span class="fa fa-plus"></span>
+                    </button>
+                    <button class="btn btn-danger" onclick="hf.delete_row(this, event);">
+                        <span class="fa fa-close"></span>
+                    </button>   
+                </div>
+            </div>
+        </div>`;
 
-        $(".detail_area").append(html)
-
+        $(".detail_area").append(html);
     },
-
+    
     delete_row : (elm, e) => {
 
         let dtl = $(".detail_form").length;
@@ -35,38 +45,66 @@ let hf ={
     save: (elm, e)  => {
 
         let header = {
-            title : $(".title_hdr").val(),
-            keterangan : $(".keterangan").val(),
+            title : $(".title_hdr").val().trim(),
+            keterangan : $(".keterangan").val().trim(),
             urutan : $(".urutan_hdr").val(),
-            kategori : $(".kategori").val(),
+            kategori : $(".kategori").attr("kode_kategori"),
+        }
+
+        if (header.title === "") {
+            return bootbox.alert("Title wajib diisi!");
+        }
+
+        if (header.keterangan === "") {
+            return bootbox.alert("Keterangan wajib diisi!");
+        }
+
+        if (header.urutan === "" || isNaN(header.urutan)) {
+            return bootbox.alert("Urutan harus berupa angka!");
+        }
+
+        if (header.kategori === "") {
+            return bootbox.alert("Kategori wajib dipilih!");
         }
 
         let detail = [];
+        let isValidDetail = true;
 
-        $(".detail_area").find(".detail_form").each(function(){
+        $(".detail_area").find(".detail_form").each(function(index){
             let label = $(this).find(".label_dtl").val().trim();
             let urutan = $(this).find(".urutan_dtl").val();
 
-            if (label !== "") {
-                let detail_temp = {
-                    label: label,
-                    urutan: urutan,
-                };
-
-                detail.push(detail_temp);
+            if (label === "") {
+                isValidDetail = false;
+                bootbox.alert(`Label pada detail ke-${index + 1} tidak boleh kosong!`);
+                return false;
             }
+
+            if (urutan === "" || isNaN(urutan)) {
+                isValidDetail = false;
+                bootbox.alert(`Urutan pada detail ke-${index + 1} harus angka!`);
+                return false;
+            }
+
+            detail.push({
+                label: label,
+                urutan: urutan,
+            });
         });
+
+        if (!isValidDetail) return;
+
+        if (detail.length === 0) {
+            return bootbox.alert("Minimal harus ada 1 detail!");
+        }
 
         let params = {
             header : header,
             detail : detail,
         }
 
-        // console.log(params);
-        // return false;
-
         $.ajax({
-            url : 'master/HrisForm/save',
+            url : 'hris/HrisForm/save',
             data : params,
             type : 'POST',
             dataType : 'json',
@@ -77,16 +115,15 @@ let hf ={
                 hideLoading();
 
                 bootbox.alert(data.message, function () {
-                    window.location.href = 'master/HrisForm';
+                    window.location.href = 'hris/HrisForm';
                 });
-
             },
         });
     },
 
     load_form : () => {
         $.ajax({
-            url : 'master/HrisForm/load_form',
+            url : 'hris/HrisForm/load_form',
             // data : params,
             type : 'POST',
             dataType : 'html',
@@ -108,7 +145,7 @@ let hf ={
         }
 
         $.ajax({
-            url : 'master/HrisForm/filter_data',
+            url : 'hris/HrisForm/filter_data',
             data : params,
             type : 'POST',
             dataType : 'html',
@@ -131,7 +168,7 @@ let hf ={
         }
 
         $.ajax({
-            url : 'master/HrisForm/show_detail',
+            url : 'hris/HrisForm/show_detail',
             data : params,
             type : 'POST',
             dataType : 'html',
@@ -177,8 +214,12 @@ let hf ={
     },
 
     edit: (params) => {
-        let url = 'master/HrisForm/edit_data?id_data=' + params.id ;
+        let url = 'hris/HrisForm/edit_data?id_data=' + params.id ;
         window.location.href = url ;
+    },
+
+    changeTabActive: () => {
+        $('a[href="#action"]').tab('show');
     },
 
 
@@ -188,7 +229,7 @@ let hf ={
             title : $(".title_hdr").val(),
             keterangan : $(".keterangan").val(),
             urutan : $(".urutan_hdr").val(),
-            kategori : $(".kategori").val(),
+            kategori : $(".kategori").attr("kode_kategori"),
         }
 
         let detail = [];
@@ -217,7 +258,7 @@ let hf ={
         // return false;
 
         $.ajax({
-            url : 'master/HrisForm/update',
+            url : 'hris/HrisForm/update',
             data : params,
             type : 'POST',
             dataType : 'json',
@@ -228,7 +269,7 @@ let hf ={
                 hideLoading();
 
                 bootbox.alert(data.message, function () {
-                    window.location.href = 'master/HrisForm';
+                    window.location.href = 'hris/HrisForm';
                 });
                
             },
@@ -239,7 +280,7 @@ let hf ={
     delete: (params) =>{
 
          $.ajax({
-            url : 'master/HrisForm/delete',
+            url : 'hris/HrisForm/delete',
             data : params,
             type : 'POST',
             dataType : 'json',
@@ -250,17 +291,57 @@ let hf ={
                 hideLoading();
 
                 bootbox.alert(data.message, function () {
-                    window.location.href = 'master/HrisForm';
+                    window.location.href = 'hris/HrisForm';
                 });
             },
         });
 
     },
 
-    generate_form: (elm, e) => {
-
+    show_kategori_list: function() {
+        $(".kategori_list").show();
     },
+
+    select_kategori_list: (elm, e) =>{
+        let kode_kategori = $(elm).attr("value_kategori");
+        let nama_kategori = $(elm).html();
+
+        $(".kategori").val(nama_kategori);
+        $(".kategori").attr('kode_kategori', kode_kategori);
+
+
+        $(".kategori_list").hide();
+    }
 }
 
+let app = {
+    init: function() {
 
-hf.load_form();
+        $(".kategori").on("click", function() {
+            $(".kategori_list").show();
+        });
+
+        $(".kategori_list div").on("click", function() {
+            let nama = $(this).text();
+            let kode = $(this).attr("value_kategori");
+
+            $(".kategori").val(nama);
+            $(".kategori").attr("kode_kategori", kode);
+            $(".kategori_list").hide();
+        });
+
+        $(document).on("click", function(e) {
+            if (!$(e.target).closest(".kategori, .kategori_list").length) {
+                $(".kategori_list").hide();
+            }
+        });
+
+    }
+};
+
+
+$(document).ready(function() {
+    app.init();
+    hf.load_form();
+});
+

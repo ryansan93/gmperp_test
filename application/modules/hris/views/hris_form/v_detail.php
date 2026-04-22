@@ -13,7 +13,7 @@
 
             <div style="display:flex; flex-direction:row; gap:10px;">
                 <span style="width:100px;">Kategori</span>
-                <label for=""><?php echo $header['kategori'] ?></label>
+                <label for=""><?php echo $header['nama_kategori'] ?></label>
             </div>
         </div>
     
@@ -28,7 +28,7 @@
     <br>
     <h4 style="">Daftar Label</h4>
     <hr>
-    <div class="detail_area" style="display:flex; flex-direction:column; gap:10px; height:300px; overflow-y:scroll">
+    <div class="detail_area" style="display:flex; flex-direction:column; gap:10px; min-height:100px; height:200px; overflow-y:scroll">
 
         <?php foreach($detail as $d){ ?>
         <div style="display:flex; flex-direction:column; gap:10px; padding:10px; border-right: 2px solid #d2d2d2; border-top: 2px solid #d2d2d2; border-bottom: 2px solid #d2d2d2; border-left: 4px solid #ababab;">
