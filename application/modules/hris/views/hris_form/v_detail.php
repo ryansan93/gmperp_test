@@ -28,7 +28,7 @@
     <br>
     <h4 style="">Daftar Label</h4>
     <hr>
-    <?php $height = count($detail) > 6 ? ' height:350px; overflow-y:scroll' : ''; ?>
+    <?php $height = count($detail) > 6 ? ' height:370px; overflow-y:scroll' : ''; ?>
     <div class="detail_area" style="display:flex; flex-direction:column; gap:8px; <?php echo $height ?> ">
 
         <?php foreach($detail as $d){ ?>
