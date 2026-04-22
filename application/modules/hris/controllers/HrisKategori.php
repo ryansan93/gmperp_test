@@ -79,7 +79,7 @@ class HrisKategori extends Public_Controller {
             foreach ($params['detail'] as $v_det) {
 
                 $m_form_detail = new \Model\Storage\HrisKategori_model();
-                $m_form_detail->kode_kategori      = $v_det['kode_kategori'];
+                $m_form_detail->kode_kategori      = $this->generate_kode();
                 $m_form_detail->nama_kategori      = $v_det['nama_kategori'];
                 $m_form_detail->save();
 
@@ -170,13 +170,35 @@ class HrisKategori extends Public_Controller {
     }
 
 
-      public function load_form(){
+    public function load_form(){
 
         $content['list'] =  $this->getKategori();
         // cetak_r($content, 1);
 
 
         echo $this->load->view($this->pathView . 'v_list', $content, TRUE);
+    }
+
+    public function generate_kode(){
+        $m_kategori = new \Model\Storage\HrisKategori_model();
+        $last = $m_kategori->where('kode_kategori', 'like', 'HRIS/K/%')->orderBy('kode_kategori', 'desc')->first();
+
+        $no = 1;
+
+        if ($last) {
+            // ambil angka terakhir (001, 002, dst)
+            $last_kode = $last->kode_kategori;
+            $explode = explode('/', $last_kode);
+            $no = (int)$explode[2] + 1;
+        }
+
+        // format jadi 3 digit
+        $no_format = str_pad($no, 3, '0', STR_PAD_LEFT);
+
+        // hasil akhir
+        $kode_kategori = 'HRIS/K/' . $no_format;
+
+        return $kode_kategori;
     }
 
 }

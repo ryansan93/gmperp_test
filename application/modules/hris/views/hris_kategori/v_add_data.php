@@ -38,10 +38,10 @@
         <div class="detail_form" style="display:flex; flex-direction:column; gap:10px; padding:10px; border-right: 2px solid #d2d2d2; border-top: 2px solid #d2d2d2; border-bottom: 2px solid #d2d2d2; border-left: 4px solid #ababab;">
 
             <div style="display:flex; flex-direction:row; gap:10px; align-items:center;" class="detail_form">
-                <label style="width:10%;">Label</label>
-                <input type="text" class="form form-control label_dtl" style="width:40%;">
+                <label style="width:10%;">Nama Kategori</label>
+                <input type="text" class="form form-control nama_kategori" style="width:40%;">
     
-                <input type="text" placeholder="urutan" class="form form-control urutan_dtl" style="width:10%;">
+                <!-- <input type="text" placeholder="urutan" class="form form-control urutan_dtl" style="width:10%;"> -->
                 
                 <div style="width:40%; text-align:right">
                     <button class="btn btn-warning" onclick="hf.add_row(this, event);"><span class="fa fa-plus"></span></button>

@@ -38,10 +38,7 @@
 
                     <div style="display:flex; flex-direction:row; gap:10px; align-items:center;">
                         <label style="width:10%;">Nama Kategori</label>
-                        <input type="text" class="form form-control nama_kategori" style="width:30%;">
-            
-                        <label style="width:10%;">Kode Kategori</label>
-                        <input type="text" placeholder="urutan" class="form form-control kode_kategori" value="1" style="width:20%;">
+                        <input type="text" class="form form-control nama_kategori" style="width:40%;">
                         
                         <div style="width:40%; text-align:right">
                             <button class="btn btn-warning" onclick="hf.add_row(this, event);"><span class="fa fa-plus"></span></button>
@@ -54,7 +51,7 @@
             <br>
 
             <div class="pull-right">
-                <button class="btn btn-secondary " onclick="window.location.href='master/HrisForm' "> <i class="fa fa-angle-left" style="margin-right:10px;" aria-hidden="true"></i>  Back</button>
+                <button class="btn btn-secondary " onclick="window.location.href='hris/HrisKategori' "> <i class="fa fa-angle-left" style="margin-right:10px;" aria-hidden="true"></i>  Back</button>
                 <button class="btn btn-primary " onclick="hf.save(this, event)"> <i class="fa fa-floppy-o" style="margin-right:10px;" aria-hidden="true"></i>  Save Data</button>
             </div>
 

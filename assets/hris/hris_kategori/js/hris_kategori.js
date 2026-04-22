@@ -4,18 +4,11 @@ let hf ={
 
     add_row: (elm, e) => {
 
-        let next_urutan = $(".detail_form").length + 1;
-
-        console.log(next_urutan)
-
         let html = `
         <div class="detail_form" style="display:flex; flex-direction:column; gap:10px; padding:10px; border-right: 2px solid #d2d2d2; border-top: 2px solid #d2d2d2; border-bottom: 2px solid #d2d2d2; border-left: 4px solid #ababab;">
             <div style="display:flex; flex-direction:row; gap:10px; align-items:center;">
                 <label style="width:10%;">Nama Kategori</label>
-                <input type="text" class="form form-control nama_kategori" style="width:30%;">
-    
-                <label style="width:10%;">Kode Kategori</label>
-                <input type="text" placeholder="urutan" class="form form-control kode_kategori" value="1" style="width:20%;">
+                <input type="text" class="form form-control nama_kategori" style="width:40%;">
                 
                 <div style="width:40%; text-align:right">
                     <button class="btn btn-warning" onclick="hf.add_row(this, event);"><span class="fa fa-plus"></span></button>
@@ -45,7 +38,6 @@ let hf ={
 
         $(".detail_area").find(".detail_form").each(function(index){
             let nama_kategori = $(this).find(".nama_kategori").val().trim();
-            let kode_kategori = $(this).find(".kode_kategori").val().trim();
 
             if (nama_kategori === "") {
                 isValidDetail = false;
@@ -55,7 +47,6 @@ let hf ={
 
             detail.push({
                 nama_kategori: nama_kategori,
-                kode_kategori: kode_kategori,
             });
         });
 
@@ -267,22 +258,28 @@ let hf ={
             kode_kategori : $(elm).attr('kode_kategori'),
         }
 
-         $.ajax({
-            url : 'hris/HrisKategori/delete',
-            data : params,
-            type : 'POST',
-            dataType : 'json',
-            beforeSend : function(){ 
-                showLoading(); 
-            },
-            success : function(data){
-                hideLoading();
+        bootbox.confirm('Yakin mau hapus?', function(result) {
+            if (result) {
+                $.ajax({
+                    url : 'hris/HrisKategori/delete',
+                    data : params,
+                    type : 'POST',
+                    dataType : 'json',
+                    beforeSend : function(){ 
+                        showLoading(); 
+                    },
+                    success : function(data){
+                        hideLoading();
 
-                bootbox.alert(data.message, function () {
-                    window.location.href = 'hris/HrisKategori';
+                        bootbox.alert(data.message, function () {
+                            window.location.href = 'hris/HrisKategori';
+                        });
+                    },
                 });
-            },
+            }
         });
+
+       
 
     },
 

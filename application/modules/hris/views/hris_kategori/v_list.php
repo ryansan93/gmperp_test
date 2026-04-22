@@ -13,8 +13,8 @@
                     <td class="text-center"><?php echo $l['kode_kategori'] ?></td>
                     <td><?php echo $l['nama_kategori'] ?></td>
                     <td class="text-center">
-                        <button kode_kategori="<?php echo $l['kode_kategori'] ?>" class="btn btn-primary" onclick="hf.edit(this, event)"><i style="margin-right:5px;" class="fa fa-edit" aria-hidden="true"></i> Edit</button>
-                        <button kode_kategori="<?php echo $l['kode_kategori'] ?>" class="btn btn-primary" onclick="hf.delete(this, event)"><i style="margin-right:5px;" class="fa fa-trash" aria-hidden="true"></i> Delete</button>
+                        <button kode_kategori="<?php echo $l['kode_kategori'] ?>" class="btn btn-warning" onclick="hf.edit(this, event)"><i style="margin-right:5px;" class="fa fa-edit" aria-hidden="true"></i> Edit</button>
+                        <button kode_kategori="<?php echo $l['kode_kategori'] ?>" class="btn btn-danger" onclick="hf.delete(this, event)"><i style="margin-right:5px;" class="fa fa-trash" aria-hidden="true"></i> Delete</button>
                     </td>
                 </tr>
             <?php } ?>
