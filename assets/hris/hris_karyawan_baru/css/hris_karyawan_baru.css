@@ -1,0 +1,29 @@
+.kategori_list{
+    border:1px solid rgb(211, 211, 211); 
+    border-radius:5px; 
+    padding:5px;
+    height: 200px;
+    display: none;
+    position: absolute;
+    margin-top: 70px;
+    background-color: white;
+    overflow-y: scroll;
+}
+
+.kategori_list div{
+    padding:5px;
+}
+
+.kategori_list div:hover{
+    background-color:  rgb(235, 235, 235);
+    color: rgb(35, 35, 35);
+    border-radius:5px; 
+    font-weight: 400;
+}
+
+.kategori_selected{
+    background-color:  rgb(235, 235, 235);
+    color: rgb(35, 35, 35);
+    border-radius:5px; 
+    font-weight: 400;
+}

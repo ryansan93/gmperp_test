@@ -39,7 +39,7 @@ class HrisForm extends Public_Controller {
             $content['kategori']        = $this->getKategori();
 
             // Load Indexx
-            $data['title_menu']     = 'HRIS - hris Form';
+            $data['title_menu']     = 'HRIS - Hris Form';
 
             $data['view'] = $this->load->view($this->pathView . 'v_index', $content, TRUE);
             $this->load->view($this->template, $data);
@@ -182,7 +182,7 @@ class HrisForm extends Public_Controller {
             $sql .= " where hf.kategori = '".$kategori."' ";
         }
 
-        $sql .= " order by urutan asc ";
+        $sql .= " order by id desc ";
 
         // cetak_r($sql, 1);
 
