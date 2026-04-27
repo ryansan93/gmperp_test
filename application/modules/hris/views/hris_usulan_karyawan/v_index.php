@@ -26,7 +26,7 @@
             <div style="display:flex; flex-direction:row; width:50%; gap:10px;">
                 <label style="width:200px;">Nama Pengaju</label>
                 <select class="select2 pengaju-filter" id="">
-                    <option>-- Pilih Kategori --</option>
+                    <option>-- Pilih Pengaju --</option>
                     <?php foreach($karyawan as $k) {?>
                         <option value="<?php echo $k['nik']?>"><?php echo $k['nama']?></option>
                         <!-- <option value="dfsfs">dfsfs</option> -->
