@@ -1,8 +1,8 @@
 <?php defined('BASEPATH') OR exit('No direct script access allowed');
 
-class HrisKaryawanBaru extends Public_Controller {
+class HrisKandidatBaru extends Public_Controller {
 
-    private $pathView = 'hris/hris_karyawan_baru/';
+    private $pathView = 'hris/hris_kandidat_baru/';
     private $url;
     private $hakAkses;
 
@@ -21,23 +21,23 @@ class HrisKaryawanBaru extends Public_Controller {
             $this->add_external_js(array(
                 "assets/jquery/easy-autocomplete/jquery.easy-autocomplete.min.js",
                 "assets/select2/js/select2.min.js",
-                "assets/hris/hris_karyawan_baru/js/hris_karyawan_baru.js",
+                "assets/hris/hris_kandidat_baru/js/hris_kandidat_baru.js",
             ));
             $this->add_external_css(array(
                 "assets/jquery/easy-autocomplete/easy-autocomplete.min.css",
                 "assets/jquery/easy-autocomplete/easy-autocomplete.themes.min.css",
                 "assets/select2/css/select2.min.css",
-                "assets/hris/hris_karyawan_baru/css/hris_karyawan_baru.css",
+                "assets/hris/hris_kandidat_baru/css/hris_kandidat_baru.css",
             ));
 
             $data                       = $this->includes;
             $content['akses']           = $this->hakAkses;
-            $content['title_panel']     = 'HRIS - Karyawan Baru';
+            $content['title_panel']     = 'HRIS - Kadidat Baru';
              $content['status']         =  $this->get_status_karyawan();
           
 
             // Load Indexx
-            $data['title_menu']     = 'HRIS - Karyawan Baru';
+            $data['title_menu']     = 'HRIS - Kadidat Baru';
 
             $data['view'] = $this->load->view($this->pathView . 'v_index', $content, TRUE);
             $this->load->view($this->template, $data);

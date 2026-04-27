@@ -59,7 +59,7 @@ let hf = {
         }
 
         $.ajax({
-            url : 'hris/HrisKaryawanBaru/save',
+            url : 'hris/HrisKandidatBaru/save',
             data : params,
             type : 'POST',
             dataType : 'json',
@@ -70,7 +70,7 @@ let hf = {
                 hideLoading();
 
                 bootbox.alert(data.message, function () {
-                    window.location.href = 'hris/HrisKaryawanBaru';
+                    window.location.href = 'hris/HrisKandidatBaru';
                 });
             },
         });
@@ -78,7 +78,7 @@ let hf = {
 
     load_form : () => {
         $.ajax({
-            url : 'hris/HrisKaryawanBaru/load_form',
+            url : 'hris/HrisKandidatBaru/load_form',
             // data : params,
             type : 'POST',
             dataType : 'html',

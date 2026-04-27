@@ -1,8 +1,8 @@
 <?php defined('BASEPATH') OR exit('No direct script access allowed');
 
-class HrisForm extends Public_Controller {
+class HrisUsulanKaryawan extends Public_Controller {
 
-    private $pathView = 'hris/hris_form/';
+    private $pathView = 'hris/hris_usulan_karyawan/';
     private $url;
     private $hakAkses;
 
@@ -21,25 +21,26 @@ class HrisForm extends Public_Controller {
             $this->add_external_js(array(
                 "assets/jquery/easy-autocomplete/jquery.easy-autocomplete.min.js",
                 "assets/select2/js/select2.min.js",
-                "assets/hris/hris_form/js/hris_form.js",
+                "assets/hris/hris_usulan_karyawan/js/hris_usulan_karyawan.js",
             ));
             $this->add_external_css(array(
                 "assets/jquery/easy-autocomplete/easy-autocomplete.min.css",
                 "assets/jquery/easy-autocomplete/easy-autocomplete.themes.min.css",
                 "assets/select2/css/select2.min.css",
-                "assets/hris/hris_form/css/hris_form.css",
+                "assets/hris/hris_usulan_karyawan/css/hris_usulan_karyawan.css",
             ));
 
             $data                       = $this->includes;
             $content['akses']           = $this->hakAkses;
-            $content['title_panel']     = 'HRIS - Hris Form';
-            $content['add_kategori']    = $this->getKategori();
+            $content['title_panel']     = 'HRIS - Hris Usulan Karyawan';
+            $content['karyawan']        = $this->get_data_karyawan();
+            $content['kandidat']        = $this->get_data_kandidat();
 
-            // cetak_r($content['kategori'], 1);
+            // cetak_r($content['kadidat'], 1);
             $content['kategori']        = $this->getKategori();
 
             // Load Indexx
-            $data['title_menu']     = 'HRIS - Hris Form';
+            $data['title_menu']     = 'HRIS - Usulan Karyawan';
 
             $data['view'] = $this->load->view($this->pathView . 'v_index', $content, TRUE);
             $this->load->view($this->template, $data);
@@ -70,13 +71,13 @@ class HrisForm extends Public_Controller {
         $this->add_external_js(array(
             "assets/jquery/easy-autocomplete/jquery.easy-autocomplete.min.js",
             "assets/select2/js/select2.min.js",
-            "assets/hris/hris_form/js/hris_form.js",
+            "assets/hris/hris_usulan_karyawan/js/hris_usulan_karyawan.js",
         ));
         $this->add_external_css(array(
             "assets/jquery/easy-autocomplete/easy-autocomplete.min.css",
             "assets/jquery/easy-autocomplete/easy-autocomplete.themes.min.css",
             "assets/select2/css/select2.min.css",
-            "assets/hris/hris_form/css/hris_form.css",
+            "assets/hris/hris_usulan_karyawan/css/hris_usulan_karyawan.css",
         ));
 
         $data                 = $this->includes;
@@ -93,25 +94,23 @@ class HrisForm extends Public_Controller {
         // cetak_r($params, 1);
         
         try {
-            $m_form     = new \Model\Storage\HrisForm_model();
+            $m_db     = new \Model\Storage\HrisUsulanKaryawan_model();
 
-            $m_form->title          = $params['header']['title'];
-            $m_form->keterangan     = $params['header']['keterangan'];
-            $m_form->urutan         = $params['header']['urutan'];
-            $m_form->kategori       = $params['header']['kategori'];
-            $m_form->save();
-
-            $id_form = $m_form->id;
+            $m_db->nama_pengusul  = $params['header']['mengusulkan'];
+            $m_db->tgl_pengusulan = $params['header']['tgl_pengusulan'];
+            $m_db->posisi         = $params['header']['posisi'];
+            $m_db->jumlah         = $params['header']['jumlah'];
+            $m_db->unit           = $params['header']['unit'];
+            $m_db->alasan         = $params['header']['alasan'];
+            $m_db->status         = 1;
+            $m_db->save();
+            $id_header = $m_db->id;
 
             foreach ($params['detail'] as $v_det) {
-
-                $m_form_detail = new \Model\Storage\HrisFormDetail_model();
-                $m_form_detail->id_form     = $id_form;
-                $m_form_detail->nama        = $v_det['label'];
-                $m_form_detail->urutan      = $v_det['urutan'];
-                $m_form_detail->parent_column  = $v_det['parent_label'];
-                $m_form_detail->kode_detail = 'DTL-'. $id_form;
-                $m_form_detail->save();
+                $m_db_detail = new \Model\Storage\HrisUsulanKaryawanDetail_model();
+                $m_db_detail->id_header     = $id_header;
+                $m_db_detail->id_kandidat   = $v_det['id_kandidat'];
+                $m_db_detail->save();
 
             }
 
@@ -141,11 +140,37 @@ class HrisForm extends Public_Controller {
 
      public function filter_data(){
 
-        $content['list'] =  $this->get_list_data($_POST['kategori']);
+        $content['list'] =  $this->get_list_data($_POST['pengaju']);
         // cetak_r($_POST, 1);
 
 
         echo $this->load->view($this->pathView . 'v_list', $content, TRUE);
+    }
+
+    public function get_data_karyawan()
+    {
+        $m_conf = new \Model\Storage\Conf();
+        $sql = "select * from karyawan order by nama asc";
+
+        $d_conf = $m_conf->hydrateRaw($sql);
+        $data = null;
+
+        if ($d_conf->count() > 0) {
+            $rows = $d_conf->toArray();
+
+            $unik = [];
+            foreach ($rows as $row) {
+                $nik = $row['nik'];
+
+                if (!isset($unik[$nik])) {
+                    $unik[$nik] = $row;
+                }
+            }
+
+            $data = array_values($unik);
+        }
+
+        return $data;
     }
 
 
@@ -153,7 +178,7 @@ class HrisForm extends Public_Controller {
     {
          
         $m_conf     = new \Model\Storage\Conf();
-        $sql        = " select * from hris_form hf 
+        $sql        = " select * from hris_usulan_karyawan hf 
                         inner join hris_kategori hk on hf.kategori = hk.kode_kategori ";
 
         if (!empty($id)){
@@ -173,18 +198,37 @@ class HrisForm extends Public_Controller {
     }
 
 
-    public function get_list_data($kategori = null)
+    public function get_list_data($id = null)
     {
+        
          
         $m_conf     = new \Model\Storage\Conf();
-        $sql        = " select * from hris_form hf 
-                        inner join hris_kategori hk on hf.kategori = hk.kode_kategori ";
+        $sql        = " SELECT hukb.*, k.nama, k.jabatan
+                        FROM hris_usulan_karyawan_baru hukb
+                        INNER JOIN (
+                            SELECT *
+                            FROM karyawan
+                            WHERE id IN (
+                                SELECT MAX(id)
+                                FROM karyawan
+                                GROUP BY nik
+                            )
+                        ) k ON hukb.nama_pengusul = k.nik";
 
-        if (!empty($kategori)){
-            $sql .= " where hf.kategori = '".$kategori."' ";
-        }
+                    if (!empty($id)){
+                        $sql .= " where hukb.nama_pengusul = '" . $id . "'";
+                    }
 
-        $sql .= " order by id desc ";
+                        $sql .= " ORDER BY hukb.id DESC ";
+
+        // cetak_r($sql, 1);
+
+
+        // if (!empty($kategori)){
+        //     $sql .= " where hf.kategori = '".$kategori."' ";
+        // }
+
+
 
         // cetak_r($sql, 1);
 
@@ -209,8 +253,9 @@ class HrisForm extends Public_Controller {
 
     public function get_list_data_ketegori($id)
     {
+
         $m_conf     = new \Model\Storage\Conf();
-        $sql        = " select * from hris_form_detail where id_form = " . $id;
+        $sql        = " select * from hris_usulan_karyawan_detail where id_form = " . $id;
         $d_conf     = $m_conf->hydrateRaw( $sql );
         // cetak_r(123, 1);
         $data       = null;
@@ -220,6 +265,7 @@ class HrisForm extends Public_Controller {
         }
 
         return $data;
+
     } 
 
     public function edit_data()
@@ -229,65 +275,80 @@ class HrisForm extends Public_Controller {
         $this->add_external_js(array(
             "assets/jquery/easy-autocomplete/jquery.easy-autocomplete.min.js",
             "assets/select2/js/select2.min.js",
-            "assets/hris/hris_form/js/hris_form.js",
+            "assets/hris/hris_usulan_karyawan/js/hris_usulan_karyawan.js",
         ));
         $this->add_external_css(array(
             "assets/jquery/easy-autocomplete/easy-autocomplete.min.css",
             "assets/jquery/easy-autocomplete/easy-autocomplete.themes.min.css",
             "assets/select2/css/select2.min.css",
-            "assets/hris/hris_form/css/hris_form.css",
+            "assets/hris/hris_usulan_karyawan/css/hris_usulan_karyawan.css",
         ));
 
         $data                       = $this->includes;
-        $content['header']          = $this->get_list($_GET['id_data'])[0];
-        $content['detail']          = $this->get_list_data_ketegori($_GET['id_data']);
-        $content['add_kategori']    = $this->getKategori();
+        $content['karyawan']        = $this->get_data_karyawan();
+        $content['kandidat']        = $this->get_data_kandidat();
+        $content['edit_data']       = $this->get_list_data($_GET['id_data']);
+        $content['detail']          = $this->get_data_detail($_GET['id_data']);
         //  cetak_r($content, 1);
-        $content['title_panel']     = 'HRIS - Hris Form / Edit Data';
+        $content['title_panel']     = 'HRIS - Hris Usulan Karyawan / Edit Data';
 
         $data['view']         = $this->load->view($this->pathView . 'v_edit_data', $content, TRUE);
         $this->load->view($this->template, $data);
+    }
+
+    public function get_data_detail($id)
+    {
+        $m_conf     = new \Model\Storage\Conf();
+
+        $sql = "select * from hris_usulan_karyawan_baru_detail hukbd
+        inner join hris_data_karyawan hdk on hdk.id =  hukbd.id_kandidat
+        where hukbd.id_header = " . $id;
+
+        // cetak_r($sql, 1);
+
+        $d_conf     = $m_conf->hydrateRaw( $sql );
+        $data       = null;
+
+        if ( $d_conf->count() > 0 ) {
+            $data = $d_conf->toArray();
+        }
+
+        return $data;
     }
 
     public function update()
     {
         $params = $_POST;
 
-        //  cetak_r($params, 1);
-
+        // cetak_r($params, 1);
 
         try {
-            $id_form = (int) $params['id_data'];
 
-            $m_form = new \Model\Storage\HrisForm_model();
+            $id_data = (int) $params['id_data'];
+            
+            $m_db     = new \Model\Storage\HrisUsulanKaryawan_model();
 
-            $d_form = $m_form->where('id', $id_form)->first();
-            if (!$d_form) {
-                throw new \Exception("Data form tidak ditemukan.");
-            }
-
-
-            $m_form->where('id', $id_form)->update([
-                'title'        => $params['header']['title'],
-                'keterangan'   => $params['header']['keterangan'],
-                'urutan'       => $params['header']['urutan'],
-                'kategori'     => $params['header']['kategori']
+            $m_db->where('id', $id_data)->update([
+                'nama_pengusul'     => $params['header']['mengusulkan'],
+                'tgl_pengusulan'    => $params['header']['tgl_pengusulan'],
+                'posisi'            => $params['header']['posisi'],
+                'jumlah'            => $params['header']['jumlah'],
+                'unit'              => $params['header']['unit'],
+                'alasan'            => $params['header']['alasan'],
+                'status'            => 1,
             ]);
-
           
-            $m_form_detail = new \Model\Storage\HrisFormDetail_model();
-            $m_form_detail->where('id_form', $id_form)->delete();
+            $m_db_detail = new \Model\Storage\HrisUsulanKaryawanDetail_model();
+            $m_db_detail->where('id_header', $id_data)->delete();
 
-            if (!empty($params['detail'])) {
+          if (!empty($params['detail'])) {
                 foreach ($params['detail'] as $v_det) {
-                    $m_form_detail = new \Model\Storage\HrisFormDetail_model();
 
-                    $m_form_detail->id_form = $id_form;
-                    $m_form_detail->nama    = $v_det['label'];
-                    $m_form_detail->urutan  = $v_det['urutan'];
-                    $m_form_detail->parent_column  = $v_det['parent_label'];
-                    $m_form_detail->kode_detail      = 'DTL-'. $id_form;
-                    $m_form_detail->save();
+                    $m_db_detail = new \Model\Storage\HrisUsulanKaryawanDetail_model();
+
+                    $m_db_detail->id_header   = $id_data;
+                    $m_db_detail->id_kandidat = $v_det['id_kandidat'];
+                    $m_db_detail->save();
                 }
             }
 
@@ -307,18 +368,18 @@ class HrisForm extends Public_Controller {
     {
         $params = $_POST;
         // cetak_r($params, 1);
-        $id_form = (int) $params['id'];
+        $id_data = (int) $params['id_data'];
 
-        $m_form = new \Model\Storage\HrisForm_model();
-        $m_form_detail = new \Model\Storage\HrisFormDetail_model();
+        $m_db     = new \Model\Storage\HrisUsulanKaryawan_model();
+        
 
         try {
             // delete detail
-            $m_form_detail = new \Model\Storage\HrisFormDetail_model();
-            $m_form_detail->where('id_form', $id_form)->delete();
+            $m_db_detail = new \Model\Storage\HrisUsulanKaryawanDetail_model();
+            $m_db_detail->where('id_header', $id_data)->delete();
 
             // delete header
-            $m_form->where('id', $id_form)->delete();
+            $m_db->where('id', $id_data)->delete();
 
     
 
@@ -331,6 +392,23 @@ class HrisForm extends Public_Controller {
         }
 
         display_json($this->result);
+    }
+
+    public function get_data_kandidat()
+    {
+
+        $m_conf     = new \Model\Storage\Conf();
+
+        $sql = "select * from hris_data_karyawan ";
+
+        $d_conf     = $m_conf->hydrateRaw( $sql );
+        $data       = null;
+
+        if ( $d_conf->count() > 0 ) {
+            $data = $d_conf->toArray();
+        }
+
+        return $data;
     }
 
 }

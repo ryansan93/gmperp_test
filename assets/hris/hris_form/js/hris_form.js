@@ -16,6 +16,8 @@ let hf ={
                     class="form form-control urutan_dtl" 
                     value="${next_urutan}" 
                     style="width:10%;">
+
+                <input type="text" placeholder="parent label" class="form form-control parent_label" style="width:10%;">
                 
                 <div style="width:40%; text-align:right">
                     <button class="btn btn-warning" onclick="hf.add_row(this, event);">
@@ -73,6 +75,7 @@ let hf ={
         $(".detail_area").find(".detail_form").each(function(index){
             let label = $(this).find(".label_dtl").val().trim();
             let urutan = $(this).find(".urutan_dtl").val();
+            let parent_label = $(this).find(".parent_label").val();
 
             if (label === "") {
                 isValidDetail = false;
@@ -89,6 +92,7 @@ let hf ={
             detail.push({
                 label: label,
                 urutan: urutan,
+                parent_label : parent_label,
             });
         });
 

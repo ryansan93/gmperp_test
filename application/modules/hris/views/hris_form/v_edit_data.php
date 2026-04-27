@@ -53,6 +53,8 @@
     
                         <input type="text" value="<?php echo $d['urutan'] ?>" placeholder="urutan" class="form form-control urutan_dtl" style="width:10%;">
                         
+                        <input type="text" value="<?php echo $d['parent_column'] ?>" placeholder="parent label" class="form form-control parent_label" style="width:10%;">
+
                         <div style="width:40%; text-align:right">
                             <button class="btn btn-warning" onclick="hf.add_row(this, event);"><span class="fa fa-plus"></span></button>
                             <button class="btn btn-danger" onclick="hf.delete_row(this, event);"><span class="fa fa-close"></span></button>   
