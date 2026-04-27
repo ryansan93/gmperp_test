@@ -96,6 +96,7 @@
                             <select class="select2 form form-control posisi">
                                 <!-- < ?php foreach($karyawan as $k){ ?> -->
                                     <!-- <option value="< ?php echo $k['nik']?>">< ?php echo $k['nama']?></option> -->
+                                    <option value="IT">IT</option>
                                     <option value="PPL">PPL</option>
                                 <!-- < ?php } ?> -->
                             </select>
