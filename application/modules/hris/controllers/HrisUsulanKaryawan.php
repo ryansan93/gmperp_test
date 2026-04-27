@@ -35,8 +35,9 @@ class HrisUsulanKaryawan extends Public_Controller {
             $content['title_panel']     = 'HRIS - Hris Usulan Karyawan';
             $content['karyawan']        = $this->get_data_karyawan();
             $content['kandidat']        = $this->get_data_kandidat();
+            $content['unit']            = $this->get_unit();
 
-            // cetak_r($content['kadidat'], 1);
+            // cetak_r($content['unit'], 1);
             $content['kategori']        = $this->getKategori();
 
             // Load Indexx
@@ -287,13 +288,32 @@ class HrisUsulanKaryawan extends Public_Controller {
         $data                       = $this->includes;
         $content['karyawan']        = $this->get_data_karyawan();
         $content['kandidat']        = $this->get_data_kandidat();
-        $content['edit_data']       = $this->get_list_data($_GET['id_data']);
+        $content['edit_data']       = $this->get_data_edit($_GET['id_data']);
+        // cetak_r($content, 1);
         $content['detail']          = $this->get_data_detail($_GET['id_data']);
-        //  cetak_r($content, 1);
+        $content['unit']            = $this->get_unit();
         $content['title_panel']     = 'HRIS - Hris Usulan Karyawan / Edit Data';
 
         $data['view']         = $this->load->view($this->pathView . 'v_edit_data', $content, TRUE);
         $this->load->view($this->template, $data);
+    }
+
+    public function get_data_edit($id)
+    {
+        $m_conf     = new \Model\Storage\Conf();
+
+        $sql = "select * from hris_usulan_karyawan_baru where id = " . $id;
+
+        // cetak_r($sql, 1);
+
+        $d_conf     = $m_conf->hydrateRaw( $sql );
+        $data       = null;
+
+        if ( $d_conf->count() > 0 ) {
+            $data = $d_conf->toArray();
+        }
+
+        return $data;
     }
 
     public function get_data_detail($id)
@@ -406,6 +426,103 @@ class HrisUsulanKaryawan extends Public_Controller {
 
         if ( $d_conf->count() > 0 ) {
             $data = $d_conf->toArray();
+        }
+
+        return $data;
+    }
+
+    public function get_unit()
+    {
+        $m_duser = new \Model\Storage\DetUser_model();
+        $d_duser = $m_duser->where('id_user', $this->userid)->first();
+
+        $m_karyawan = new \Model\Storage\Karyawan_model();
+        $d_karyawan = $m_karyawan->where('nama', 'like', strtolower(trim($d_duser->nama_detuser)).'%')->orderBy('id', 'desc')->first();
+
+        $data = null;
+
+        // $kode_unit = array();
+        // $kode_unit_all = null;
+        $data = null;
+        if ( $d_karyawan ) {
+            $m_ukaryawan = new \Model\Storage\UnitKaryawan_model();
+            $d_ukaryawan = $m_ukaryawan->where('id_karyawan', $d_karyawan->id)->get();
+
+            if ( $d_ukaryawan->count() > 0 ) {
+                $d_ukaryawan = $d_ukaryawan->toArray();
+
+                foreach ($d_ukaryawan as $k_ukaryawan => $v_ukaryawan) {
+                    if ( stristr($v_ukaryawan['unit'], 'all') === false ) {
+                        $m_wil = new \Model\Storage\Wilayah_model();
+                        $d_wil = $m_wil->where('id', $v_ukaryawan['unit'])->first();
+
+                        $nama = str_replace('Kab ', '', str_replace('Kota ', '', $d_wil->nama));
+                        $kode = $d_wil->kode;
+
+                        $key = $nama.' - '.$kode;
+
+                        $data[$key] = array(
+                            'nama' => $nama,
+                            'kode' => $kode
+                        );
+                    } else {
+                        $m_wil = new \Model\Storage\Wilayah_model();
+                        $d_wil = $m_wil->select('nama', 'kode')->where('jenis', 'UN')->get();
+
+                        if ( $d_wil->count() > 0 ) {
+                            $d_wil = $d_wil->toArray();
+                            foreach ($d_wil as $k_wil => $v_wil) {
+                                $nama = str_replace('Kab ', '', str_replace('Kota ', '', $v_wil['nama']));
+                                $kode = $v_wil['kode'];
+
+                                $key = $nama.' - '.$kode;
+                                $data[$key] = array(
+                                    'nama' => $nama,
+                                    'kode' => $kode
+                                );
+                            }
+                        }
+                    }
+                }
+            } else {
+                $m_wil = new \Model\Storage\Wilayah_model();
+                $d_wil = $m_wil->select('nama', 'kode')->where('jenis', 'UN')->get();
+
+                if ( $d_wil->count() > 0 ) {
+                    $d_wil = $d_wil->toArray();
+                    foreach ($d_wil as $k_wil => $v_wil) {
+                        $nama = str_replace('Kab ', '', str_replace('Kota ', '', $v_wil['nama']));
+                        $kode = $v_wil['kode'];
+
+                        $key = $nama.' - '.$kode;
+                        $data[$key] = array(
+                            'nama' => $nama,
+                            'kode' => $kode
+                        );
+                    }
+                }
+            }
+        } else {
+            $m_wil = new \Model\Storage\Wilayah_model();
+            $d_wil = $m_wil->select('nama', 'kode')->where('jenis', 'UN')->get();
+
+            if ( $d_wil->count() > 0 ) {
+                $d_wil = $d_wil->toArray();
+                foreach ($d_wil as $k_wil => $v_wil) {
+                    $nama = str_replace('Kab ', '', str_replace('Kota ', '', $v_wil['nama']));
+                    $kode = $v_wil['kode'];
+
+                    $key = $nama.' - '.$kode;
+                    $data[$key] = array(
+                        'nama' => $nama,
+                        'kode' => $kode
+                    );
+                }
+            }
+        }
+
+        if ( !empty($data) ) {
+            ksort($data);
         }
 
         return $data;

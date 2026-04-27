@@ -111,11 +111,10 @@
                     <div style="display:flex; flex-direction:column; gap:5px;">
                         <span>Unit</span>
                         <select class="select2 form form-control unit">
-                                <!-- < ?php foreach($karyawan as $k){ ?> -->
-                                    <!-- <option value="< ?php echo $k['nik']?>">< ?php echo $k['nama']?></option> -->
-                                    <option value="MLG">Malang</option>
-                                <!-- < ?php } ?> -->
-                            </select>
+                            <?php foreach($unit as $u){ ?>
+                                <option value="<?php echo $u['kode']?>"><?php echo $u['nama']?></option>  
+                            <?php } ?>
+                        </select>
                     </div>
 
                     <div style="display:flex; flex-direction:column; gap:5px;">

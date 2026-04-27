@@ -52,13 +52,13 @@
 
             <div style="display:flex; flex-direction:column; gap:5px;">
                 <span>Unit</span>
-                <select class="select2 form form-control unit">
-                        <!-- < ?php foreach($karyawan as $k){ ?> -->
-                            <!-- <option value="< ?php echo $k['nik']?>">< ?php echo $k['nama']?></option> -->
-                            <option value="GSK">Gresik</option>
-                            <option <?php echo $edit_data[0]['unit'] == "MLG" ? 'selected' : '' ?>  value="MLG">Malang</option>
-                        <!-- < ?php } ?> -->
-                    </select>
+                 <select class="select2 form form-control unit">
+                    <?php foreach($unit as $u){ ?>
+
+                        <option <?php echo trim($edit_data[0]['unit']) == trim($u['kode']) ? 'selected' : '' ?>  value="<?php echo $u['kode']?>"><?php echo $u['nama']?></option>
+                    <?php } ?>
+                </select>
+                    
             </div>
 
             <div style="display:flex; flex-direction:column; gap:5px;">
