@@ -57,7 +57,9 @@ let hf ={
             $(elm).closest(".detail_form").remove();
         }
 
-        $(".jumlah").val(dtl);
+        // console.log(dtl)
+
+        $(".jumlah").val(dtl -1);
     },
 
     save: (elm, e)  => {
