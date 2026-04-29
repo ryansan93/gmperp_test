@@ -39,7 +39,7 @@ class HrisForm extends Public_Controller {
             $content['kategori']        = $this->getKategori();
 
             // Load Indexx
-            $data['title_menu']     = 'HRIS - hris Form';
+            $data['title_menu']     = 'HRIS - Hris Form';
 
             $data['view'] = $this->load->view($this->pathView . 'v_index', $content, TRUE);
             $this->load->view($this->template, $data);
@@ -87,6 +87,7 @@ class HrisForm extends Public_Controller {
 
     public function save()
     {
+        
 
         $params = $_POST;
         // cetak_r($params, 1);
@@ -108,6 +109,7 @@ class HrisForm extends Public_Controller {
                 $m_form_detail->id_form     = $id_form;
                 $m_form_detail->nama        = $v_det['label'];
                 $m_form_detail->urutan      = $v_det['urutan'];
+                $m_form_detail->parent_column  = $v_det['parent_label'];
                 $m_form_detail->kode_detail = 'DTL-'. $id_form;
                 $m_form_detail->save();
 
@@ -182,7 +184,7 @@ class HrisForm extends Public_Controller {
             $sql .= " where hf.kategori = '".$kategori."' ";
         }
 
-        $sql .= " order by urutan asc ";
+        $sql .= " order by id desc ";
 
         // cetak_r($sql, 1);
 
@@ -283,6 +285,7 @@ class HrisForm extends Public_Controller {
                     $m_form_detail->id_form = $id_form;
                     $m_form_detail->nama    = $v_det['label'];
                     $m_form_detail->urutan  = $v_det['urutan'];
+                    $m_form_detail->parent_column  = $v_det['parent_label'];
                     $m_form_detail->kode_detail      = 'DTL-'. $id_form;
                     $m_form_detail->save();
                 }

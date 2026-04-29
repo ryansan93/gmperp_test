@@ -109,6 +109,8 @@
                         <input type="text" class="form form-control label_dtl" style="width:40%;">
             
                         <input type="text" placeholder="urutan" class="form form-control urutan_dtl" value="1" style="width:10%;">
+
+                        <input type="text" placeholder="parent label" class="form form-control parent_label" style="width:10%;">
                         
                         <div style="width:40%; text-align:right">
                             <button class="btn btn-warning" onclick="hf.add_row(this, event);"><span class="fa fa-plus"></span></button>
