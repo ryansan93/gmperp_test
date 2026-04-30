@@ -260,11 +260,13 @@ let hf ={
        $(".detail_area").find(".detail_form").each(function(){
             let label = $(this).find(".label_dtl").val().trim();
             let urutan = $(this).find(".urutan_dtl").val();
+            let parent_label = $(this).find(".parent_label").val();
 
             if (label !== "") {
                 let detail_temp = {
                     label: label,
                     urutan: urutan,
+                    parent_label : parent_label,
                 };
 
                 detail.push(detail_temp);
