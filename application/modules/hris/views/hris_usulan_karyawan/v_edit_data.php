@@ -1,5 +1,5 @@
 
-
+<div class="posisi-val" style="display:none;"><?php echo $edit_data[0]['posisi'] ?></div>
 
 
 <div class="panel panel-default">
@@ -9,9 +9,10 @@
         <div style="display:flex; gap:10px; flex-wrap:wrap;">
                 <div style="display:flex; flex-direction:column; gap:5px; flex:1; min-width:200px;">
                     <span>Yang Mengusulkan</span>
-                    <select class="select2 form form-control mengusulkan">
+
+                    <select class="select2 form form-control mengusulkan" onchange="hf.get_jabatan(this, event)">
                         <?php foreach($karyawan as $k){ ?>
-                            <option <?php echo $edit_data[0]['nama_pengusul'] == $k['nik']  ? 'selected' : '' ?> value="<?php echo $k['nik'] ?>"><?php echo $k['nama']?></option>
+                            <option <?php echo $edit_data[0]['nama_pengusul'] == $k['nik']  ? 'selected' : '' ?> jabatan="<?php echo $k['jabatan']?>" value="<?php echo $k['nik']?>"> <?php echo ucwords(strtolower($k['nama'])) . ' - ' .  ucwords(strtolower($k['jabatan']))  ?> </option>
                         <?php } ?>
                     </select>
                 </div>
@@ -34,12 +35,13 @@
                 <div style="display:flex; flex-direction:column; gap:5px; flex:1; min-width:200px;">
                     <span>Posisi</span>
                     <select class="select2 form form-control posisi">
-                        <!-- < ?php foreach($karyawan as $k){ ?> -->
-                            <!-- <option value="< ?php echo $k['nik']?>">< ?php echo $k['nama']?></option> -->
-                            <option value="IT">IT</option>
-                            <option <?php echo $edit_data[0]['posisi'] == "PPL" ? 'selected' : '' ?> value="PPL">PPL</option>
-                            
-                        <!-- < ?php } ?> -->
+                     
+                        <select class="select2 form form-control posisi">
+                            <?php foreach($posisi as $p){ ?>
+                                <option value="<?php echo $p['kode_dokumen']?>" <?php echo $edit_data[0]['posisi'] == $p['kode'] ? 'selected' : '' ?> value="<?php echo $p['kode_posisi']?>"><?php echo $p['kode_posisi'] . ' - ' . $p['nama_posisi']?></option>
+                            <?php } ?>
+                        </select>
+                        
                     </select>
                 </div>
 
@@ -70,30 +72,6 @@
 
         <br>
 
-        <span style="font-size:17px; margin-left:10px;">Daftar Kandidat</span>
-        <hr>
-        <div class="detail_area" style="display:flex; flex-direction:column; gap:10px; padding:10px ">
-
-            <?php foreach ($detail as $d) { ?>
-                <div class="detail_form" style="display:flex; flex-direction:column; gap:10px; padding:10px; border-right: 2px solid #d2d2d2; border-top: 2px solid #d2d2d2; border-bottom: 2px solid #d2d2d2; border-left: 4px solid #ababab;">
-
-                    <div style="display:flex; flex-direction:row; gap:10px; align-items:center;">
-                        <label style="width:10%;">Nama</label>
-                            <select class="select2 nama_kandidat" style="width:40%;">
-                            <option disabled selected>-- Pilih Kandidat --</option>
-                            <?php  foreach($kandidat as $k){?>
-                                <option  <?php echo $d['id_kandidat'] ==  $k['id'] ? 'selected' : '' ?> <?php echo $k['document']?> value="<?php echo $k['id']?>"><?php echo $k['nama']?></option>
-                            <?php }?>
-                        </select>
-                        
-                        <div style="width:40%; text-align:right">
-                            <button class="btn btn-warning" onclick="hf.add_row(this, event);"><span class="fa fa-plus"></span></button>
-                            <button class="btn btn-danger" onclick="hf.delete_row(this, event);"><span class="fa fa-close"></span></button>   
-                        </div>
-                    </div>
-                </div>
-            <?php } ?>
-
         </div>
     
         <div class="pull-right" style="margin-top:10px;">
@@ -102,8 +80,6 @@
         </div>
 
         <br>
-        <br>
-
         <br>
 
         

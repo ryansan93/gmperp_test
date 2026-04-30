@@ -144,25 +144,44 @@ let hf ={
     },
 
     filter_data : () => {
-        let params ={
-            kategori : $("#kategori").val(),
-        }
+        // let params ={
+        //     kategori : $("#kategori").val(),
+        // }
 
-        $.ajax({
-            url : 'hris/HrisForm/filter_data',
-            data : params,
-            type : 'POST',
-            dataType : 'html',
-            beforeSend : function(){ 
-                // showLoading(); 
-            },
-            success : function(html){
-                hideLoading();
+        // $.ajax({
+        //     url : 'hris/HrisForm/filter_data',
+        //     data : params,
+        //     type : 'POST',
+        //     dataType : 'html',
+        //     beforeSend : function(){ 
+        //         // showLoading(); 
+        //     },
+        //     success : function(html){
+        //         hideLoading();
 
-                $(".list_data").html(html)
+        //         $(".list_data").html(html)
                
-            },
+        //     },
+        // });
+
+        let value = $(".pengaju-filter").val().toLowerCase();
+        let visibleCount = 0;
+
+        $(".table tbody tr.data-row").each(function () {
+            let text = $(this).text().toLowerCase();
+            let match = text.indexOf(value) > -1;
+
+            $(this).toggle(match);
+
+            if (match) visibleCount++;
         });
+
+        if (visibleCount === 0) {
+            $(".no-data").show();
+        } else {
+            $(".no-data").hide();
+        }
+        
     },
 
     show_detail :(elm, e) =>{

@@ -99,6 +99,26 @@ class Home extends Public_Controller
 		}
 		// END - LHK
 
+
+		// HRD
+		$url = 'hris/FormAckUsulanKaryawan';
+		$akses = hakAkses('/'.$url);
+		if ( !empty($akses['a_ack']) && $akses['a_ack'] == 1 ) {
+			$status = getStatus('submit');
+
+			$m_db = new \Model\Storage\HrisUsulanKaryawan_model();
+			$data = $m_db->notifData();
+
+			// echo '<pre>';print_r($data);die;
+
+			if ( $data ) {
+				$notif[$url] = $this->mappingNotif($data, $url, 'HRIS - ACK Usulan Karyawan Baru');
+				$notif[$url]['link'] = $url;
+				$notif[$url]['jenis'] = 'window.open';
+			}
+		}
+		// END - HRD
+
         return $notif;
 	}
 

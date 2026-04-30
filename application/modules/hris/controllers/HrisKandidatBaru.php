@@ -33,7 +33,10 @@ class HrisKandidatBaru extends Public_Controller {
             $data                       = $this->includes;
             $content['akses']           = $this->hakAkses;
             $content['title_panel']     = 'HRIS - Kadidat Baru';
-             $content['status']         =  $this->get_status_karyawan();
+            $content['status']          = $this->get_status_karyawan();
+            $content['usulan']          = $this->get_data_usulan();
+
+            // cetak_r($content['usulan'], 1);
           
 
             // Load Indexx
@@ -45,6 +48,24 @@ class HrisKandidatBaru extends Public_Controller {
         } else {
             showErrorAkses();
         }
+    }
+
+    public function get_data_usulan()
+    {
+        $m_conf     = new \Model\Storage\Conf();
+        $sql        = " select hukb.*, k.nama from hris_usulan_karyawan_baru hukb 
+						INNER JOIN (
+                            SELECT * FROM karyawan
+                                WHERE id IN (
+                                    SELECT MAX(id)
+                                    FROM karyawan
+                                    GROUP BY nik
+                                )
+                            ) k ON hukb.nama_pengusul = k.nik
+						where hukb.status = 6 ";
+        $result     = $m_conf->hydrateRaw( $sql )->toArray();
+
+        return $result;
     }
 
 
@@ -61,6 +82,7 @@ class HrisKandidatBaru extends Public_Controller {
                 $m_db->nama             = $v_det['nama_karyawan'];
                 $m_db->status_karyawan  = $v_det['status_karyawan'];
                 $m_db->is_active        = 'ACTIVE';
+                $m_db->usulan_id        = $v_det['usulan'];
                 $m_db->save();
             }
 
@@ -161,9 +183,19 @@ class HrisKandidatBaru extends Public_Controller {
     public function get_data_form(){
         
         $m_conf     = new \Model\Storage\Conf();
-        $sql        = " select hdk.id as id_data_karyawan, hdk.nama, hsk.nama_status , hsk.kategori, hdk.is_active
+        $sql        = " select hdk.id as id_data_karyawan, hdk.nama, hsk.nama_status , hsk.kategori, hdk.is_active, k.nama as nama_pengusul 
                         from hris_data_karyawan hdk
                         inner join hris_status_karyawan hsk on hdk.status_karyawan = hsk.id 
+                        inner join hris_usulan_karyawan_baru hukb on hdk.usulan_id = hukb.id
+                        INNER JOIN (
+                            SELECT *
+                            FROM karyawan
+                            WHERE id IN (
+                                SELECT MAX(id)
+                                FROM karyawan
+                                GROUP BY nik
+                            )
+                        ) k ON hukb.nama_pengusul = k.nik
                         order by hdk.id desc ";
         $result     = $m_conf->hydrateRaw( $sql )->toArray();
 

@@ -35,9 +35,11 @@ class HrisUsulanKaryawan extends Public_Controller {
             $content['title_panel']     = 'HRIS - Hris Usulan Karyawan';
             $content['karyawan']        = $this->get_data_karyawan();
             $content['kandidat']        = $this->get_data_kandidat();
+            // $content['posisi']          = $this->get_data_posisi();
             $content['unit']            = $this->get_unit();
 
-            // cetak_r($content['unit'], 1);
+            // cetak_r($content['posisi'], 1);
+
             $content['kategori']        = $this->getKategori();
 
             // Load Indexx
@@ -104,16 +106,10 @@ class HrisUsulanKaryawan extends Public_Controller {
             $m_db->unit           = $params['header']['unit'];
             $m_db->alasan         = $params['header']['alasan'];
             $m_db->status         = 1;
+            $m_db->document       = $this->generate_document($params['header']['kode_dokumen']);
             $m_db->save();
-            $id_header = $m_db->id;
 
-            foreach ($params['detail'] as $v_det) {
-                $m_db_detail = new \Model\Storage\HrisUsulanKaryawanDetail_model();
-                $m_db_detail->id_header     = $id_header;
-                $m_db_detail->id_kandidat   = $v_det['id_kandidat'];
-                $m_db_detail->save();
-
-            }
+    
 
             // $deskripsi_log = 'di-submit oleh ' . $this->userdata['detail_user']['nama_detuser'];
             // Modules::run( 'base/event/save', $m_mm, $deskripsi_log, null, $no_mm );
@@ -129,10 +125,39 @@ class HrisUsulanKaryawan extends Public_Controller {
 
     }
 
+    public function generate_document($posisi)
+    {
+  
+        $tahun = date('Y');
+        $bulan = date('m');
+
+        $m_conf     = new \Model\Storage\Conf();
+
+        $sql = "SELECT MAX(CAST(RIGHT(document, 3) AS INT)) AS last_number
+		FROM hris_usulan_karyawan_baru
+		WHERE document LIKE 'PROP/{$posisi}/{$tahun}{$bulan}%'";
+
+        $d_conf     = $m_conf->hydrateRaw( $sql );
+        
+        $data       = null;
+        if ( $d_conf->count() > 0 ) {
+            $data = $d_conf->toArray();
+        }
+        
+        $last = $data[0]['last_number'] ?? 0;
+        $new  = str_pad($last + 1, 3, '0', STR_PAD_LEFT);
+        
+        $kode = "PROP/{$posisi}/$tahun$bulan$new";
+        // cetak_r($kode, 1);
+        // echo $kode;
+        return $kode;
+    }
+
 
     public function load_form(){
 
         $content['list'] =  $this->get_list_data();
+        $content['unit'] = $this->get_unit();
         // cetak_r($content, 1);
 
 
@@ -202,9 +227,8 @@ class HrisUsulanKaryawan extends Public_Controller {
     public function get_list_data($id = null)
     {
         
-         
         $m_conf     = new \Model\Storage\Conf();
-        $sql        = " SELECT hukb.*, k.nama, k.jabatan
+        $sql        = " SELECT hukb.*, k.nama, k.jabatan, j.nama as nama_posisi
                         FROM hris_usulan_karyawan_baru hukb
                         INNER JOIN (
                             SELECT *
@@ -214,13 +238,14 @@ class HrisUsulanKaryawan extends Public_Controller {
                                 FROM karyawan
                                 GROUP BY nik
                             )
-                        ) k ON hukb.nama_pengusul = k.nik";
+                        ) k ON hukb.nama_pengusul = k.nik
+                        inner join jabatan j on hukb.posisi = j.kode";
 
                     if (!empty($id)){
                         $sql .= " where hukb.nama_pengusul = '" . $id . "'";
                     }
 
-                        $sql .= " ORDER BY hukb.id DESC ";
+                    $sql .= " ORDER BY hukb.id DESC ";
 
         // cetak_r($sql, 1);
 
@@ -284,15 +309,18 @@ class HrisUsulanKaryawan extends Public_Controller {
             "assets/select2/css/select2.min.css",
             "assets/hris/hris_usulan_karyawan/css/hris_usulan_karyawan.css",
         ));
+        
 
         $data                       = $this->includes;
         $content['karyawan']        = $this->get_data_karyawan();
         $content['kandidat']        = $this->get_data_kandidat();
         $content['edit_data']       = $this->get_data_edit($_GET['id_data']);
         // cetak_r($content, 1);
-        $content['detail']          = $this->get_data_detail($_GET['id_data']);
+        // $content['detail']          = $this->get_data_detail($_GET['id_data']);
         $content['unit']            = $this->get_unit();
         $content['title_panel']     = 'HRIS - Hris Usulan Karyawan / Edit Data';
+        $data['title_menu']     = 'HRIS - Usulan Karyawan';
+        
 
         $data['view']         = $this->load->view($this->pathView . 'v_edit_data', $content, TRUE);
         $this->load->view($this->template, $data);
@@ -355,22 +383,9 @@ class HrisUsulanKaryawan extends Public_Controller {
                 'jumlah'            => $params['header']['jumlah'],
                 'unit'              => $params['header']['unit'],
                 'alasan'            => $params['header']['alasan'],
-                'status'            => 1,
+                'document'          => $this->generate_document($params['header']['kode_dokumen']),
             ]);
           
-            $m_db_detail = new \Model\Storage\HrisUsulanKaryawanDetail_model();
-            $m_db_detail->where('id_header', $id_data)->delete();
-
-          if (!empty($params['detail'])) {
-                foreach ($params['detail'] as $v_det) {
-
-                    $m_db_detail = new \Model\Storage\HrisUsulanKaryawanDetail_model();
-
-                    $m_db_detail->id_header   = $id_data;
-                    $m_db_detail->id_kandidat = $v_det['id_kandidat'];
-                    $m_db_detail->save();
-                }
-            }
 
             $this->result['status'] = 1;
             $this->result['message'] = 'Data berhasil di update.';
@@ -394,14 +409,8 @@ class HrisUsulanKaryawan extends Public_Controller {
         
 
         try {
-            // delete detail
-            $m_db_detail = new \Model\Storage\HrisUsulanKaryawanDetail_model();
-            $m_db_detail->where('id_header', $id_data)->delete();
-
             // delete header
             $m_db->where('id', $id_data)->delete();
-
-    
 
             $this->result['status'] = 1;
             $this->result['message'] = 'Data berhasil di hapus.';
@@ -419,7 +428,7 @@ class HrisUsulanKaryawan extends Public_Controller {
 
         $m_conf     = new \Model\Storage\Conf();
 
-        $sql = "select * from hris_data_karyawan ";
+        $sql = " select * from hris_data_karyawan where tgl_selesai_isi is not null ";
 
         $d_conf     = $m_conf->hydrateRaw( $sql );
         $data       = null;
@@ -459,7 +468,7 @@ class HrisUsulanKaryawan extends Public_Controller {
                         $nama = str_replace('Kab ', '', str_replace('Kota ', '', $d_wil->nama));
                         $kode = $d_wil->kode;
 
-                        $key = $nama.' - '.$kode;
+                        $key = $kode;
 
                         $data[$key] = array(
                             'nama' => $nama,
@@ -475,7 +484,7 @@ class HrisUsulanKaryawan extends Public_Controller {
                                 $nama = str_replace('Kab ', '', str_replace('Kota ', '', $v_wil['nama']));
                                 $kode = $v_wil['kode'];
 
-                                $key = $nama.' - '.$kode;
+                                $key = $kode;
                                 $data[$key] = array(
                                     'nama' => $nama,
                                     'kode' => $kode
@@ -494,7 +503,7 @@ class HrisUsulanKaryawan extends Public_Controller {
                         $nama = str_replace('Kab ', '', str_replace('Kota ', '', $v_wil['nama']));
                         $kode = $v_wil['kode'];
 
-                        $key = $nama.' - '.$kode;
+                        $key = $kode;
                         $data[$key] = array(
                             'nama' => $nama,
                             'kode' => $kode
@@ -512,7 +521,7 @@ class HrisUsulanKaryawan extends Public_Controller {
                     $nama = str_replace('Kab ', '', str_replace('Kota ', '', $v_wil['nama']));
                     $kode = $v_wil['kode'];
 
-                    $key = $nama.' - '.$kode;
+                    $key = $kode;
                     $data[$key] = array(
                         'nama' => $nama,
                         'kode' => $kode
@@ -523,6 +532,32 @@ class HrisUsulanKaryawan extends Public_Controller {
 
         if ( !empty($data) ) {
             ksort($data);
+        }
+
+        return $data;
+    }
+
+    public function get_jabatan()
+    {
+        $jabatan = $this->get_data_posisi($_POST['jabatan']);
+        // cetak_r($jabatan, 1);
+        echo json_encode($jabatan);
+    }
+    
+
+    public function get_data_posisi($jabatan)
+    {
+        $m_conf     = new \Model\Storage\Conf();
+
+        $sql        = " select * from jabatan j
+                    inner join jabatan_atasan ja on j.kode = ja.kode_jabatan
+                    where ja.kode_jabatan_atasan = '".$jabatan."' ";
+
+        $d_conf     = $m_conf->hydrateRaw( $sql );
+        $data       = null;
+
+        if ( $d_conf->count() > 0 ) {
+            $data = $d_conf->toArray();
         }
 
         return $data;

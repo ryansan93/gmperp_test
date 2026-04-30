@@ -22,14 +22,8 @@
         <div style="display:flex; flex-direction:row; gap:10px;">
             
             <div style="display:flex; flex-direction:row; width:50%; gap:10px;">
-                <label for="">Kategori</label>
-                <select class="form form-control" id="kategori">
-                    <option>-- Pilih Kategori --</option>
-                    <?php foreach($kategori as $k) {?>
-                        <option value="<?php echo $k['kode_kategori']?>"><?php echo $k['nama_kategori']?></option>
-                        <!-- <option value="dfsfs">dfsfs</option> -->
-                    <?php }?>
-                </select>
+                <label style="width:200px;">Cari data</label>
+                <input type="text" class="form form-control pengaju-filter" placeholder="Masukan kata kunci" name="" id="">
             </div>
 
             <div>

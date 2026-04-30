@@ -3,7 +3,7 @@
 <div class="panel-heading no-padding">
     <ul class="nav nav-tabs nav-justified">
         <li class="nav-item">
-            <a class="nav-link active" data-toggle="tab" href="#riwayat" data-tab="riwayat">RIWAYAT FORM</a>
+            <a class="nav-link active" data-toggle="tab" href="#riwayat" data-tab="riwayat">RIWAYAT USULAN</a>
         </li>
         <li class="nav-item">
             <a class="nav-link" data-toggle="tab" href="#action" data-tab="action">ADD DATA</a>
@@ -24,22 +24,14 @@
         <div style="display:flex; flex-direction:row; gap:10px;">
             
             <div style="display:flex; flex-direction:row; width:50%; gap:10px;">
-                <label style="width:200px;">Nama Pengaju</label>
-                <select class="select2 pengaju-filter" id="">
-                    <option>-- Pilih Pengaju --</option>
-                    <?php foreach($karyawan as $k) {?>
-                        <option value="<?php echo $k['nik']?>"><?php echo $k['nama']?></option>
-                        <!-- <option value="dfsfs">dfsfs</option> -->
-                    <?php }?>
-                </select>
+                <label style="width:200px;">Cari data</label>
+                <input type="text" class="form form-control pengaju-filter" placeholder="Masukan kata kunci" name="" id="">
             </div>
 
             <div>
                 <button class="btn btn-primary" onclick="hf.filter_data(this, event)"><i class="fa fa-search" style="margin-right: 10px;" aria-hidden="true"></i> Filter</button>
                 <!-- <button class="btn btn-primary" onclick="window.location.href='master/HrisForm/add_data' "><i class="fa fa-plus"  style="margin-right: 10px;" aria-hidden="true"></i> Add Data</button> -->
-                <button class="btn btn-primary" onclick="hf.changeTabActive()"><i class="fa fa-plus"  style="margin-right: 10px;" aria-hidden="true"></i> Add Data</button>
-
-                
+                <button class="btn btn-primary" onclick="hf.changeTabActive()"><i class="fa fa-plus"  style="margin-right: 10px;" aria-hidden="true"></i> Add Data</button>   
             </div>
 
 
@@ -71,9 +63,9 @@
                     <div style="display:flex; gap:10px; flex-wrap:wrap;">
                         <div style="display:flex; flex-direction:column; gap:5px; flex:1; min-width:200px;">
                             <span>Yang Mengusulkan</span>
-                            <select class="select2 form form-control mengusulkan">
+                            <select class="select2 form form-control mengusulkan" onchange="hf.get_jabatan(this, event)">
                                 <?php foreach($karyawan as $k){ ?>
-                                    <option value="<?php echo $k['nik']?>"><?php echo $k['nama']?></option>
+                                    <option jabatan="<?php echo $k['jabatan']?>" value="<?php echo $k['nik']?>"> <?php echo ucwords(strtolower($k['nama'])) . ' - ' .  ucwords(strtolower($k['jabatan']))  ?> </option>
                                 <?php } ?>
                             </select>
                         </div>
@@ -81,7 +73,7 @@
                         <div style="display:flex; flex-direction:column; gap:5px; flex:1; min-width:200px;">
                             <span>Tanggal Mengusulkan</span>
                            <div class="input-group date datetimepicker" id="tgl_pengusulan">
-                                <input type="text" name="tgl_pengusulan" class="form-control text-center" placeholder="Tanggal Kirim" />
+                                <input type="text" name="tgl_pengusulan" class="form-control text-center" placeholder="Tanggal Mengusulan" />
                                 <span class="input-group-addon">
                                     <span class="glyphicon glyphicon-calendar"></span>
                                 </span>
@@ -94,11 +86,9 @@
                         <div style="display:flex; flex-direction:column; gap:5px; flex:1; min-width:200px;">
                             <span>Posisi</span>
                             <select class="select2 form form-control posisi">
-                                <!-- < ?php foreach($karyawan as $k){ ?> -->
-                                    <!-- <option value="< ?php echo $k['nik']?>">< ?php echo $k['nama']?></option> -->
-                                    <option value="IT">IT</option>
-                                    <option value="PPL">PPL</option>
-                                <!-- < ?php } ?> -->
+                                <?php foreach($posisi as $p){ ?>
+                                    <option value="<?php echo $p['kode_posisi']?>"><?php echo $p['kode_posisi'] . ' - ' . $p['nama_posisi']?></option>
+                                <?php } ?>
                             </select>
                         </div>
 
@@ -113,7 +103,7 @@
                         <span>Unit</span>
                         <select class="select2 form form-control unit">
                             <?php foreach($unit as $u){ ?>
-                                <option value="<?php echo $u['kode']?>"><?php echo $u['nama']?></option>  
+                                <option value="<?php echo $u['kode']?>"><?php echo ucwords($u['nama'])?></option>  
                             <?php } ?>
                         </select>
                     </div>
@@ -124,33 +114,6 @@
                     </div>
 
                 </div>
-            </div>
-
-            <br>
-           
-
-            <span style="font-size:17px;">Daftar Kandidat</span>
-            <hr>
-            <div class="detail_area" style="display:flex; flex-direction:column; gap:10px; ">
-
-                <div class="detail_form" style="display:flex; flex-direction:column; gap:10px; padding:10px; border-right: 2px solid #d2d2d2; border-top: 2px solid #d2d2d2; border-bottom: 2px solid #d2d2d2; border-left: 4px solid #ababab;">
-
-                    <div style="display:flex; flex-direction:row; gap:10px; align-items:center;">
-                        <label style="width:10%;">Nama</label>
-                         <select class="select2 nama_kandidat" style="width:40%;">
-                            <option disabled selected>-- Pilih Kandidat --</option>
-                            <?php foreach($kandidat as $k){?>
-                                <option <?php echo $k['document']?> value="<?php echo $k['id']?>"><?php echo $k['nama']?></option>
-                            <?php }?>
-                        </select>
-                        
-                        <div style="width:40%; text-align:right">
-                            <button class="btn btn-warning" onclick="hf.add_row(this, event);"><span class="fa fa-plus"></span></button>
-                            <button class="btn btn-danger" onclick="hf.delete_row(this, event);"><span class="fa fa-close"></span></button>   
-                        </div>
-                    </div>
-                </div>
-
             </div>
             <br>
 

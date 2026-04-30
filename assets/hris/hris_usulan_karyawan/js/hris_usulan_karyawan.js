@@ -10,6 +10,56 @@ let hf ={
                 format: 'DD MMM YYYY'
         });
 
+        $(".mengusulkan").trigger("change", "get_jabatan");
+    },
+
+    get_jabatan: (elm, e) => {
+
+        let params = {
+            jabatan : $(elm).find("option:selected").attr("jabatan"),
+        }
+        
+        $.ajax({
+            url : 'hris/HrisUsulanKaryawan/get_jabatan',
+            data : params,
+            type : 'POST',
+            dataType : 'json',
+            beforeSend : function(){ 
+                showLoading(); 
+            },
+            success : function(resp){
+                hideLoading();
+
+                let select = $('.posisi');
+
+                if (!resp || resp.length === 0) {
+                    select.empty(); 
+                } else {
+
+                    let posisi_val = '';
+                    if ($(".posisi-val").length > 0) {
+                        posisi_val = $(".posisi-val").html().trim();
+                    }
+
+                    // console.log(posisi_val)
+
+                    let html = resp.map(item => 
+                        `<option kode_dokumen="${item.kode_dokumen}" value="${item.kode}" ${posisi_val == item.kode ? 'selected' : ''}>
+                            ${item.nama}
+                        </option>`
+                    ).join('');
+
+                    select.html(html); 
+                }
+
+            },
+            error: function(){
+                hideLoading();
+                bootbox.alert("Terjadi kesalahan data!");
+            }
+        });
+                
+
     },
 
     add_row: (elm, e) => {
@@ -71,22 +121,27 @@ let hf ={
             jumlah          : $(".jumlah").val(),
             unit            : $(".unit").val(),
             alasan          : $(".alasan").val(),
+            kode_dokumen    : $(".posisi").find("option:selected").attr("kode_dokumen"),
         }
+
+        // console.log(header.tgl_penunitgusulan)
 
         if (header.mengusulkan === "") {
             return bootbox.alert("Pengusul wajib diisi!");
         }
 
-        if (header.tgl_pengusulan === "") {
+        let tgl = $('#tgl_pengusulan').data('DateTimePicker').date();
+        if (!tgl || !tgl.isValid()) {
             return bootbox.alert("Tanggal wajib diisi!");
         }
+
 
         if (header.posisi === "") {
             return bootbox.alert("Posisi wajib diisi!");
         }
 
         if (header.jumlah === "" || isNaN(header.jumlah)) {
-            return bootbox.alert("Urutan harus berupa angka!");
+            return bootbox.alert("Jumlah harus berupa angka!");
         }
 
         if (header.unit === "") {
@@ -94,35 +149,35 @@ let hf ={
         }
 
          if (header.alasan === "") {
-            return bootbox.alert("Alasan wajib dipilih!");
+            return bootbox.alert("Alasan wajib di isi!");
         }
 
-        let detail = [];
-        let isValidDetail = true;
+        // let detail = [];
+        // let isValidDetail = true;
 
-        $(".detail_area").find(".detail_form").each(function(index){
-            let nama_kandidat = $(this).find(".nama_kandidat").val().trim();
+        // $(".detail_area").find(".detail_form").each(function(index){
+        //     let nama_kandidat = $(this).find(".nama_kandidat").val().trim();
 
-            if (nama_kandidat === "") {
-                isValidDetail = false;
-                bootbox.alert(`Label pada detail ke-${index + 1} tidak boleh kosong!`);
-                return false;
-            }
+        //     if (nama_kandidat === "") {
+        //         isValidDetail = false;
+        //         bootbox.alert(`Label pada detail ke-${index + 1} tidak boleh kosong!`);
+        //         return false;
+        //     }
 
-            detail.push({
-                id_kandidat: nama_kandidat,
-            });
-        });
+        //     detail.push({
+        //         id_kandidat: nama_kandidat,
+        //     });
+        // });
 
-        if (!isValidDetail) return;
+        // if (!isValidDetail) return;
 
-        if (detail.length === 0) {
-            return bootbox.alert("Minimal harus ada 1 detail!");
-        }
+        // if (detail.length === 0) {
+        //     return bootbox.alert("Minimal harus ada 1 detail!");
+        // }
 
         let params = {
             header : header,
-            detail : detail,
+            // detail : detail,
         }
 
 
@@ -164,25 +219,45 @@ let hf ={
     },
 
     filter_data : () => {
-        let params ={
-            pengaju : $(".pengaju-filter").val(),
-        }
+        // let params ={
+        //     pengaju : $(".pengaju-filter").val(),
+        // }
 
-        $.ajax({
-            url : 'hris/HrisUsulanKaryawan/filter_data',
-            data : params,
-            type : 'POST',
-            dataType : 'html',
-            beforeSend : function(){ 
-                // showLoading(); 
-            },
-            success : function(html){
-                hideLoading();
+        // $.ajax({
+        //     url : 'hris/HrisUsulanKaryawan/filter_data',
+        //     data : params,
+        //     type : 'POST',
+        //     dataType : 'html',
+        //     beforeSend : function(){ 
+        //         // showLoading(); 
+        //     },
+        //     success : function(html){
+        //         hideLoading();
 
-                $(".list_data").html(html)
+        //         $(".list_data").html(html)
                
-            },
+        //     },
+        // });
+
+
+        let value = $(".pengaju-filter").val().toLowerCase();
+        let visibleCount = 0;
+
+        $(".table tbody tr.data-row").each(function () {
+            let text = $(this).text().toLowerCase();
+            let match = text.indexOf(value) > -1;
+
+            $(this).toggle(match);
+
+            if (match) visibleCount++;
         });
+
+        if (visibleCount === 0) {
+            $(".no-data").show();
+        } else {
+            $(".no-data").hide();
+        }
+        
     },
 
     
@@ -206,6 +281,7 @@ let hf ={
             jumlah          : $(".jumlah").val(),
             unit            : $(".unit").val(),
             alasan          : $(".alasan").val(),
+            kode_dokumen    : $(".posisi").find("option:selected").attr("kode_dokumen"),
 
         }
 
@@ -352,39 +428,40 @@ let app = {
 
     filter_kandidat: () => {
 
-    let selectedValues = [];
+        let selectedValues = [];
 
-    $('.nama_kandidat').each(function(){
-        let val = $(this).val();
-        if (val) selectedValues.push(val);
-    });
-
-    $('.nama_kandidat').each(function(){
-
-        let current = $(this).val();
-
-        // reset ke master option
-        $(this).html(masterOptions);
-
-        // hapus yang sudah dipilih di select lain
-        $(this).find('option').each(function(){
+        $('.nama_kandidat').each(function(){
             let val = $(this).val();
-
-            if (selectedValues.includes(val) && val !== current) {
-                $(this).remove();
-            }
+            if (val) selectedValues.push(val);
         });
 
-        // set kembali value sebelumnya
-        $(this).val(current);
+        $('.nama_kandidat').each(function(){
 
-    });
+            let current = $(this).val();
+            $(this).html(masterOptions);
 
-    // re-init select2
-    $('.nama_kandidat').each(function(){
-        $(this).select2('destroy').select2();
-    });
-}
+            
+            $(this).find('option').each(function(){
+                let val = $(this).val();
+
+                if (selectedValues.includes(val) && val !== current) {
+                    $(this).remove();
+                }
+            });
+
+            
+            $(this).val(current);
+
+        });
+
+        
+        $('.nama_kandidat').each(function(){
+            $(this).select2('destroy').select2();
+        });
+    },
+
+
+    
 
 
 };

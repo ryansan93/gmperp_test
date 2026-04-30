@@ -38,6 +38,8 @@
                 <label for="" style="width:200px;"><?php echo $d['nama'] ?></label>
                 <span style="width:100px;">Urutan</span>
                 <label for="" style="width:200px;"><?php echo $d['urutan'] ?></label>
+                <span style="width:100px;">Parent</span>
+                <label for="" style="width:200px;"><?php echo $d['parent_column'] ?></label>
             </div>
         </div>
          <?php } ?>

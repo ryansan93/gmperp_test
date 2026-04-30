@@ -3,6 +3,7 @@
         <tr>
             <th class="text-center">Nama Karyawan</th>
             <th class="text-center">Status Karyawan</th>
+            <th class="text-center">Pengusul</th>
             <th class="text-center">Keterangan</th>
             <th class="text-center">Action</th>
         </tr>
@@ -13,6 +14,7 @@
                 <tr>
                     <td class="text-center"><?php echo $l['nama'] ?></td>
                     <td class="text-center"><?php echo $l['nama_status'] ?></td>
+                    <td class="text-center"><?php echo $l['nama_pengusul'] ?></td>
                     <td class="text-center"><?php echo $l['is_active'] ?></td>
                     <td class="text-center">
 
@@ -21,7 +23,8 @@
                             $plaintext = $l['kategori'].'-'.$l['id_data_karyawan'];
 
                             $encrypted = openssl_encrypt($plaintext, "AES-128-ECB", $key);
-                            $url = "http://localhost/recruitment-gmp-dev/HrisGenerateForm?kode=" . urlencode($encrypted);
+                            // $url = "http://localhost/recruitment-gmp-dev/HrisGenerateForm?kode=" . urlencode($encrypted);
+                            $url = "http://localhost/recruitment-gmp/Form?kode=" . urlencode($encrypted);
                         ?>
 
                         <a <?php echo $l['is_active'] == 'NONACTIVE' ? '' : 'href="'.$url.'" target="_blank"' ?> 

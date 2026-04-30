@@ -11,7 +11,7 @@
     <tbody>
         <?php if (!empty($list)) { ?>
             <?php foreach($list as $l){?>
-                <tr>
+                <tr class="data-row">
                     <td class="text-center"><?php echo $l['urutan'] ?></td>
                     <td><?php echo $l['nama_kategori'] ?></td>
                     <td><?php echo $l['title'] ?></td>
@@ -27,6 +27,12 @@
             <td colspan="6" style="text-align:center;">Tidak ada data</td>
         </tr>
         <?php } ?>
+
+
+        <tr class="no-data" style="display:none;">
+            <td colspan="6" style="text-align:center;">Tidak ada data</td>
+        </tr>
+        
 
 
     </tbody>

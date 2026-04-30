@@ -34,19 +34,28 @@
       
             <div class="detail_area" style="display:flex; flex-direction:column; gap:10px; ">
 
+                <div style="display:flex; flex-direction:row; gap:20px;">
+                    <label style="width:10%;">Status karyawan</label>
+                    <select class="form form-control status_karyawan" style="width:20%;">
+                        <?php foreach($status as $s) { ?>
+                            <option value="<?php echo $s['id'] ?>"><?php echo $s['nama_status'] ?></option>
+                        <?php } ?>
+                    </select>
+    
+                    <label style="width:10%;">Pengusul</label>
+                    <select class="select2 form form-control usulan" style="width:20%;">
+                        <option disabled selected>-- Pilih Karyawan --</option>
+                        <?php foreach($usulan as $u) { ?>
+                            <option value="<?php echo $u['id'] ?>"><?php echo $u['unit'] . ' - ' .  $u['nama'] . ' - ' . $u['document'] ?></option>
+                        <?php } ?>
+                    </select>
+                </div>
+
                 <div class="detail_form" style="display:flex; flex-direction:column; gap:10px; padding:10px; border-right: 2px solid #d2d2d2; border-top: 2px solid #d2d2d2; border-bottom: 2px solid #d2d2d2; border-left: 4px solid #ababab;">
 
                      <div style="display:flex; flex-direction:row; gap:20px; align-items:center;">
-                        <label style="width:20%;">Nama karyawan</label>
-                        <input type="text" class="form form-control nama_kategori" style="width:60%;">
-            
-
-                        <label style="width:20%;">Status karyawan</label>
-                        <select class="form form-control status_karyawan" style="width:20%;">
-                            <?php foreach($status as $s) { ?>
-                                <option value="<?php echo $s['id'] ?>"><?php echo $s['nama_status'] ?></option>
-                            <?php } ?>
-                        </select>
+                        <label style="width:10%;">Nama karyawan</label>
+                        <input type="text" class="form form-control nama_kategori" style="width:30%;">
                         
                         <div style="width:10%; text-align:right">
                             <button class="btn btn-warning" onclick="hf.add_row(this, event);"><span class="fa fa-plus"></span></button>

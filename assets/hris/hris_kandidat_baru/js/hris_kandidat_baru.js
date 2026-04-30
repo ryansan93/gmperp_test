@@ -1,20 +1,14 @@
 let hf = {
     add_row: (elm, e) => {
 
+        let selectPengusul = $(elm).closest('.detail_form').find('.usulan').html(); 
+
         let html = `
             <div class="detail_form" style="display:flex; flex-direction:column; gap:10px; padding:10px; border-right: 2px solid #d2d2d2; border-top: 2px solid #d2d2d2; border-bottom: 2px solid #d2d2d2; border-left: 4px solid #ababab;">
 
-                <div style="display:flex; flex-direction:row; gap:20px; align-items:center;" class="detail_form">
-                    <label style="width:20%;">Nama karyawan</label>
-                    <input type="text" class="form form-control nama_kategori" style="width:60%;">
-        
-
-                    <label style="width:20%;">Status karyawan</label>
-                    <select class="form form-control status_karyawan" style="width:20%;">
-                        <option value="Interview">Interview</option>
-                        <option value="Training">Training</option>
-                        <option value="Tetap">Tetap</option>
-                    </select>
+                <div style="display:flex; flex-direction:row; gap:20px; align-items:center;">
+                    <label style="width:10%;">Nama karyawan</label>
+                    <input type="text" class="form form-control nama_kategori" style="width:30%;">
                     
                     <div style="width:10%; text-align:right">
                         <button class="btn btn-warning" onclick="hf.add_row(this, event);"><span class="fa fa-plus"></span></button>
@@ -33,8 +27,9 @@ let hf = {
         let isValidDetail = true;
 
         $(".detail_area").find(".detail_form").each(function(){
-            let nama_karyawan = $(this).find(".nama_kategori").val().trim();
-            let status_karyawan = $(this).find(".status_karyawan").val();
+            let nama_karyawan   = $(this).find(".nama_kategori").val().trim();
+            let status_karyawan = $(".status_karyawan").val();
+            let usulan          = $(".usulan").val();
 
             if (nama_karyawan === "") {
                 isValidDetail = false;
@@ -45,6 +40,7 @@ let hf = {
             detail.push({
                 nama_karyawan: nama_karyawan,
                 status_karyawan: status_karyawan,
+                usulan : usulan,
             });
         });
 
@@ -98,4 +94,6 @@ let hf = {
 $(document).ready(function() {
     // app.init();
     hf.load_form();
+
+    $('.select2').select2();
 });
