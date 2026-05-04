@@ -21,12 +21,16 @@ class HrisKandidatBaru extends Public_Controller {
             $this->add_external_js(array(
                 "assets/jquery/easy-autocomplete/jquery.easy-autocomplete.min.js",
                 "assets/select2/js/select2.min.js",
+                "assets/toastr/js/toastr.js",
+                "assets/toastr/js/toastr.min.js",
                 "assets/hris/hris_kandidat_baru/js/hris_kandidat_baru.js",
             ));
             $this->add_external_css(array(
                 "assets/jquery/easy-autocomplete/easy-autocomplete.min.css",
                 "assets/jquery/easy-autocomplete/easy-autocomplete.themes.min.css",
                 "assets/select2/css/select2.min.css",
+                "assets/toastr/css/toastr.css",
+                "assets/toastr/css/toastr.min.css",
                 "assets/hris/hris_kandidat_baru/css/hris_kandidat_baru.css",
             ));
 
@@ -86,8 +90,9 @@ class HrisKandidatBaru extends Public_Controller {
                 $m_db->save();
             }
 
-            // $deskripsi_log = 'di-submit oleh ' . $this->userdata['detail_user']['nama_detuser'];
-            // Modules::run( 'base/event/save', $m_mm, $deskripsi_log, null, $no_mm );
+            $id            = $m_db->id;
+            $deskripsi_log = 'di-submit oleh ' . $this->userdata['detail_user']['nama_detuser'];
+            Modules::run('base/event/save', $m_db, $deskripsi_log, null, $id, $m_db);
 
             $this->result['status'] = 1;
             $this->result['message'] = 'Data berhasil di simpan.';
@@ -119,18 +124,9 @@ class HrisKandidatBaru extends Public_Controller {
 
 
         try {
-            $kode_kategori = $params['kode_kategori'];
-
-            $m_kategori = new \Model\Storage\HrisKategori_model();
-
-            $d_kategori = $m_kategori->where('kode_kategori', $kode_kategori)->first();
-            if (!$d_kategori) {
-                throw new \Exception("Data form tidak ditemukan.");
-            }
-
-            $m_kategori->where('kode_kategori', $kode_kategori)->update([
-                'nama_kategori' => $params['nama_kategori'],
-            ]);
+           
+            
+            
 
             $this->result['status'] = 1;
             $this->result['message'] = 'Data berhasil di update.';
@@ -183,9 +179,9 @@ class HrisKandidatBaru extends Public_Controller {
     public function get_data_form(){
         
         $m_conf     = new \Model\Storage\Conf();
-        $sql        = " select hdk.id as id_data_karyawan, hdk.nama, hsk.nama_status , hsk.kategori, hdk.is_active, k.nama as nama_pengusul 
+        $sql        = " select hdk.id as id_data_karyawan, hdk.nama, hdk.status_karyawan, hdk.tgl_masuk, hdk.keterangan_reject, hsk.nama_status , hsk.kategori, hdk.is_active, hdk.document, k.nama as nama_pengusul, k.jabatan as jabatan_pengusul
                         from hris_data_karyawan hdk
-                        inner join hris_status_karyawan hsk on hdk.status_karyawan = hsk.id 
+                        left join hris_status_karyawan hsk on hdk.status_karyawan = hsk.id 
                         inner join hris_usulan_karyawan_baru hukb on hdk.usulan_id = hukb.id
                         INNER JOIN (
                             SELECT *
@@ -202,13 +198,123 @@ class HrisKandidatBaru extends Public_Controller {
         return $result;
     }
 
-       public function get_status_karyawan(){
+    public function get_status_karyawan(){
         
         $m_conf     = new \Model\Storage\Conf();
         $sql        = " select * from hris_status_karyawan  ";
         $result     = $m_conf->hydrateRaw( $sql )->toArray();
 
         return $result;
+    }
+
+
+    public function show_document_kandidat()
+    {
+
+        $this->add_external_js(array(
+            "assets/jquery/easy-autocomplete/jquery.easy-autocomplete.min.js",
+            "assets/select2/js/select2.min.js",
+            "assets/toastr/js/toastr.js",
+            "assets/toastr/js/toastr.min.js",
+            "assets/hris/hris_kandidat_baru/js/hris_kandidat_baru.js",
+        ));
+        $this->add_external_css(array(
+            "assets/jquery/easy-autocomplete/easy-autocomplete.min.css",
+            "assets/jquery/easy-autocomplete/easy-autocomplete.themes.min.css",
+            "assets/select2/css/select2.min.css",
+            "assets/toastr/css/toastr.css",
+            "assets/toastr/css/toastr.min.css",
+            "assets/hris/hris_kandidat_baru/css/hris_kandidat_baru.css",
+        ));
+
+        $data                       = $this->includes;
+        $content['akses']           = $this->hakAkses;
+        $content['title_panel']     = 'HRIS - Kadidat Baru';
+        
+        $content['biodata'] = $this->get_bio_data($_GET['id']);
+        // cetak_r($content, 1);
+
+        // echo $this->load->view($this->pathView . 'v_detail', $content, TRUE);
+
+        $data['title_menu']     = 'HRIS - Kadidat Baru / Detail Form Kandidat';
+
+        $data['view'] = $this->load->view($this->pathView . 'v_detail', $content, TRUE);
+        $this->load->view($this->template, $data);
+
+
+        // return $content;
+
+
+    }
+
+    public function get_bio_data($id_kandidat)
+    {
+        $m_conf     = new \Model\Storage\Conf();
+        $sql        = " select * from hris_data_karyawan_detail where id_data_karyawan in  ($id_kandidat)";
+
+        $d_conf     = $m_conf->hydrateRaw( $sql );
+        $data       = null;
+        
+        if ( $d_conf->count() > 0 ) {
+            $data = $d_conf->toArray();
+        }
+        // cetak_r($data, 1);
+
+        $result = [];
+
+        foreach ($data as $row) {
+            $id = $row['id_data_karyawan'];
+
+            if (!isset($result[$id])) {
+                $result[$id] = [
+                    'standalone' => [],
+                    'grouped' => []
+                ];
+            }
+
+            if (!empty($row['parent_column'])) {
+                $result[$id]['grouped'][$row['parent_column']][] = $row;
+            } else {
+                $result[$id]['standalone'][$row['label']] = $row;
+            }
+        }
+
+        return $result;
+
+    }
+
+
+    public function exec_keputusan_akhir()
+    {
+
+        $params = $_POST;
+
+        // cetak_r($params, 1);
+
+        try {
+
+            $m_db = new \Model\Storage\HrisDataKaryawan_model();
+
+            $d_db = $m_db->where('id', $params['id_data'])->first();
+            if (!$d_db) {
+                throw new \Exception("Data form tidak ditemukan.");
+            }
+
+            $m_db->where('id', $params['id_data'])->update([
+                'status_karyawan'   => $params['keputusan'] == 1 ? 2 : 3,
+                'tgl_masuk'         => $params['keputusan'] == 1 ? $params['tgl_masuk'] : null,
+                'keterangan_reject' => $params['keputusan'] == 2 ? $params['keterangan_reject'] : null,
+            ]);
+
+            $this->result['status'] = 1;
+            $this->result['message'] = 'Data berhasil di update.';
+
+        } catch (\Exception $e) {
+            $this->result['status'] = 0;
+            $this->result['message'] = $e->getMessage();
+        }
+
+        display_json($this->result);
     }
 
    

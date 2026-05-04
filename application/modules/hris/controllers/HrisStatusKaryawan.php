@@ -85,16 +85,16 @@ class HrisStatusKaryawan extends Public_Controller {
         try {
 
             foreach ($params['data'] as $v_det) {
-
                 $m_form_detail = new \Model\Storage\HrisStatusKaryawan_model();
-                $m_form_detail->nama_status   = $v_det['nama_status'];
-                $m_form_detail->kategori      = $v_det['kategori'];
+                $m_form_detail->nama_status = $v_det['nama_status'];
+                $m_form_detail->kategori    = $v_det['kategori'];
                 $m_form_detail->save();
 
-            }
+                $id = $m_form_detail->id;
 
-            // $deskripsi_log = 'di-submit oleh ' . $this->userdata['detail_user']['nama_detuser'];
-            // Modules::run( 'base/event/save', $m_mm, $deskripsi_log, null, $no_mm );
+                $deskripsi_log = 'di-submit oleh ' . $this->userdata['detail_user']['nama_detuser'];
+                Modules::run('base/event/save', $m_form_detail, $deskripsi_log, null, $m_form_detail);
+            }
 
             $this->result['status'] = 1;
             $this->result['message'] = 'Data berhasil di simpan.';
@@ -142,6 +142,9 @@ class HrisStatusKaryawan extends Public_Controller {
                 'kategori' => $params['kategori'],
             ]);
 
+            $deskripsi_log = 'di-update oleh ' . $this->userdata['detail_user']['nama_detuser'];
+            Modules::run('base/event/update', $m_status, $deskripsi_log, null, $id_data, $m_status);
+
             $this->result['status'] = 1;
             $this->result['message'] = 'Data berhasil di update.';
 
@@ -165,6 +168,9 @@ class HrisStatusKaryawan extends Public_Controller {
         try {
 
             $m_status->where('id', $id_data)->delete();
+
+            $deskripsi_log = 'di-hapus oleh ' . $this->userdata['detail_user']['nama_detuser'];
+            Modules::run('base/event/delete', $m_status, $deskripsi_log, null, $id_data, $m_status);
 
             $this->result['status'] = 1;
             $this->result['message'] = 'Data berhasil di hapus.';

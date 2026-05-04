@@ -23,7 +23,7 @@
                         $status = 'Acknowledge';
                         $color = 'border: 2px solid #AAF799;';
                     } else if ( $l['status'] == 3 ){
-                        $status = 'Approve';
+                        $status = 'Approved';
                         $color = 'border: 2px solid #2283D6;';
                     } else if ( $l['status'] == 6 ){
                         $status = 'Done';

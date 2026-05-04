@@ -44,49 +44,6 @@ class FormAckUsulanKaryawan extends Public_Controller {
     }
 
 
-    public function save()
-    {
-    
-        $params = $_POST;
-        // cetak_r($params, 1);
-        
-        try {
-            $m_form     = new \Model\Storage\HrisForm_model();
-
-            $m_form->title          = $params['header']['title'];
-            $m_form->keterangan     = $params['header']['keterangan'];
-            $m_form->urutan         = $params['header']['urutan'];
-            $m_form->kategori       = $params['header']['kategori'];
-            $m_form->save();
-
-            $id_form = $m_form->id;
-
-            foreach ($params['detail'] as $v_det) {
-
-                $m_form_detail = new \Model\Storage\HrisFormDetail_model();
-                $m_form_detail->id_form     = $id_form;
-                $m_form_detail->nama        = $v_det['label'];
-                $m_form_detail->urutan      = $v_det['urutan'];
-                $m_form_detail->parent_column  = $v_det['parent_label'];
-                $m_form_detail->kode_detail = 'DTL-'. $id_form;
-                $m_form_detail->save();
-
-            }
-
-            // $deskripsi_log = 'di-submit oleh ' . $this->userdata['detail_user']['nama_detuser'];
-            // Modules::run( 'base/event/save', $m_mm, $deskripsi_log, null, $no_mm );
-
-            $this->result['status'] = 1;
-            $this->result['message'] = 'Data berhasil di simpan.';
-            // $this->result['content'] = array('id' => $no_mm);
-        } catch (Exception $e) {
-            $this->result['message'] = $e->getMessage();
-        }
-
-        display_json( $this->result );
-
-    }
-
     public function filter()
     {
         $content['list'] =  $this->get_list($_POST['status']); 

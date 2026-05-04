@@ -21,6 +21,17 @@ let hf = {
         $(".detail_area").append(html);
     },
 
+    delete_row : (elm, e) => {
+
+        let dtl = $(".detail_form").length;
+
+        if(dtl <= 1){
+            bootbox.alert('Baris tidak boleh lebih dari 1');
+        } else {
+            $(elm).closest(".detail_form").remove();
+        }
+    },
+
     save: (elm, e)  => {
 
         let detail = [];
@@ -34,6 +45,12 @@ let hf = {
             if (nama_karyawan === "") {
                 isValidDetail = false;
                 bootbox.alert(`Label pada detail ke-${nama_karyawan + 1} tidak boleh kosong!`);
+                return false;
+            }
+
+            if (usulan === null) {
+                isValidDetail = false;
+                bootbox.alert(`Usulan wajib di isi`);
                 return false;
             }
 
@@ -89,6 +106,120 @@ let hf = {
             },
         });
     },
+
+    copy_link:(elm, e) => {
+        e.preventDefault();
+
+        let url = $(elm).attr("url");
+        // console.log(url)
+        
+        navigator.clipboard.writeText(url)
+        .then(() => {
+            toastr.info("Link berhasil disalin!");
+        })
+        .catch(() => {
+            toastr.info("Gagal copy link");
+        });
+    },
+
+
+    keputusan_akhir: (elm, e, val) => {
+        let params = {
+            keputusan: val,
+            id_data: $(elm).attr("id_data"),
+        };
+
+        if (params.keputusan == 1) {
+            let dialog = bootbox.dialog({
+                title: "Masukkan Tanggal Masuk Kerja",
+                message: `
+                    <div class="input-group date datetimepicker" id="tgl_masuk">
+                        <input type="text" name="tgl_masuk" class="form-control text-center" placeholder="Tanggal Masuk Kerja" />
+                        <span class="input-group-addon">
+                            <span class="glyphicon glyphicon-calendar"></span>
+                        </span>
+                    </div>
+                `,
+                buttons: {
+                    cancel: {
+                        label: 'Batal',
+                        className: 'btn-secondary'
+                    },
+                    confirm: {
+                        label: 'Simpan',
+                        className: 'btn-primary',
+                        callback: function () {
+                            let picker = $('#tgl_masuk').data('DateTimePicker');
+                            let date = picker ? picker.date() : null;
+
+                            if (!date) {
+                                bootbox.alert("Tanggal wajib diisi!");
+                                return false;
+                            }
+
+                            let tgl = dateSQL(date);
+                            params.tgl_masuk = tgl;
+                            hf.exec_keputusan_akhir(params);
+                        }
+                    }
+                }
+            });
+
+            dialog.on('shown.bs.modal', function () {
+                // console.log(123);
+
+                $('#tgl_masuk').datetimepicker({
+                    locale: 'id',
+                    format: 'DD MMM YYYY'
+                });
+            });
+        } else if (params.keputusan == 2) {
+            bootbox.confirm({
+                message: "Apakah anda yakin ingin reject kandidat ini? <br><br> <textarea class='form form-control ket-reject' rows='3'></textarea>",
+                buttons: {
+                    confirm: {
+                        label: 'Ya',
+                        className: 'btn-danger'
+                    },
+                    cancel: {
+                        label: 'Batal',
+                        className: 'btn-secondary'
+                    }
+                },
+                callback: function (result) {
+                    if (result) {
+                        // console.log(params);
+
+                        let keterangan_reject = $('.ket-reject').val();
+                        params.keterangan_reject = keterangan_reject;
+                        hf.exec_keputusan_akhir(params)
+                    }
+                }
+            });
+        }
+    },
+
+    exec_keputusan_akhir: (params) =>{
+        // console.log(params)
+
+
+         $.ajax({
+            url : 'hris/HrisKandidatBaru/exec_keputusan_akhir',
+            data : params,
+            type : 'POST',
+            dataType : 'json',
+            beforeSend : function(){ 
+                showLoading(); 
+            },
+            success : function(data){
+                hideLoading();
+                // console.log(resp)   
+                 bootbox.alert(data.message, function () {
+                    window.location.href = 'hris/HrisKandidatBaru';
+                });        
+            },
+        });
+    }
 }
 
 $(document).ready(function() {

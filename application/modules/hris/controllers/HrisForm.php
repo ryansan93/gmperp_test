@@ -115,8 +115,10 @@ class HrisForm extends Public_Controller {
 
             }
 
-            // $deskripsi_log = 'di-submit oleh ' . $this->userdata['detail_user']['nama_detuser'];
-            // Modules::run( 'base/event/save', $m_mm, $deskripsi_log, null, $no_mm );
+            $id            = $m_form->id;
+            $deskripsi_log = 'di-submit oleh ' . $this->userdata['detail_user']['nama_detuser'];
+            Modules::run('base/event/save', $m_form, $deskripsi_log, null, $id, $m_form);
+
 
             $this->result['status'] = 1;
             $this->result['message'] = 'Data berhasil di simpan.';
@@ -291,6 +293,9 @@ class HrisForm extends Public_Controller {
                 }
             }
 
+            $deskripsi_log = 'di-update oleh ' . $this->userdata['detail_user']['nama_detuser'];
+            Modules::run('base/event/update', $m_form, $deskripsi_log, null, $id_form, $m_form);
+
             $this->result['status'] = 1;
             $this->result['message'] = 'Data berhasil di update.';
 
@@ -319,6 +324,9 @@ class HrisForm extends Public_Controller {
 
             // delete header
             $m_form->where('id', $id_form)->delete();
+
+            $deskripsi_log = 'di-hapus oleh ' . $this->userdata['detail_user']['nama_detuser'];
+            Modules::run('base/event/delete', $m_form, $deskripsi_log, null, $id_form, $m_form);
 
     
 

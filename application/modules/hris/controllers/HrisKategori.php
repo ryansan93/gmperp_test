@@ -75,18 +75,19 @@ class HrisKategori extends Public_Controller {
         // cetak_r($params, 1);
         
         try {
-
+    
             foreach ($params['detail'] as $v_det) {
-
+                $kode = $this->generate_kode();
                 $m_form_detail = new \Model\Storage\HrisKategori_model();
                 $m_form_detail->kode_kategori      = $this->generate_kode();
                 $m_form_detail->nama_kategori      = $v_det['nama_kategori'];
                 $m_form_detail->save();
 
+                $id            = $m_form_detail->id;
+                $deskripsi_log = 'di-submit oleh ' . $this->userdata['detail_user']['nama_detuser'];
+                Modules::run('base/event/save', $m_form_detail, $deskripsi_log, null, $kode, $m_form_detail);
             }
 
-            // $deskripsi_log = 'di-submit oleh ' . $this->userdata['detail_user']['nama_detuser'];
-            // Modules::run( 'base/event/save', $m_mm, $deskripsi_log, null, $no_mm );
 
             $this->result['status'] = 1;
             $this->result['message'] = 'Data berhasil di simpan.';
@@ -132,6 +133,9 @@ class HrisKategori extends Public_Controller {
                 'nama_kategori' => $params['nama_kategori'],
             ]);
 
+            $deskripsi_log = 'di-update oleh ' . $this->userdata['detail_user']['nama_detuser'];
+            Modules::run('base/event/update', $m_kategori, $deskripsi_log, null, $kode_kategori, $m_kategori);
+
             $this->result['status'] = 1;
             $this->result['message'] = 'Data berhasil di update.';
 
@@ -148,15 +152,17 @@ class HrisKategori extends Public_Controller {
     {
         $params = $_POST;
         // cetak_r($params, 1);
-        $id_form = $params['kode_kategori'];
+        $id_kategori = $params['kode_kategori'];
 
-        $m_form = new \Model\Storage\HrisKategori_model();
+        $m_kategori = new \Model\Storage\HrisKategori_model();
 
         try {
 
-            $m_form->where('kode_kategori', $id_form)->delete();
+            $m_kategori->where('kode_kategori', $id_kategori)->delete();
 
-    
+            $deskripsi_log = 'di-hapus oleh ' . $this->userdata['detail_user']['nama_detuser'];
+            Modules::run('base/event/delete', $m_kategori, $deskripsi_log, null, $id_kategori, $m_kategori);
+
 
             $this->result['status'] = 1;
             $this->result['message'] = 'Data berhasil di hapus.';

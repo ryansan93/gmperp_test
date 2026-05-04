@@ -117,6 +117,26 @@ class Home extends Public_Controller
 				$notif[$url]['jenis'] = 'window.open';
 			}
 		}
+
+		
+
+		$url = 'hris/HrisKandidatBaru';
+		$akses = hakAkses('/'.$url);
+
+		if ( !empty($akses['a_ack']) && $akses['a_ack'] == 1 ) {
+			$status = getStatus('submit');
+
+			$m_dk = new \Model\Storage\HrisDataKaryawan_model();
+			$data = $m_dk->notifData();
+
+			// echo '<pre>';print_r($data);die;
+
+			if ( $data ) {
+				$notif[$url] = $this->mappingNotif($data, $url, 'HRIS - ACK Kandidat Baru');
+				$notif[$url]['link'] = $url;
+				$notif[$url]['jenis'] = 'window.open';
+			}
+		}
 		// END - HRD
 
         return $notif;

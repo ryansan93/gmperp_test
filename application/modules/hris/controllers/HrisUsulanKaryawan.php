@@ -98,7 +98,7 @@ class HrisUsulanKaryawan extends Public_Controller {
         
         try {
             $m_db     = new \Model\Storage\HrisUsulanKaryawan_model();
-
+            
             $m_db->nama_pengusul  = $params['header']['mengusulkan'];
             $m_db->tgl_pengusulan = $params['header']['tgl_pengusulan'];
             $m_db->posisi         = $params['header']['posisi'];
@@ -109,10 +109,10 @@ class HrisUsulanKaryawan extends Public_Controller {
             $m_db->document       = $this->generate_document($params['header']['kode_dokumen']);
             $m_db->save();
 
-    
-
-            // $deskripsi_log = 'di-submit oleh ' . $this->userdata['detail_user']['nama_detuser'];
-            // Modules::run( 'base/event/save', $m_mm, $deskripsi_log, null, $no_mm );
+            $id             = $m_db->id;
+            $deskripsi_log  = 'di-submit oleh ' . $this->userdata['detail_user']['nama_detuser'];
+            Modules::run( 'base/event/save', $m_db, $deskripsi_log, null, $id, $m_db);
+            
 
             $this->result['status'] = 1;
             $this->result['message'] = 'Data berhasil di simpan.';
@@ -368,24 +368,32 @@ class HrisUsulanKaryawan extends Public_Controller {
     {
         $params = $_POST;
 
-        // cetak_r($params, 1);
 
         try {
 
             $id_data = (int) $params['id_data'];
-            
-            $m_db     = new \Model\Storage\HrisUsulanKaryawan_model();
 
-            $m_db->where('id', $id_data)->update([
-                'nama_pengusul'     => $params['header']['mengusulkan'],
-                'tgl_pengusulan'    => $params['header']['tgl_pengusulan'],
-                'posisi'            => $params['header']['posisi'],
-                'jumlah'            => $params['header']['jumlah'],
-                'unit'              => $params['header']['unit'],
-                'alasan'            => $params['header']['alasan'],
-                'document'          => $this->generate_document($params['header']['kode_dokumen']),
-            ]);
-          
+            $m_db = new \Model\Storage\HrisUsulanKaryawan_model();
+            $data = $m_db->where('id', $id_data)->first();
+
+            // cetak_r($params, 1);
+
+
+            if (!$data) {
+                throw new \Exception("Data tidak ditemukan");
+            }
+
+            $data->nama_pengusul  = $params['header']['mengusulkan'];
+            $data->tgl_pengusulan = $params['header']['tgl_pengusulan'];
+            $data->posisi         = $params['header']['posisi'];
+            $data->jumlah         = $params['header']['jumlah'];
+            $data->unit           = $params['header']['unit'];
+            $data->alasan         = $params['header']['alasan'];
+            $data->document       = $this->generate_document($params['header']['kode_dokumen']);
+            $data->save();
+
+            $deskripsi_log = 'di-edit oleh ' . $this->userdata['detail_user']['nama_detuser'];
+            Modules::run('base/event/update', $data, $deskripsi_log, null, $id_data, json_encode($data));
 
             $this->result['status'] = 1;
             $this->result['message'] = 'Data berhasil di update.';
@@ -409,8 +417,20 @@ class HrisUsulanKaryawan extends Public_Controller {
         
 
         try {
-            // delete header
-            $m_db->where('id', $id_data)->delete();
+           
+            $id_data = (int) $params['id_data'];
+            $m_db = new \Model\Storage\HrisUsulanKaryawan_model();
+            $data = $m_db->where('id', $id_data)->first();
+
+            if (!$data) {
+                throw new \Exception("Data tidak ditemukan");
+            }
+
+            $id = $data->id;
+            $data->delete();
+
+            $deskripsi_log = 'di-hapus oleh ' . $this->userdata['detail_user']['nama_detuser'];
+            Modules::run('base/event/delete', $data, $deskripsi_log, null, $id, $data);
 
             $this->result['status'] = 1;
             $this->result['message'] = 'Data berhasil di hapus.';
