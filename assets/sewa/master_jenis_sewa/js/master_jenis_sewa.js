@@ -39,7 +39,7 @@ let mjs = {
     },
 
     add_form: function () {
-        $.get('master/MasterJenisSewa/add_form', function (data) {
+        $.get('sewa/MasterJenisSewa/add_form', function (data) {
             mjs.open_action_tab(data);
         }, 'html');
     },
@@ -47,7 +47,7 @@ let mjs = {
     edit_form: function (elm) {
         var id = $(elm).data('id');
 
-        $.get('master/MasterJenisSewa/edit_form', { id: id }, function (data) {
+        $.get('sewa/MasterJenisSewa/edit_form', { id: id }, function (data) {
             mjs.open_action_tab(data);
         }, 'html');
     },
@@ -64,7 +64,7 @@ let mjs = {
 
     load_data: function () {
         $.ajax({
-            url: 'master/MasterJenisSewa/list_data',
+            url: 'sewa/MasterJenisSewa/list_data',
             type: 'GET',
             dataType: 'HTML',
             beforeSend: function () {
@@ -114,7 +114,7 @@ let mjs = {
         bootbox.confirm('Apakah anda yakin ingin menyimpan data ?', function (result) {
             if ( result ) {
                 $.ajax({
-                    url: 'master/MasterJenisSewa/save_data',
+                    url: 'sewa/MasterJenisSewa/save_data',
                     type: 'POST',
                     dataType: 'JSON',
                     data: { params: params },
@@ -162,7 +162,7 @@ let mjs = {
         bootbox.confirm('Apakah anda yakin ingin mengubah data ?', function (result) {
             if ( result ) {
                 $.ajax({
-                    url: 'master/MasterJenisSewa/edit_data',
+                    url: 'sewa/MasterJenisSewa/edit_data',
                     type: 'POST',
                     dataType: 'JSON',
                     data: { params: params },
@@ -195,7 +195,7 @@ let mjs = {
         bootbox.confirm('Apakah anda yakin ingin menghapus data ini ?', function (result) {
             if ( result ) {
                 $.ajax({
-                    url: 'master/MasterJenisSewa/delete_data',
+                    url: 'sewa/MasterJenisSewa/delete_data',
                     type: 'POST',
                     dataType: 'JSON',
                     data: { params: id },

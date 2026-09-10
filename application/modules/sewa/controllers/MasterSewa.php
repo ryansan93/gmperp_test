@@ -13,7 +13,7 @@ use Dompdf\Dompdf;
 
 class MasterSewa extends Public_Controller {
 
-    private $pathView = 'master/master_sewa/';
+    private $pathView = 'sewa/master_sewa/';
     private $url;
     private $hakAkses;
 
@@ -32,13 +32,13 @@ class MasterSewa extends Public_Controller {
             $this->add_external_js(array(
                 "assets/jquery/easy-autocomplete/jquery.easy-autocomplete.min.js",
                 "assets/select2/js/select2.min.js",
-                "assets/master/master_sewa/js/master_sewa.js",
+                "assets/sewa/master_sewa/js/master_sewa.js",
             ));
             $this->add_external_css(array(
                 "assets/jquery/easy-autocomplete/easy-autocomplete.min.css",
                 "assets/jquery/easy-autocomplete/easy-autocomplete.themes.min.css",
                 "assets/select2/css/select2.min.css",
-                "assets/master/master_sewa/css/master_sewa.css",
+                "assets/sewa/master_sewa/css/master_sewa.css",
             ));
 
             $data = $this->includes;

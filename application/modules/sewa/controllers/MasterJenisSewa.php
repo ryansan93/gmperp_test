@@ -2,7 +2,7 @@
 
 class MasterJenisSewa extends Public_Controller {
 
-    private $pathView = 'master/master_jenis_sewa/';
+    private $pathView = 'sewa/master_jenis_sewa/';
     private $url;
     private $hakAkses;
 
@@ -18,7 +18,7 @@ class MasterJenisSewa extends Public_Controller {
         if ( $this->hakAkses['a_view'] == 1 ) {
 
             $this->add_external_js(array(
-                "assets/master/master_jenis_sewa/master_jenis_sewa.js",
+                "assets/sewa/master_jenis_sewa/js/master_jenis_sewa.js",
             ));
 
             $data = $this->includes;

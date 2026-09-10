@@ -148,7 +148,7 @@ let ms = {
 
     add_form: function () {
         ms.currentMode = 'add';
-        $.get('master/MasterSewa/add_form', function (data) {
+        $.get('sewa/MasterSewa/add_form', function (data) {
             ms.open_action_tab(data);
         }, 'html');
     },
@@ -157,7 +157,7 @@ let ms = {
         var id = $(elm).data('id');
         ms.currentMode = 'edit';
 
-        $.get('master/MasterSewa/edit_form', { id: id }, function (data) {
+        $.get('sewa/MasterSewa/edit_form', { id: id }, function (data) {
             ms.open_action_tab(data);
         }, 'html');
     },
@@ -193,7 +193,7 @@ let ms = {
 
     load_data: function () {
         $.ajax({
-            url: 'master/MasterSewa/list_data',
+            url: 'sewa/MasterSewa/list_data',
             type: 'GET',
             dataType: 'HTML',
             beforeSend: function () {
@@ -259,7 +259,7 @@ let ms = {
         bootbox.confirm('Apakah anda yakin ingin menyimpan data ?', function (result) {
             if ( result ) {
                 $.ajax({
-                    url: 'master/MasterSewa/save_data',
+                    url: 'sewa/MasterSewa/save_data',
                     type: 'POST',
                     dataType: 'JSON',
                     data: { params: params },
@@ -340,7 +340,7 @@ let ms = {
         bootbox.confirm('Apakah anda yakin ingin mengubah data ?', function (result) {
             if ( result ) {
                 $.ajax({
-                    url: 'master/MasterSewa/edit_data',
+                    url: 'sewa/MasterSewa/edit_data',
                     type: 'POST',
                     dataType: 'JSON',
                     data: { params: params },
@@ -373,7 +373,7 @@ let ms = {
         bootbox.confirm('Apakah anda yakin ingin menghapus data ini ?', function (result) {
             if ( result ) {
                 $.ajax({
-                    url: 'master/MasterSewa/delete_data',
+                    url: 'sewa/MasterSewa/delete_data',
                     type: 'POST',
                     dataType: 'JSON',
                     data: { params: id },
@@ -426,7 +426,7 @@ let ms = {
                     label: 'PDF',
                     className: 'btn-primary',
                     callback: function () {
-                        var url = 'master/MasterSewa/export_data?type=pdf&' + $.param(filters);
+                        var url = 'sewa/MasterSewa/export_data?type=pdf&' + $.param(filters);
                         window.location.href = url;
                     }
                 },
@@ -434,7 +434,7 @@ let ms = {
                     label: 'Excel',
                     className: 'btn-success',
                     callback: function () {
-                        var url = 'master/MasterSewa/export_data?type=xlsx&' + $.param(filters);
+                        var url = 'sewa/MasterSewa/export_data?type=xlsx&' + $.param(filters);
                         window.location.href = url;
                     }
                 },
@@ -465,7 +465,7 @@ let ms = {
         }
 
         $.ajax({
-            url: 'master/MasterSewa/list_data',
+            url: 'sewa/MasterSewa/list_data',
             type: 'POST',
             data: {
                 jenis_sewa: $('#filter_jenis_sewa').val() || '',
@@ -487,7 +487,7 @@ let ms = {
         var id = $(elm).data('id');
 
         $.ajax({
-            url: 'master/MasterSewa/detail_data',
+            url: 'sewa/MasterSewa/detail_data',
             type: 'POST',
             dataType: 'HTML',
             data: { params: id },
