@@ -1,4 +1,4 @@
-<input type="hidden" id="config-form" value="<?php echo $data['is_locked'] ?? 0; ?>">
+<input type="hidden" id="config-form" value="<?php echo (($data['is_locked'] ?? 0) == 1 || $cek_amortisasi == 1) ? 1 : 0; ?>">
 
 <fieldset>
     <legend>Form Sewa</legend>
