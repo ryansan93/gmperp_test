@@ -251,11 +251,11 @@ let ms = {
         if ( $.trim(no_supplier) === '' ) { ms.showFieldError('#no_supplier', 'No supplier wajib diisi.'); return; }
 
 
-        var dp_clean = dp ? parseInt(dp.toString().replace(/\./g, '')) : 0;
-        if ( dp_clean > 0 && (!durasi_cicilan || parseInt(durasi_cicilan) <= 0) ) {
-            ms.showFieldError('#durasi_cicilan', 'Durasi cicilan wajib diisi jika ada DP.');
-            return;
-        }
+        // var dp_clean = dp ? parseInt(dp.toString().replace(/\./g, '')) : 0;
+        // if ( dp_clean > 0 && (!durasi_cicilan || parseInt(durasi_cicilan) <= 0) ) {
+        //     ms.showFieldError('#durasi_cicilan', 'Durasi cicilan wajib diisi jika ada DP.');
+        //     return;
+        // }
 
         var formData = new FormData();
 

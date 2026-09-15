@@ -80,7 +80,7 @@ class MasterSewa extends Public_Controller {
             'ms_sewa.*', 
             'ms_jenis_sewa.nama_jenis_sewa', 
             'p.nama as nama_supplier', 
-            // Ganti LIMIT 1 menjadi TOP 1 untuk SQL Server
+         
             new \Illuminate\Database\Query\Expression('(SELECT TOP 1 nama FROM wilayah WHERE kode = ms_sewa.unit) as nama_unit')
         )
         ->leftJoin('ms_jenis_sewa', 'ms_jenis_sewa.kode_jenis_sewa', '=', 'ms_sewa.jenis_sewa')
@@ -157,7 +157,11 @@ class MasterSewa extends Public_Controller {
     public function get_unit_list()
     {
         $m_conf     = new \Model\Storage\Conf();
-        $sql = " select kode, nama from wilayah where jenis = 'UN' order by nama asc ";
+        $sql = " SELECT kode, MAX(nama) AS nama
+                    FROM wilayah
+                    WHERE jenis = 'UN'
+                    GROUP BY kode
+                    ORDER BY kode ASC; ";
 
         $d_conf     = $m_conf->hydrateRaw( $sql );
         
@@ -181,7 +185,7 @@ class MasterSewa extends Public_Controller {
         $data['supplier']   = $this->get_supplier_list();
         $data['unit']       = $this->get_unit_list();
 
-        // $data['cek_amortisasi'] = $this->check_status_amortisasi($d_sewa->no_sewa);
+        $data['cek_amortisasi'] = $this->check_status_amortisasi($d_sewa->no_sewa);
         // cetak_r($data['cek_amortisasi'], 1);
 
         $this->load->view($this->pathView . 'v_form', $data);
