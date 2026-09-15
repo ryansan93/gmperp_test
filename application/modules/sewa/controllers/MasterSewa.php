@@ -291,9 +291,11 @@ class MasterSewa extends Public_Controller {
     
         $termin->where('no_sewa', $noSewa)->delete();
 
-        if ($durasi <= 0) {
-            return; 
-        }
+        // if ($durasi <= 0) {
+        //     return; 
+        // }
+
+        // cetak_r($dp, 1);
 
         if ($dp > 0) {
             $rowDp = new \Model\Storage\MsSewaTermin_model();
@@ -324,6 +326,8 @@ class MasterSewa extends Public_Controller {
             $row->save();
         }
     }
+
+
 
     public function save_data()
     {
@@ -396,6 +400,8 @@ class MasterSewa extends Public_Controller {
                 }
 
                 if ($durasiTermin > 0 && !empty($noSewa)) {
+                // if (!empty($noSewa)) {
+
                     $tglJatuhTempo = $m_sewa->tgl_jatuh_tempo > 0 ? $m_sewa->tgl_jatuh_tempo : 1;
                     
                     $this->syncTermin(
@@ -444,10 +450,10 @@ class MasterSewa extends Public_Controller {
                 display_json($this->result); return;
             }
 
-            if ($dp > 0 && $durasiCicilan <= 0) {
-                $this->result['message'] = 'Jika ada DP, Durasi Cicilan wajib diisi.';
-                display_json($this->result); return;
-            }
+            // if ($dp > 0 && $durasiCicilan <= 0) {
+            //     $this->result['message'] = 'Jika ada DP, Durasi Cicilan wajib diisi.';
+            //     display_json($this->result); return;
+            // }
 
             $current = $m_sewa->where('id', $params['id'])->first();
             if (!$current) {

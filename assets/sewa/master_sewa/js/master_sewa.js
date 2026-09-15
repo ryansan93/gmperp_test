@@ -335,11 +335,11 @@ let ms = {
         if ( $.trim(unit) === '' ) { ms.showFieldError('#unit', 'Unit wajib diisi.'); return; }
         if ( $.trim(no_supplier) === '' ) { ms.showFieldError('#no_supplier', 'No supplier wajib diisi.'); return; }
 
-        var dp_clean = dp ? parseInt(dp.toString().replace(/\./g, '')) : 0;
-        if ( dp_clean > 0 && (!durasi_cicilan || parseInt(durasi_cicilan) <= 0) ) {
-            ms.showFieldError('#durasi_cicilan', 'Durasi cicilan wajib diisi jika ada DP.');
-            return;
-        }
+        // var dp_clean = dp ? parseInt(dp.toString().replace(/\./g, '')) : 0;
+        // if ( dp_clean > 0 && (!durasi_cicilan || parseInt(durasi_cicilan) <= 0) ) {
+        //     ms.showFieldError('#durasi_cicilan', 'Durasi cicilan wajib diisi jika ada DP.');
+        //     return;
+        // }
 
         
         var formData = new FormData();
@@ -898,6 +898,19 @@ let ms = {
             var durasi        = parseInt($('#durasi_cicilan').val()) || 0;
             var jumlahBulan   = parseInt($('#jumlah_bulan').val()) || 0;
 
+
+             // 1. AUTO-CORRECT: Jika DP lebih besar dari Nominal Sewa, paksa DP = Nominal Sewa
+            if (nominalSewa > 0 && dp > nominalSewa) {
+                dp = nominalSewa;
+                $('#dp').val(formatNominal(dp)); // Langsung update tampilan input DP
+                
+                // Opsional: Beri feedback visual sesaat (misal border kuning)
+                $('#dp').closest('.form-group').addClass('has-warning');
+                setTimeout(function() {
+                    $('#dp').closest('.form-group').removeClass('has-warning');
+                }, 1500);
+            }
+
             // Jika durasi kosong, fallback ke jumlah_bulan
             // if (durasi <= 0 && jumlahBulan > 0) {
             //     durasi = jumlahBulan;
@@ -1057,6 +1070,7 @@ let ms = {
             oldFileAlert.style.display = 'block';
         }
     },
+    
 };
 
 $(document).ready(function () {
