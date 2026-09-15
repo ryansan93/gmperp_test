@@ -60,7 +60,7 @@ class MasterSewa extends Public_Controller {
     public function list_data()
     {
         $akses              = hakAkses($this->url);
-        $m_sewa             = new \Model\Storage\MasterSewa_model();
+        $m_sewa             = new \Model\Storage\MsSewa_model();
         $jenisSewa          = trim($this->input->post('jenis_sewa'));
         $tanggalMulai       = trim($this->input->post('tanggal_mulai'));
         $search             = trim($this->input->post('search'));
@@ -173,7 +173,7 @@ class MasterSewa extends Public_Controller {
     {
         $id = $this->input->get('id');
 
-        $m_sewa = new \Model\Storage\MasterSewa_model();
+        $m_sewa = new \Model\Storage\MsSewa_model();
         $d_sewa = $m_sewa->where('id', $id)->first();
 
         $data['data']       = $d_sewa;
@@ -213,7 +213,7 @@ class MasterSewa extends Public_Controller {
         $year = !empty($tanggal_mulai) ? date('Y', strtotime($tanggal_mulai)) : date('Y');
         $month = !empty($tanggal_mulai) ? date('m', strtotime($tanggal_mulai)) : date('m');
 
-        $m_sewa = new \Model\Storage\MasterSewa_model();
+        $m_sewa = new \Model\Storage\MsSewa_model();
         $rows = $m_sewa
             ->whereRaw('UPPER(jenis_sewa) = ?', [$jenis])
             ->get();
@@ -326,7 +326,7 @@ class MasterSewa extends Public_Controller {
         $params = $this->input->post('params');
 
         try {
-            $m_sewa = new \Model\Storage\MasterSewa_model();
+            $m_sewa = new \Model\Storage\MsSewa_model();
 
             $namaSewa     = trim($params['nama_sewa']);
             $noKontrak    = trim($params['no_kontrak']);
@@ -423,7 +423,7 @@ class MasterSewa extends Public_Controller {
         $params = $this->input->post('params');
 
         try {
-            $m_sewa = new \Model\Storage\MasterSewa_model();
+            $m_sewa = new \Model\Storage\MsSewa_model();
             
             $namaSewa     = trim($params['nama_sewa']);
             $noKontrak    = trim($params['no_kontrak']);
@@ -566,7 +566,7 @@ class MasterSewa extends Public_Controller {
         $supplier = trim($this->input->get('supplier'));
         $search = trim($this->input->get('search'));
 
-        $m_sewa = new \Model\Storage\MasterSewa_model();
+        $m_sewa = new \Model\Storage\MsSewa_model();
         $query = $m_sewa
             ->select('ms_sewa.*', 'ms_jenis_sewa.nama_jenis_sewa', 'p.nama as nama_supplier')
             ->leftJoin('ms_jenis_sewa', 'ms_jenis_sewa.kode_jenis_sewa', '=', 'ms_sewa.jenis_sewa')
@@ -712,7 +712,7 @@ class MasterSewa extends Public_Controller {
     //     $id = $this->input->post('params');
 
     //     try {
-    //         $m_sewa = new \Model\Storage\MasterSewa_model();
+    //         $m_sewa = new \Model\Storage\MsSewa_model();
     //         $current = $m_sewa->where('id', $id)->first();
             
     //         // Validasi: Pastikan data ada sebelum diproses
@@ -778,7 +778,7 @@ class MasterSewa extends Public_Controller {
         $id = $this->input->post('params');
 
         try {
-            $m_sewa = new \Model\Storage\MasterSewa_model();
+            $m_sewa = new \Model\Storage\MsSewa_model();
             
             // 1. AMBIL DATA DULU (Wajib, agar object punya properti 'id' untuk Event controller)
             $current = $m_sewa->where('id', $id)->first();
@@ -852,7 +852,7 @@ class MasterSewa extends Public_Controller {
         ];
 
         try {
-            $m_sewa = new \Model\Storage\MasterSewa_model();
+            $m_sewa = new \Model\Storage\MsSewa_model();
             $d_sewa = $m_sewa->where('id', $id)->first();
 
             if ( $d_sewa ) {
@@ -913,7 +913,7 @@ class MasterSewa extends Public_Controller {
         ];
 
         try {
-            $m_sewa = new \Model\Storage\MasterSewa_model();
+            $m_sewa = new \Model\Storage\MsSewa_model();
             $d_sewa = $m_sewa->where('id', $id)->first();
 
             if ($d_sewa) {
@@ -980,7 +980,7 @@ class MasterSewa extends Public_Controller {
             }
 
             // Kunci ms_swa 
-                $m_sewa = new \Model\Storage\MasterSewa_model();
+                $m_sewa = new \Model\Storage\MsSewa_model();
                 $data_update = [
                     'is_locked'      => 1,
                 ];
@@ -990,7 +990,7 @@ class MasterSewa extends Public_Controller {
 
             // // Log Event
             // if ($updatedCount > 0 || $deletedCount > 0) {
-            //     $m_sewa = new \Model\Storage\MasterSewa_model();
+            //     $m_sewa = new \Model\Storage\MsSewa_model();
             //     $d_sewa = $m_sewa->where('id', $idSewa)->first();
             //     if ($d_sewa) {
             //         $deskripsi_log = 'amortisasi di-update (' . $updatedCount . ' data) dan dihapus (' . $deletedCount . ' data) oleh ' . $this->userdata['detail_user']['nama_detuser'];
