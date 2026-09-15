@@ -1,0 +1,18 @@
+----------------------------------- GMP ERP -----------------------------------------
+
+create table ms_sewa				=> Sudah ada di live
+create table ms_jenis_sewa			=> Sudah ada di live
+create table tabel_amortisasi_jadwal		=> Sudah ada di live
+create table ms_sewa_termin			=> Sudah ada di live
+
+alter table ms_sewa				
+	add column unit				=> Sudah ada di live
+	add column dp				=> Sudah ada di live
+	add column durasi_cicilan		=> Sudah ada di live
+	add column tgl_jatuh_tempo		=> Sudah ada di live
+	add column nominal_cicilan		=> Sudah ada di live
+	add column is_locked			=> Sudah ada di live
+	add column attachment			=> Sudah ada di live
+
+
+----------------------------------- GMP ERP -----------------------------------------
