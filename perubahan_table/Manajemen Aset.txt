@@ -1,0 +1,6 @@
+create table ms_asset				=> Belum ada di live
+create table ms_asset_kategori			=> Belum ada di live
+create table penyusutan_komersial_aset		=> Belum ada di live
+create table penyusutan_fiskal_aset		=> Belum ada di live
+create table ms_kelompok			=> Belum ada di live
+create table penerimaan_aset			=> Belum ada di live

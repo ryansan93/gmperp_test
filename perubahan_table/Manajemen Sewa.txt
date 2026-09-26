@@ -1,4 +1,3 @@
------------------------------------ GMP ERP -----------------------------------------
 
 create table ms_sewa				=> Sudah ada di live
 create table ms_jenis_sewa			=> Sudah ada di live
@@ -15,4 +14,4 @@ alter table ms_sewa
 	add column attachment			=> Sudah ada di live
 
 
------------------------------------ GMP ERP -----------------------------------------
+
