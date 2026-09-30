@@ -332,8 +332,9 @@ let ma = {
                         hideLoading();
                         if (response.status == 1) {
                             bootbox.alert(response.message, function () {
-                                ma.load_data();
-                                $('a[href="#history"]').trigger('click');
+                                // ma.load_data();
+                                // $('a[href="#history"]').trigger('click');
+                                window.location.reload(true);
                             });
                         } else {
                             bootbox.alert(response.message);
@@ -402,8 +403,9 @@ let ma = {
                         hideLoading();
                         if (response.status == 1) {
                             bootbox.alert(response.message, function () {
-                                ma.load_data();
-                                $('a[href="#history"]').trigger('click');
+                                // ma.load_data();
+                                // $('a[href="#history"]').trigger('click');
+                                window.location.reload(true);
                             });
                         } else {
                             bootbox.alert(response.message);
@@ -464,7 +466,7 @@ let ma = {
             type: 'POST',
             data: {
                 id_kategori: $('#filter_kategori_aset').val() || '',
-                tanggal_mulai: ma.toBackendDate($('#filter_tanggal_mulai').val() || ''),
+                filter_status: ma.toBackendDate($('#filter_status').val() || ''),
                 search: $('#search_aset').val() || ''
             },
             dataType: 'HTML',
@@ -495,7 +497,7 @@ let ma = {
 
         var allowedTypes = ['application/pdf', 'image/jpeg', 'image/jpg', 'image/png'];
         if (allowedTypes.indexOf(file.type) === -1) {
-            alert('File harus berformat PDF, JPG, atau PNG!');
+            bootbox.alert('File harus berformat PDF, JPG, atau PNG!');
             input.value = '';
             previewArea.style.display = 'none';
             if (oldFileAlert) oldFileAlert.style.display = 'block';
@@ -504,7 +506,7 @@ let ma = {
 
         var maxSize = 5 * 1024 * 1024;
         if (file.size > maxSize) {
-            alert('Ukuran file maksimal 5MB!');
+            bootbox.alert('Ukuran file maksimal 5MB!');
             input.value = '';
             previewArea.style.display = 'none';
             if (oldFileAlert) oldFileAlert.style.display = 'block';
@@ -538,6 +540,7 @@ let ma = {
     },
 
     show_detail : function(elm){
+
         var id = $(elm).data('id');
 
         // console.log(id)

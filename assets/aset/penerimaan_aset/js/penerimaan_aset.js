@@ -304,8 +304,9 @@ let pa = {
                         hideLoading();
                         if (response.status == 1) {
                             bootbox.alert(response.message, function () {
-                                pa.load_data();
-                                $('a[href="#history"]').trigger('click');
+                                // pa.load_data();
+                                // $('a[href="#history"]').trigger('click');
+                                window.location.reload(true);
                             });
                         } else {
                             bootbox.alert(response.message);
@@ -372,8 +373,9 @@ let pa = {
                         hideLoading();
                         if (response.status == 1) {
                             bootbox.alert(response.message, function () {
-                                pa.load_data();
-                                $('a[href="#history"]').trigger('click');
+                                // pa.load_data();
+                                // $('a[href="#history"]').trigger('click');
+                                window.location.reload(true);
                             });
                         } else {
                             bootbox.alert(response.message);

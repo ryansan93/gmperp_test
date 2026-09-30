@@ -134,8 +134,9 @@ let mk = {
                         hideLoading();
                         if ( response.status == 1 ) {
                             bootbox.alert(response.message, function () {
-                                mk.load_data();
-                                $('a[href="#history"]').trigger('click');
+                                // mk.load_data();
+                                // $('a[href="#history"]').trigger('click');
+                                window.location.reload(true);
                             });
                         } else {
                             bootbox.alert(response.message);
@@ -191,8 +192,9 @@ let mk = {
                         hideLoading();
                         if ( response.status == 1 ) {
                             bootbox.alert(response.message, function () {
-                                mk.load_data();
-                                $('a[href="#history"]').trigger('click');
+                                // mk.load_data();
+                                // $('a[href="#history"]').trigger('click');
+                                window.location.reload(true);
                             });
                         } else {
                             bootbox.alert(response.message);
