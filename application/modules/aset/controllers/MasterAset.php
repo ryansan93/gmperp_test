@@ -1182,5 +1182,39 @@ class MasterAset extends Public_Controller {
         }
     }
 
+
+
+    public function generateUlang()
+    {
+        $m_conf = new \Model\Storage\Conf();
+        $sql = "select * from ms_aset where keterangan = 'inject_data'";
+
+        $d_conf = $m_conf->hydrateRaw($sql);
+        $result = $d_conf->count() > 0 ? $d_conf->toArray() : null;
+
+        // cetak_r($result, 1);
+
+        foreach ($result as $d) {
+            $kode_aset      = $d['kode_aset'] ?? null;
+            $id_kategori    = $d['id_kategori'] ?? null;
+            $tgl_perolehan  = $d['tgl_perolehan'] ?? null;
+            $nilai_perolehan= $d['nilai_perolehan'] ?? null;
+
+            if (!empty($kode_aset)) {
+                try {
+                    $this->syncKomersial($kode_aset, $id_kategori, $tgl_perolehan, $nilai_perolehan);
+                    $this->syncFiskal($kode_aset, $id_kategori, $tgl_perolehan, $nilai_perolehan);
+                } catch (\Exception $e) {
+                    echo "Error syncing asset {$kode_aset}: " . $e->getMessage() . "<br>";
+                }
+            }
+        }
+
+        // if (!empty($kode_aset)) {
+        //     $this->syncKomersial($kode_aset, $id_kategori, $tgl_perolehan, $nilai_perolehan);
+        //     $this->syncFiskal($kode_aset, $id_kategori, $tgl_perolehan, $nilai_perolehan);
+        // }
+    }
+
     
 }
