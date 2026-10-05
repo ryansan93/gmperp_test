@@ -36,6 +36,7 @@
                <td class="text-center" style="width: 120px; white-space: nowrap;">
                     <?php 
                         $is_locked = isset($row['is_locked']) && $row['is_locked'] == 1;
+                        $is_received = isset($row['is_received']) && $row['is_received'] == 1;
                     ?>
 
                     <?php if ($is_locked): ?>
@@ -61,9 +62,15 @@
                         <?php endif; ?>
 
                         <?php if (isset($akses['a_delete']) && $akses['a_delete'] == 1): ?>
-                            <button type="button" class="btn btn-sm btn-danger" data-id="<?php echo $row['id']; ?>" onclick="ma.delete_data(this)" title="Hapus">
-                                <i class="fa fa-trash"></i>
-                            </button>
+                            <?php if ($is_received): ?>
+                                <button type="button" class="btn btn-sm btn-danger" disabled title="Aset sudah memiliki data penerimaan">
+                                    <i class="fa fa-trash"></i>
+                                </button>
+                            <?php else: ?>
+                                <button type="button" class="btn btn-sm btn-danger" data-id="<?php echo $row['id']; ?>" onclick="ma.delete_data(this)" title="Hapus">
+                                    <i class="fa fa-trash"></i>
+                                </button>
+                            <?php endif; ?>
                         <?php endif; ?>
 
                     <?php endif; ?>

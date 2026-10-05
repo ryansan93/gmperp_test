@@ -195,6 +195,7 @@ class MasterAset extends Public_Controller {
         }
 
         $d_aset = $query->orderBy('ms_aset.id', 'desc')->get()->toArray();
+        // cetak_r($d_aset, 1);
 
         $content['akses']   = $akses;
         $content['list']    = $d_aset;
@@ -678,6 +679,12 @@ class MasterAset extends Public_Controller {
             }
 
             $kode_aset = $current->kode_aset;
+            $m_penerimaan = new \Model\Storage\PenerimaanAset_model();
+            if ($m_penerimaan->where('kode_aset', $kode_aset)->exists()) {
+                $this->result['message'] = 'Aset tidak bisa dihapus karena sudah memiliki data penerimaan.';
+                display_json($this->result);
+                return;
+            }
 
             $dt_log = $m_aset->with(['penyusutan_komersial_aset', 'penyusutan_fiskal_aset'])->where('id', $id)->first();
             

@@ -437,6 +437,18 @@ class PenerimaanAset extends Public_Controller {
             }
 
             $kodePenerimaan = $current->kode_penerimaan;
+            $isLocked = \Model\Storage\PenyusutanKomersialAset_model::where('kode_aset', $current->kode_aset)
+                ->where('status', 1)
+                ->exists()
+                || \Model\Storage\PenyusutanFiskalAset_model::where('kode_aset', $current->kode_aset)
+                    ->where('status', 1)
+                    ->exists();
+
+            if ($isLocked) {
+                $this->result['message'] = 'Data penerimaan aset tidak bisa dihapus karena aset sudah terkunci oleh penyusutan.';
+                display_json($this->result);
+                return;
+            }
             
             $dt_log = $m_penerimaan->where('id', $id)->first();
             if (!$dt_log) {

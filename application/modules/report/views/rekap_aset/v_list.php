@@ -47,8 +47,7 @@
             </td>
             <td><?php echo !empty($row['pic']) ? $row['pic'] : '-'; ?></td>
             <td><?php echo !empty($row['lokasi_pengguna']) ? $row['lokasi_pengguna'] : '-'; ?></td>
-
-
+            
             <td>
                 <?php if (!empty($row['attachment_pembelian'])): ?>
                     <a href="uploads/aset/<?php echo $row['attachment_pembelian'] ?>" target="_blank">Lihat Attachment</a>

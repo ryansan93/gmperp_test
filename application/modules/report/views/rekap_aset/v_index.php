@@ -113,21 +113,21 @@
 
                                         <th>DP</th>
                                         <th>Cicilan</th>
-                                        <th>Jurnal Diproses <br> (Sudah / Belum)</th>
+                                        <th>Cicilan Diproses <br> (Sudah / Belum)</th>
                                         <th>Penyelesaian</th>
 
                                         <th>Periode Tagihan</th>
                                         <th>Nominal Cicilan</th>
                                         <th>Sudah Terbayar</th>
                                         <th>Belum Terbayar</th>
-                                        <th>Jurnal Diproses <br> (Sudah / Belum)</th>
+                                        <th>Penyusutan Diproses <br> (Sudah / Belum)</th>
                                         <th>Penyelesaian</th>
 
                                         <th>Periode Tagihan</th>
                                         <th>Nominal Cicilan </th>
                                         <th>Sudah Terbayar</th>
                                         <th>Belum Terbayar</th>
-                                        <th>Jurnal Diproses <br> (Sudah / Belum)</th>
+                                        <th>Penyusutan Diproses <br> (Sudah / Belum)</th>
                                         <th>Penyelesaian</th>
                                     </tr>
                                 </thead>

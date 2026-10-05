@@ -21,12 +21,12 @@
                 <td class="text-center"><?php echo $key + 1; ?></td>
                 
                 <td class="text-center">
-                    <strong><?php echo isset($row['kode_penerimaan']) ? $row['kode_penerimaan'] : '-'; ?></strong>
+                    <?php echo isset($row['kode_penerimaan']) ? $row['kode_penerimaan'] : '-'; ?>
                 </td>
 
                 <td class="text-center">
                     <a href="javascript:void(0);" onclick="pa.show_detail(this)" data-id="<?php echo $row['id']; ?>" title="Lihat Detail">
-                        <?php echo isset($row['kode_aset']) ? $row['kode_aset'] : '-'; ?>
+                        <strong><?php echo isset($row['kode_aset']) ? $row['kode_aset'] : '-'; ?></strong>
                     </a>
                 </td>
 
@@ -62,9 +62,15 @@
                     <?php endif; ?>
 
                     <?php if (isset($akses['a_delete']) && $akses['a_delete'] == 1): ?>
-                        <button type="button" class="btn btn-sm btn-danger" data-id="<?php echo $row['id']; ?>" onclick="pa.delete_data(this)" title="Hapus">
-                            <i class="fa fa-trash"></i>
-                        </button>
+                        <?php if (!empty($row['is_locked'])): ?>
+                            <button type="button" class="btn btn-sm btn-danger" disabled title="Aset sudah terkunci oleh penyusutan">
+                                <i class="fa fa-trash"></i>
+                            </button>
+                        <?php else: ?>
+                            <button type="button" class="btn btn-sm btn-danger" data-id="<?php echo $row['id']; ?>" onclick="pa.delete_data(this)" title="Hapus">
+                                <i class="fa fa-trash"></i>
+                            </button>
+                        <?php endif; ?>
                     <?php endif; ?>
                 </td>
             </tr>
@@ -73,7 +79,7 @@
 
 <?php else : ?>
     <tr>
-        <td colspan="9" class="text-center text-muted" style="padding: 20px;">
+        <td colspan="10" class="text-center text-muted" style="padding: 20px;">
             <i class="fa fa-inbox" style="font-size: 24px; margin-bottom: 10px; display: block;"></i>
             Tidak ada data penerimaan tersedia
         </td>
