@@ -7,16 +7,24 @@
         }
     ?>
 
+    <?php $groupIndex = 0; ?>
     <?php foreach ( $grouped as $kategori => $rows ) : ?>
-        <tr>
-            <td colspan="10" class="text-left" style="font-weight:bold; background:#f5f5f5; padding:8px 12px;">
-                <i class="fa fa-folder-open" style="margin-right:6px;"></i> <?php echo $kategori; ?>
-                <span class="badge" style="background:#337ab7; margin-left:8px;"><?php echo count($rows); ?> Aset</span>
+        <?php
+            $groupId = 'aset-category-' . $groupIndex++;
+        ?>
+        <tr class="aset-category-header">
+            <td colspan="7">
+                <button type="button" class="aset-category-toggle" data-group-id="<?php echo $groupId; ?>" aria-expanded="true">
+                    <i class="fa fa-folder-open aset-category-folder" aria-hidden="true"></i>
+                    <span><?php echo htmlspecialchars($kategori, ENT_QUOTES, 'UTF-8'); ?></span>
+                    <span class="badge"><?php echo count($rows); ?> Aset</span>
+                    <i class="fa fa-chevron-down aset-category-chevron" aria-hidden="true"></i>
+                </button>
             </td>
         </tr>
 
         <?php foreach ( $rows as $key => $row ) : ?>
-            <tr class="tr_loop">
+            <tr class="tr_loop aset-category-item" data-group-id="<?php echo $groupId; ?>">
                 <td class="text-center"><?php echo $key + 1; ?></td>
                 <td class="text-center">
                     <a href="javascript:void(0);" onclick="ma.show_detail(this)" data-id="<?php echo $row['id']; ?>" title="Lihat Detail">

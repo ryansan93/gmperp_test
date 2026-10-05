@@ -26,3 +26,50 @@
     color: #fff;
     cursor: pointer;
 }
+
+.sewa-supplier-header > td {
+    padding: 0 !important;
+    background: #f5f5f5;
+}
+
+.sewa-supplier-toggle {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    padding: 8px 12px;
+    border: 0;
+    background: transparent;
+    color: inherit;
+    font-weight: bold;
+    text-align: left;
+}
+
+.sewa-supplier-toggle:hover,
+.sewa-supplier-toggle:focus {
+    background: #e9eef3;
+    outline: none;
+}
+
+.sewa-supplier-toggle .sewa-supplier-folder {
+    margin-right: 6px;
+}
+
+.sewa-supplier-toggle .badge {
+    margin-left: 8px;
+    background: #337ab7;
+}
+
+.sewa-supplier-chevron {
+    margin-left: auto;
+    transition: transform 180ms ease;
+}
+
+.sewa-supplier-chevron.is-collapsed {
+    transform: rotate(-90deg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .sewa-supplier-chevron {
+        transition: none;
+    }
+}

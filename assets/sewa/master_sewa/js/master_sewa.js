@@ -11,6 +11,7 @@ let ms = {
         ms.init_select2();
         ms.init_nominal_sewa();
         ms.bind_search_filter();
+        ms.bind_supplier_accordion();
     },
 
     loadActivePeriods: function () {
@@ -155,7 +156,26 @@ let ms = {
     //             useCurrent: false
     //         });
     //     }
-    // },
+    //     },
+
+    bind_supplier_accordion: function () {
+        $(document).off('click.msSupplierAccordion', '.sewa-supplier-toggle')
+            .on('click.msSupplierAccordion', '.sewa-supplier-toggle', function () {
+                var toggle = $(this);
+                var groupId = toggle.attr('data-group-id');
+                var isExpanded = toggle.attr('aria-expanded') === 'true';
+                var rows = $('#table-sewa tbody tr.sewa-supplier-item').filter(function () {
+                    return $(this).attr('data-group-id') === groupId;
+                });
+
+                toggle.attr('aria-expanded', isExpanded ? 'false' : 'true');
+                toggle.find('.sewa-supplier-folder')
+                    .toggleClass('fa-folder-open', !isExpanded)
+                    .toggleClass('fa-folder', isExpanded);
+                toggle.find('.sewa-supplier-chevron').toggleClass('is-collapsed', isExpanded);
+                rows.stop(true, true).fadeToggle(180);
+            });
+    },
 
     init_datepickers: function () {
         if ( $.fn.datetimepicker ) {

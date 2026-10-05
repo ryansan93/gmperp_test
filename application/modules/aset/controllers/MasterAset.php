@@ -1092,7 +1092,6 @@ class MasterAset extends Public_Controller {
                 ],
             ]);
 
-
         $sheet->getColumnDimension('A')->setWidth(3);
         $sheet->getColumnDimension('B')->setWidth(15);
         $sheet->getColumnDimension('C')->setWidth(30);
@@ -1299,28 +1298,42 @@ class MasterAset extends Public_Controller {
         $sql = "select * from ms_aset where keterangan = 'inject_data'";
 
         $d_conf = $m_conf->hydrateRaw($sql);
-        $result = $d_conf->count() > 0 ? $d_conf->toArray() : null;
-
-        // cetak_r($result, 1);
+        $result = $d_conf->count() > 0 ? $d_conf->toArray() : [];
+        $errors = [];
 
         foreach ($result as $d) {
+            $id             = $d['id'] ?? null;
             $kode_aset      = $d['kode_aset'] ?? null;
             $id_kategori    = $d['id_kategori'] ?? null;
             $tgl_perolehan  = $d['tgl_perolehan'] ?? null;
             $nilai_perolehan= $d['nilai_perolehan'] ?? null;
+            $dp             = $d['dp'] ?? 0;
+            $durasi         = $d['durasi'] ?? 0;
 
-            if (!empty($kode_aset)) {
-                try {
-                    $this->syncKomersial($kode_aset, $id_kategori, $tgl_perolehan, $nilai_perolehan);
-                    $this->syncFiskal($kode_aset, $id_kategori, $tgl_perolehan, $nilai_perolehan);
-                    $this->syncTermin($kode_aset, $tgl_perolehan, $nilai_perolehan, $dp, $durasi);
-                } catch (\Exception $e) {
-                    echo "Error syncing asset {$kode_aset}: " . $e->getMessage() . "<br>";
-                }
+            if (empty($id) || empty($kode_aset)) {
+                $errors[] = 'Data aset tidak memiliki ID atau kode aset.';
+                continue;
+            }
+
+            try {
+                $this->syncKomersial($kode_aset, $id_kategori, $tgl_perolehan, $nilai_perolehan);
+                $this->syncFiskal($kode_aset, $id_kategori, $tgl_perolehan, $nilai_perolehan);
+                $this->syncTermin($kode_aset, $tgl_perolehan, $nilai_perolehan, $dp, $durasi);
+
+                \Model\Storage\MsAset_model::where('id', $id)->update([
+                    'keterangan' => null
+                ]);
+            } catch (\Exception $e) {
+                $errors[] = "Error syncing asset {$kode_aset}: " . $e->getMessage();
             }
         }
 
-        echo "Proses generate ulang selesai.";
+        if (!empty($errors)) {
+            echo implode("<br>", array_map('htmlspecialchars', $errors));
+            return;
+        }
+
+        redirect('aset/MasterAset');
     }
 
     

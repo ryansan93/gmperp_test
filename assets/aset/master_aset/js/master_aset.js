@@ -9,6 +9,7 @@ let ma = {
         ma.init_datepickers();
         ma.init_nominal_aset();
         ma.bind_search_filter();
+        ma.bind_category_accordion();
     },
 
     config_form: function () {
@@ -88,6 +89,25 @@ let ma = {
                 ma.filterData();
             }, 300);
         });
+    },
+
+    bind_category_accordion: function () {
+        $(document).off('click.maCategoryAccordion', '.aset-category-toggle')
+            .on('click.maCategoryAccordion', '.aset-category-toggle', function () {
+                var toggle = $(this);
+                var groupId = toggle.attr('data-group-id');
+                var isExpanded = toggle.attr('aria-expanded') === 'true';
+                var rows = $('#table-aset tbody tr.aset-category-item').filter(function () {
+                    return $(this).attr('data-group-id') === groupId;
+                });
+
+                toggle.attr('aria-expanded', isExpanded ? 'false' : 'true');
+                toggle.find('.aset-category-folder')
+                    .toggleClass('fa-folder-open', !isExpanded)
+                    .toggleClass('fa-folder', isExpanded);
+                toggle.find('.aset-category-chevron').toggleClass('is-collapsed', isExpanded);
+                rows.stop(true, true).fadeToggle(180);
+            });
     },
 
     init_datepickers: function () {
