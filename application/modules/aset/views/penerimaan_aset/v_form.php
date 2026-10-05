@@ -99,6 +99,7 @@
                         <label for="file_dokumen" style="display:block; font-weight:600; margin-bottom:6px;">
                             <i class="fa fa-paperclip"></i> Dokumen Pendukung (BAST / Foto Kondisi)
                             <small style="font-weight:normal; color:#888;">(PDF / JPG / PNG, Maks 5MB)</small>
+                            <span class="text-danger">*</span>
                         </label>
                         
                         <div class="input-group">

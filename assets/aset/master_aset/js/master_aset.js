@@ -84,7 +84,7 @@ let ma = {
         $(document).off('input.maSearchFilter', '#search_aset').on('input.maSearchFilter', '#search_aset', function () {
             clearTimeout(ma.searchTimer);
             ma.searchTimer = setTimeout(function () {
-                // console.log('Menjalankan ma.filterData()...');
+                // console.log('test ma.filterData()...');
                 ma.filterData();
             }, 300);
         });
@@ -124,7 +124,7 @@ let ma = {
     },
 
     init_nominal_aset: function () {
-        var nominalTargets = $('#nilai_perolehan');
+        var nominalTargets = $('#nilai_perolehan, #dp');
         if (nominalTargets.length) {
             nominalTargets.each(function () {
                 var target = $(this);
@@ -134,6 +134,46 @@ let ma = {
                 });
             });
         }
+
+        $('#nilai_perolehan, #dp, #durasi')
+            .off('input.maCicilan change.maCicilan')
+            .on('input.maCicilan change.maCicilan', ma.calculate_nominal_cicilan);
+        $('#nilai_perolehan, #dp')
+            .off('input.maDpLimit change.maDpLimit')
+            .on('input.maDpLimit change.maDpLimit', ma.enforce_dp_limit);
+        ma.enforce_dp_limit();
+        ma.calculate_nominal_cicilan();
+    },
+
+    enforce_dp_limit: function () {
+        var nilaiPerolehan = parseInt(ma.toBackendNominal($('#nilai_perolehan').val()), 10) || 0;
+        var dp = parseInt(ma.toBackendNominal($('#dp').val()), 10) || 0;
+
+        if (dp > nilaiPerolehan) {
+            $('#dp').val(ma.formatRupiah(nilaiPerolehan));
+            ma.calculate_nominal_cicilan();
+        }
+
+        $('#dp').attr('aria-invalid', 'false').css({ 'border': '', 'box-shadow': '' });
+        return true;
+    },
+
+    calculate_nominal_cicilan: function () {
+        var nilaiPerolehan = parseInt(ma.toBackendNominal($('#nilai_perolehan').val()), 10) || 0;
+        var dp = parseInt(ma.toBackendNominal($('#dp').val()), 10) || 0;
+        var durasi = parseInt($('#durasi').val(), 10) || 0;
+        var sisaPembayaran = Math.max(nilaiPerolehan - dp, 0);
+
+        if (nilaiPerolehan > 0 && sisaPembayaran === 0) {
+            durasi = 0;
+            $('#durasi').val('0');
+        }
+
+        var nominalCicilan = durasi > 0 && sisaPembayaran > 0
+            ? Math.round(sisaPembayaran / durasi)
+            : 0;
+
+        $('#nominal_cicilan').val(nominalCicilan > 0 ? ma.formatRupiah(nominalCicilan) : '');
     },
 
     open_action_tab: function (html) {
@@ -209,84 +249,17 @@ let ma = {
         });
     },
 
-    // save_data: function () {
-
-    //     var kode_aset      = $('#kode_aset').val() ?? null;
-    //     var id_kategori     = $('#id_kategori').val();
-    //     var deskripsi_aset = $('#deskripsi_aset').val();
-    //     var document_no     = $('#document_no').val();
-    //     var tgl_perolehan   = $('#tgl_perolehan').val();
-    //     var nilai_perolehan = $('#nilai_perolehan').val();
-    //     var unit_pengguna   = $('#unit_pengguna').val();
-    //     var lokasi_pengguna = $('#lokasi_pengguna').val();
-    //     var pic             = $('#pic').val();
-    //     // var status          = $('#status').val() || 'Aktif';
-    //     var keterangan      = $('#keterangan').val();
-
-    //     // if ($.trim(kode_aset) === '') { ma.showFieldError('#kode_aset', 'Kode aset wajib diisi.'); return; }
-    //     if ($.trim(id_kategori) === '') { ma.showFieldError('#id_kategori', 'Kategori aset wajib diisi.'); return; }
-    //     if ($.trim(tgl_perolehan) === '') { ma.showFieldError('#tgl_perolehan', 'Tanggal perolehan wajib diisi.'); return; }
-    //     // if ($.trim(lokasi_pengguna) === '') { ma.showFieldError('#lokasi_pengguna', 'Lokasi fisik wajib diisi.'); return; }
-    //     if ($.trim(deskripsi_aset) === '') { ma.showFieldError('#deskripsi_aset', 'Deskripsi aset wajib diisi.'); return; }
-    //     if ($.trim(nilai_perolehan) === '' || parseFloat(ma.toBackendNominal(nilai_perolehan)) <= 0) {
-    //         ma.showFieldError('#nilai_perolehan', 'Nilai perolehan wajib diisi dan lebih dari 0.'); return;
-    //     }
-
-    //     var formData = new FormData();
-    //     formData.append('params[kode_aset]', kode_aset);
-    //     formData.append('params[id_kategori]', id_kategori);
-    //     formData.append('params[deskripsi_aset]', deskripsi_aset);
-    //     formData.append('params[document_no]', document_no);
-    //     formData.append('params[tgl_perolehan]', ma.toBackendDate(tgl_perolehan));
-    //     formData.append('params[nilai_perolehan]', ma.toBackendNominal(nilai_perolehan));
-    //     formData.append('params[unit_pengguna]', unit_pengguna);
-    //     formData.append('params[lokasi_pengguna]', lokasi_pengguna);
-    //     formData.append('params[pic]', pic);
-    //     formData.append('params[status]', status);
-    //     formData.append('params[keterangan]', keterangan);
-
-    //     var fileInput = document.getElementById('file_dokumen');
-    //     if (fileInput && fileInput.files.length > 0) {
-    //         formData.append('file_dokumen', fileInput.files[0]);
-    //     }
-
-    //     bootbox.confirm('Apakah anda yakin ingin menyimpan data ?', function (result) {
-    //         if (result) {
-    //             $.ajax({
-    //                 url: 'aset/MasterAset/save_data',
-    //                 type: 'POST',
-    //                 dataType: 'JSON',
-    //                 data: formData,
-    //                 processData: false,
-    //                 contentType: false,
-    //                 beforeSend: function () { showLoading(); },
-    //                 success: function (response) {
-    //                     hideLoading();
-    //                     if (response.status == 1) {
-    //                         bootbox.alert(response.message, function () {
-    //                             ma.load_data();
-    //                             $('a[href="#history"]').trigger('click');
-    //                         });
-    //                     } else {
-    //                         bootbox.alert(response.message);
-    //                     }
-    //                 },
-    //                 error: function () {
-    //                     hideLoading();
-    //                     bootbox.alert('Terjadi kesalahan saat menyimpan data.');
-    //                 }
-    //             });
-    //         }
-    //     });
-    // },
-
     save_data: function () {
 
+        ma.calculate_nominal_cicilan();
         var id_kategori     = $('#id_kategori').val();
         var deskripsi_aset = $('#deskripsi_aset').val();
         var document_no     = $('#document_no').val();
         var tgl_perolehan   = $('#tgl_perolehan').val();
         var nilai_perolehan = $('#nilai_perolehan').val();
+        var dp              = $('#dp').val();
+        var nominal_cicilan = $('#nominal_cicilan').val();
+        var durasi          = $('#durasi').val();
         var unit_pengguna   = $('#unit_pengguna').val();
         var keterangan      = $('#keterangan').val();
         
@@ -298,6 +271,8 @@ let ma = {
         if ($.trim(nilai_perolehan) === '' || parseFloat(ma.toBackendNominal(nilai_perolehan)) <= 0) {
             ma.showFieldError('#nilai_perolehan', 'Nilai perolehan wajib diisi dan lebih dari 0.'); return;
         }
+        ma.enforce_dp_limit();
+
 
         var formData = new FormData();
 
@@ -310,10 +285,18 @@ let ma = {
         formData.append('params[document_no]', document_no);
         formData.append('params[tgl_perolehan]', ma.toBackendDate(tgl_perolehan));
         formData.append('params[nilai_perolehan]', ma.toBackendNominal(nilai_perolehan));
+        formData.append('params[dp]', ma.toBackendNominal(dp));
+        formData.append('params[nominal_cicilan]', ma.toBackendNominal(nominal_cicilan));
+        formData.append('params[durasi]', durasi || '0');
         formData.append('params[unit_pengguna]', unit_pengguna);
         formData.append('params[keterangan]', keterangan);
 
         var fileInput = document.getElementById('file_dokumen');
+
+        // console.log('fileInput:', fileInput.files[0]);
+
+        if ($.trim(fileInput.files[0]) === '') { ma.showFieldError('#file_dokumen', 'File dokumen wajib diisi.'); return; }
+
         if (fileInput && fileInput.files.length > 0) {
             formData.append('file_dokumen', fileInput.files[0]);
         }
@@ -350,6 +333,7 @@ let ma = {
     },
 
     edit_data: function () {
+        ma.calculate_nominal_cicilan();
         var id = $('#id_aset').val();
         var kode_aset = $('#kode_aset').val();
         var id_kategori = $('#id_kategori').val();
@@ -357,6 +341,9 @@ let ma = {
         var document_no = $('#document_no').val();
         var tgl_perolehan = $('#tgl_perolehan').val();
         var nilai_perolehan = $('#nilai_perolehan').val();
+        var dp = $('#dp').val();
+        var nominal_cicilan = $('#nominal_cicilan').val();
+        var durasi = $('#durasi').val();
         var unit_pengguna = $('#unit_pengguna').val();
         // var lokasi_pengguna = $('#lokasi_pengguna').val();
         // var pic = $('#pic').val();
@@ -369,6 +356,7 @@ let ma = {
         if ($.trim(nilai_perolehan) === '' || parseFloat(ma.toBackendNominal(nilai_perolehan)) <= 0) {
             ma.showFieldError('#nilai_perolehan', 'Nilai perolehan wajib diisi dan lebih dari 0.'); return;
         }
+        ma.enforce_dp_limit();
 
         var formData = new FormData();
         formData.append('params[id]', id);
@@ -378,6 +366,9 @@ let ma = {
         formData.append('params[document_no]', document_no);
         formData.append('params[tgl_perolehan]', ma.toBackendDate(tgl_perolehan));
         formData.append('params[nilai_perolehan]', ma.toBackendNominal(nilai_perolehan));
+        formData.append('params[dp]', ma.toBackendNominal(dp));
+        formData.append('params[nominal_cicilan]', ma.toBackendNominal(nominal_cicilan));
+        formData.append('params[durasi]', durasi || '0');
         formData.append('params[unit_pengguna]', unit_pengguna);
         // formData.append('params[lokasi_pengguna]', lokasi_pengguna);
         // formData.append('params[pic]', pic);
@@ -595,9 +586,6 @@ let ma = {
     },
 
 
-
-
-    // Import Excel   
     triggerImportExcel: function() {
         $('#file_excel').val('');
         $('#file_excel').trigger('click');
@@ -632,7 +620,6 @@ let ma = {
             var firstSheetName = workbook.SheetNames[0];
             var worksheet = workbook.Sheets[firstSheetName];
             
-            // Skip 2 baris pertama (baris 1 kosong, baris 2 header)
             var jsonData = XLSX.utils.sheet_to_json(worksheet, { 
                 header: 1, 
                 range: 2,
@@ -641,17 +628,14 @@ let ma = {
 
             loadingBox.modal('hide');
 
-            // FILTER: Hanya ambil baris yang kolom pertamanya (id_kategori) ada datanya
             var filteredData = [];
             for (var i = 0; i < jsonData.length; i++) {
                 var row = jsonData[i];
                 
                 if (!Array.isArray(row)) continue;
-                
-                // Cek kolom pertama (index 0 = id_kategori) harus ada datanya
+        
                 var firstCell = row[0];
                 
-                // Validasi: kolom pertama tidak boleh kosong/null/undefined
                 if (firstCell !== null && firstCell !== undefined && firstCell !== '') {
                     var firstCellStr = String(firstCell).trim();
                     if (firstCellStr.length > 0 && firstCellStr !== 'null' && firstCellStr !== 'undefined') {
@@ -660,8 +644,8 @@ let ma = {
                 }
             }
 
-            console.log('Total baris terbaca:', jsonData.length);
-            console.log('Baris valid (ada id_kategori):', filteredData.length);
+            // console.log('Total baris terbaca:', jsonData.length);
+            // console.log('Baris valid (ada id_kategori):', filteredData.length);
 
             if (filteredData.length === 0) {
                 bootbox.alert("File Excel kosong atau tidak ada data yang bisa dibaca.");
@@ -695,7 +679,6 @@ let ma = {
             for (var j = 0; j < headers.length; j++) {
                 var cellValue = (row[j] !== undefined && row[j] !== null) ? row[j] : '';
                 
-                // Format tanggal untuk kolom Tgl Perolehan (index 6)
                 if (j === 6 && typeof cellValue === 'number') { 
                     cellValue = ma.ExcelDate(cellValue);
                 }

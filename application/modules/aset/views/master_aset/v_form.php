@@ -6,7 +6,7 @@
         cursor: not-allowed !important;      /* Kursor jadi tanda larang */
         opacity: 0.8;
     }
-    
+
     /* Menghilangkan tombol 'x' (clear) saat disabled */
     .select2-container--disabled .select2-selection__clear {
         display: none !important;
@@ -80,20 +80,42 @@
                         <label for="nilai_perolehan" style="display:block; font-weight:600; margin-bottom:6px;">Nilai Perolehan (Rp) <span class="text-danger">*</span></label>
                         <div class="input-group">
                             <span class="input-group-addon">Rp</span>
-                            <input type="text" class="form-control" autocomplete="off" id="nilai_perolehan" value="<?php echo isset($data['nilai_perolehan']) ? htmlspecialchars($data['nilai_perolehan']) : ''; ?>" placeholder="Masukkan nilai perolehan" inputmode="numeric">
+                            <input type="text" class="form-control" autocomplete="off" id="nilai_perolehan" value="<?php echo isset($data['nilai_perolehan']) ? number_format((float)$data['nilai_perolehan'], 0, ',', '.') : ''; ?>" placeholder="Masukkan nilai perolehan" inputmode="numeric">
                         </div>
                     </div>
                 </div>
 
                 <div class="row" style="margin:0 -20px;">
+                    <div class="col-xs-12 col-sm-4" style="padding:0 6px; margin-bottom:15px;">
+                        <label for="dp" style="display:block; font-weight:600; margin-bottom:6px;">DP (Down Payment) (Rp)</label>
+                        <div class="input-group">
+                            <span class="input-group-addon">Rp</span>
+                            <input type="text" class="form-control" autocomplete="off" id="dp" value="<?php echo isset($data['dp']) ? number_format((float)$data['dp'], 0, ',', '.') : ''; ?>" placeholder="Masukkan DP" inputmode="numeric">
+                        </div>
+                    </div>
+                    <div class="col-xs-12 col-sm-4" style="padding:0 6px; margin-bottom:15px;">
+                        <label for="durasi" style="display:block; font-weight:600; margin-bottom:6px;">Durasi (Bulan)</label>
+                        <input type="number" class="form-control" id="durasi" min="0" step="1" value="<?php echo isset($data['durasi']) ? htmlspecialchars($data['durasi']) : ''; ?>" placeholder="Masukkan durasi dalam bulan">
+                    </div>
+                    <div class="col-xs-12 col-sm-4" style="padding:0 6px; margin-bottom:15px;">
+                        <label for="nominal_cicilan" style="display:block; font-weight:600; margin-bottom:6px;">Nominal Cicilan (Rp)</label>
+                        <div class="input-group">
+                            <span class="input-group-addon">Rp</span>
+                            <input type="text" class="form-control" autocomplete="off" id="nominal_cicilan" value="<?php echo isset($data['nominal_cicilan']) ? number_format((float)$data['nominal_cicilan'], 0, ',', '.') : ''; ?>" placeholder="Terhitung otomatis" inputmode="numeric" readonly>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="row" style="margin:0 -20px;">
                     <div class="col-xs-12 col-sm-6" style="padding:0 6px; margin-bottom:15px;">
-                        <label for="unit_pengguna" style="display:block; font-weight:600; margin-bottom:6px;">Unit Pengguna </label>
+                        <label for="unit_pengguna" style="display:block; font-weight:600; margin-bottom:6px;">Unit Terdaftar</label>
                         <select name="unit_pengguna" id="unit_pengguna">
                             <option value="">-- Pilih Data --</option>
                             <option <?php echo isset($data['unit_pengguna']) && $data['unit_pengguna'] == 'Head Office' ? 'selected' : ''; ?> value="Head Office">Head Office (HO)</option>
                         </select>
                     </div>
                 </div>
+
 
                 <div class="form-group" style="margin-bottom: 15px;">
                     <label for="deskripsi_aset" style="display:block; font-weight:600; margin-bottom:6px;">Deskripsi Aset <span class="text-danger">*</span></label>
@@ -111,6 +133,7 @@
                         <label for="file_dokumen" style="display:block; font-weight:600; margin-bottom:6px;">
                             <i class="fa fa-paperclip"></i> Dokumen Pendukung
                             <small style="font-weight:normal; color:#888;">(PDF / JPG / PNG, Maks 5MB)</small>
+                            <span class="text-danger">*</span>
                         </label>
                         
                         <div class="input-group">

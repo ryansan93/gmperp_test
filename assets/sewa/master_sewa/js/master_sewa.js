@@ -1,15 +1,40 @@
 let ms = {
     currentMode: 'add',
     searchTimer: null,
+    activePeriods: [],
+    activePeriodsLoaded: false,
 
     start_up: function () {
         ms.load_data();
         ms.bind_tab_events();
+        ms.loadActivePeriods();
         ms.init_select2();
-        ms.init_datepickers();
         ms.init_nominal_sewa();
         ms.bind_search_filter();
+    },
 
+    loadActivePeriods: function () {
+        $.ajax({
+            url: 'sewa/MasterSewa/getActivePeriods',
+            type: 'GET',
+            dataType: 'JSON',
+            success: function (response) {
+                ms.activePeriodsLoaded = true;
+                if (response.status == 1 && response.data) {
+                    ms.activePeriods = $.isArray(response.data) ? response.data : [response.data];
+                } else {
+                    ms.activePeriods = [];
+                    bootbox.alert('Tidak ada periode aktif. Silakan hubungi administrator.');
+                }
+                ms.init_datepickers();
+            },
+            error: function () {
+                ms.activePeriods = [];
+                ms.activePeriodsLoaded = true;
+                ms.init_datepickers();
+                bootbox.alert('Gagal memuat periode fiskal aktif. Silakan coba lagi atau hubungi administrator.');
+            }
+        });
     },
 
 
@@ -104,20 +129,144 @@ let ms = {
         });
     },
 
+    // init_datepickers: function () {
+    //     if ( $.fn.datetimepicker ) {
+    //         moment.locale('id');
+
+    //         $('#tanggal_mulai, #filter_tanggal_mulai').each(function () {
+    //             var value = $(this).val();
+    //             var date = moment(value, ['YYYY-MM-DD', 'DD MMMM YYYY'], true);
+
+    //             if ( value && date.isValid() ) {
+    //                 $(this).val(date.format('DD MMMM YYYY'));
+    //             }
+    //         });
+
+    //         $('#tanggal_mulai_picker').datetimepicker({
+    //             locale: 'id',
+    //             format: 'DD MMMM YYYY',
+    //             useCurrent: false,
+    //             minDate: moment().startOf('day')
+    //         });
+
+    //         $('#filter_tanggal_mulai_picker').datetimepicker({
+    //             locale: 'id',
+    //             format: 'DD MMMM YYYY',
+    //             useCurrent: false
+    //         });
+    //     }
+    // },
+
     init_datepickers: function () {
         if ( $.fn.datetimepicker ) {
             moment.locale('id');
 
-            $('#tanggal_mulai, #filter_tanggal_mulai').each(function () {
+            $('#filter_tanggal_mulai').each(function () {
                 var value = $(this).val();
                 var date = moment(value, ['YYYY-MM-DD', 'DD MMMM YYYY'], true);
-
                 if ( value && date.isValid() ) {
                     $(this).val(date.format('DD MMMM YYYY'));
                 }
             });
 
-            $('#tanggal_mulai_picker, #filter_tanggal_mulai_picker').datetimepicker({
+            var pickerConfig = {
+                locale: 'id',
+                format: 'DD MMMM YYYY',
+                useCurrent: false
+            };
+
+            if (ms.activePeriodsLoaded) {
+                var enabledDates = [];
+                var enabledMonths = [];
+                $.each(ms.activePeriods, function (index, period) {
+                    var startDate = moment(period.start_date).startOf('day');
+                    var endDate = moment(period.end_date).startOf('day');
+
+                    if (startDate.isValid() && endDate.isValid() && !startDate.isAfter(endDate)) {
+                        var month = startDate.clone().startOf('month');
+                        var lastMonth = endDate.clone().startOf('month');
+                        while (!month.isAfter(lastMonth, 'month')) {
+                            var monthKey = month.format('YYYY-MM');
+                            if ($.inArray(monthKey, enabledMonths) === -1) {
+                                enabledMonths.push(monthKey);
+                            }
+                            month.add(1, 'month');
+                        }
+
+                        var date = startDate.clone();
+                        while (!date.isAfter(endDate, 'day')) {
+                            enabledDates.push(date.format('YYYY-MM-DD'));
+                            date.add(1, 'day');
+                        }
+                    }
+                });
+
+                var currentMonth = moment().startOf('month');
+                var currentMonthEnd = currentMonth.clone().endOf('month');
+                var currentMonthKey = currentMonth.format('YYYY-MM');
+                if ($.inArray(currentMonthKey, enabledMonths) === -1) {
+                    enabledMonths.push(currentMonthKey);
+                }
+                while (!currentMonth.isAfter(currentMonthEnd, 'day')) {
+                    var currentMonthDate = currentMonth.format('YYYY-MM-DD');
+                    if ($.inArray(currentMonthDate, enabledDates) === -1) {
+                        enabledDates.push(currentMonthDate);
+                    }
+                    currentMonth.add(1, 'day');
+                }
+
+                enabledDates.sort();
+                enabledMonths.sort();
+                var startPicker = $('#tanggal_mulai_picker');
+                var startInput = $('#tanggal_mulai');
+                if (!enabledDates.length) {
+                    startInput.prop('disabled', true);
+                } else {
+                    startInput.prop('disabled', false);
+                    pickerConfig.enabledDates = enabledDates;
+
+                    var value = startInput.val();
+                    var selectedDate = moment(value, ['YYYY-MM-DD', 'DD MMMM YYYY'], true);
+                    var selectedDateIsActive = selectedDate.isValid()
+                        && $.inArray(selectedDate.format('YYYY-MM-DD'), enabledDates) !== -1;
+
+                    if (selectedDateIsActive) {
+                        pickerConfig.date = selectedDate;
+                        startInput.val(selectedDate.format('DD MMMM YYYY'));
+                    } else if (value && selectedDate.isValid()) {
+                        startInput.val(selectedDate.format('DD MMMM YYYY'));
+                    } else if (!value) {
+                        var today = moment().format('YYYY-MM-DD');
+                        var defaultDate = $.inArray(today, enabledDates) !== -1
+                            ? moment(today)
+                            : moment(enabledDates[0]);
+                        pickerConfig.date = defaultDate;
+                        startInput.val(defaultDate.format('DD MMMM YYYY'));
+                    }
+                }
+                startPicker.datetimepicker(pickerConfig);
+                startPicker.off('.msFiscalMonth').on('dp.show.msFiscalMonth dp.update.msFiscalMonth', function (event) {
+                    var picker = startPicker.data('DateTimePicker');
+                    var viewDate = event.viewDate ? moment(event.viewDate) : picker.viewDate();
+                    if (!viewDate.isValid()) {
+                        return;
+                    }
+
+                    startPicker.find('.datepicker-months tbody span.month').each(function (index) {
+                        var monthKey = viewDate.clone().startOf('year').add(index, 'month').format('YYYY-MM');
+                        $(this).toggleClass('disabled', $.inArray(monthKey, enabledMonths) === -1);
+                    });
+
+                    var displayedMonth = viewDate.clone().startOf('month');
+                    var previousMonth = displayedMonth.clone().subtract(1, 'month').format('YYYY-MM');
+                    var nextMonth = displayedMonth.clone().add(1, 'month').format('YYYY-MM');
+                    var daysHeader = startPicker.find('.datepicker-days thead tr:first th');
+                    daysHeader.eq(0).toggleClass('disabled', $.inArray(previousMonth, enabledMonths) === -1);
+                    daysHeader.eq(2).toggleClass('disabled', $.inArray(nextMonth, enabledMonths) === -1);
+                });
+            }
+
+            $('#filter_tanggal_mulai_picker').datetimepicker({
                 locale: 'id',
                 format: 'DD MMMM YYYY',
                 useCurrent: false
@@ -128,6 +277,19 @@ let ms = {
     toBackendDate: function (value) {
         var date = moment(value, ['YYYY-MM-DD', 'DD MMMM YYYY'], true);
         return date.isValid() ? date.format('YYYY-MM-DD') : '';
+    },
+
+    isDateInActivePeriod: function (value) {
+        var date = ms.toBackendDate(value);
+        if (!date) {
+            return false;
+        }
+
+        return $.grep(ms.activePeriods, function (period) {
+            var startDate = moment(period.start_date).format('YYYY-MM-DD');
+            var endDate = moment(period.end_date).format('YYYY-MM-DD');
+            return date >= startDate && date <= endDate;
+        }).length > 0;
     },
 
     formatRupiah: function (value) {
@@ -248,6 +410,10 @@ let ms = {
         if ( $.trim(no_kontrak) === '' ) { ms.showFieldError('#no_kontrak', 'No kontrak wajib diisi.'); return; }
         if ( $.trim(jenis_sewa) === '' ) { ms.showFieldError('#jenis_sewa', 'Jenis sewa wajib diisi.'); return; }
         if ( $.trim(tanggal_mulai) === '' ) { ms.showFieldError('#tanggal_mulai', 'Tanggal mulai wajib diisi.'); return; }
+        if (!ms.isDateInActivePeriod(tanggal_mulai)) {
+            ms.showFieldError('#tanggal_mulai', 'Tanggal mulai harus berada dalam periode fiskal yang aktif.');
+            return;
+        }
         if ( $.trim(no_supplier) === '' ) { ms.showFieldError('#no_supplier', 'No supplier wajib diisi.'); return; }
 
 
@@ -274,6 +440,9 @@ let ms = {
         formData.append('params[unit]', unit);
 
         var fileInput = document.getElementById('file_dokumen');
+
+        if ($.trim(fileInput.files[0]) === '') { ms.showFieldError('#file_dokumen', 'File dokumen wajib diisi.'); return; }
+
         if (fileInput && fileInput.files.length > 0) {
             formData.append('file_dokumen', fileInput.files[0]);
         }
@@ -332,6 +501,10 @@ let ms = {
         if ( $.trim(nama_sewa) === '' ) { ms.showFieldError('#nama_sewa', 'Nama sewa wajib diisi.'); return; }
         if ( $.trim(jenis_sewa) === '' ) { ms.showFieldError('#jenis_sewa', 'Jenis sewa wajib diisi.'); return; }
         if ( $.trim(tanggal_mulai) === '' ) { ms.showFieldError('#tanggal_mulai', 'Tanggal mulai wajib diisi.'); return; }
+        if (!ms.isDateInActivePeriod(tanggal_mulai)) {
+            ms.showFieldError('#tanggal_mulai', 'Tanggal mulai harus berada dalam periode fiskal yang aktif.');
+            return;
+        }
         if ( $.trim(unit) === '' ) { ms.showFieldError('#unit', 'Unit wajib diisi.'); return; }
         if ( $.trim(no_supplier) === '' ) { ms.showFieldError('#no_supplier', 'No supplier wajib diisi.'); return; }
 
@@ -367,6 +540,16 @@ let ms = {
             formData.append('file_dokumen', fileInput.files[0]);
         }
 
+        var oldFileAlert = document.getElementById('old_file_alert');
+        var removeOldFile = oldFileAlert && oldFileAlert.getAttribute('data-removed') === '1';
+        if ((!fileInput || fileInput.files.length === 0) && (!oldFileAlert || removeOldFile)) {
+            ms.showFieldError('#file_dokumen', 'File dokumen wajib diisi.');
+            return;
+        }
+        if (removeOldFile) {
+            formData.append('params[remove_attachment]', '1');
+        }
+
         
         bootbox.confirm('Apakah anda yakin ingin mengubah data ?', function (result) {
             if ( result ) {
@@ -374,9 +557,9 @@ let ms = {
                     url: 'sewa/MasterSewa/edit_data',
                     type: 'POST',
                     dataType: 'JSON',
-                    data: formData,             // <-- Ganti object params dengan formData
-                    processData: false,         // <-- WAJIB: Mencegah jQuery memproses data
-                    contentType: false,         // <-- WAJIB: Mencegah jQuery menimpa Content-Type
+                    data: formData,             
+                    processData: false,         
+                    contentType: false,         
                     beforeSend: function () {
                         showLoading();
                     },
@@ -1081,17 +1264,23 @@ let ms = {
         }
     },
 
-    // Hapus file yang dipilih
     clearFile: function() {
         var fileInput = document.getElementById('file_dokumen');
         fileInput.value = '';
         document.getElementById('file_preview_area').style.display = 'none';
         document.getElementById('file_preview_image').style.display = 'none';
         
-        // Tampilkan kembali alert file lama jika ada
+        var oldFileAlert = document.getElementById('old_file_alert');
+        if (oldFileAlert && oldFileAlert.getAttribute('data-removed') !== '1') {
+            oldFileAlert.style.display = 'block';
+        }
+    },
+
+    clearOldFile: function() {
         var oldFileAlert = document.getElementById('old_file_alert');
         if (oldFileAlert) {
-            oldFileAlert.style.display = 'block';
+            oldFileAlert.setAttribute('data-removed', '1');
+            oldFileAlert.style.display = 'none';
         }
     },
     
@@ -1121,5 +1310,3 @@ $(document).ready(function () {
 //         btn.html('<i class="fa fa-trash"></i>').removeClass('btn-warning').addClass('btn-danger'); // Kembali jadi tombol Delete
 //     }
 // });
-
-

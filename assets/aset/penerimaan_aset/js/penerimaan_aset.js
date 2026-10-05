@@ -290,6 +290,8 @@ let pa = {
             formData.append('file_dokumen', fileInput.files[0]);
         }
 
+        if ($.trim(fileInput.files[0]) === '') { pa.showFieldError('#file_dokumen', 'File dokumen wajib diisi.'); return; }
+
         bootbox.confirm('Apakah anda yakin ingin menyimpan data penerimaan ini?', function (result) {
             if (result) {
                 $.ajax({

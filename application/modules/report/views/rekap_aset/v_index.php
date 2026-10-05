@@ -55,8 +55,10 @@
                                 <label for="filter_status">Status Aset</label>
                                 <select id="filter_status" style="width:100%;">
                                     <option value="">Semua Status</option>
-                                    <option value="Aktif">Aktif</option>
-                                    <option value="Selesai">Selesai</option>
+                                    <option value="belum_terproses">Belum Terproses</option>
+                                    <option value="sudah_terproses">Sudah Terproses</option>
+                                    <option value="belum_terima">Belum Diterima</option>
+                                    <option value="sudah_terima">Sudah Diterima</option>
                                 </select>
                             </div>
                         </div>
@@ -91,7 +93,7 @@
                                         <th rowspan="2">Kategori Name</th>
                                         <th rowspan="2">Deskripsi Aset</th>
                                         <th rowspan="2">No. Faktur / Bukti Pembelian</th>
-                                        <th rowspan="2">Unit Pengguna</th>
+                                        <th rowspan="2">Unit Terdaftar</th>
                                         <th rowspan="2">Pengelompokan Aset</th>
                                         <th rowspan="2">Masa Manfaat (Komersial)</th>
                                         <th rowspan="2">Masa Manfaat (Fiskal)</th>
@@ -101,27 +103,37 @@
                                         <th rowspan="2">PIC Pengguna</th>
                                         <th rowspan="2">Lokasi Pengguna</th>
                                         <th colspan="2">Attachment</th>
-                                        <th colspan="4">Komersial</th>
-                                        <th colspan="4">Fiskal</th>
+                                        <th colspan="4">Termin</th>
+                                        <th colspan="6">Komersial</th>
+                                        <th colspan="6">Fiskal</th>
                                     </tr>
                                     <tr>
                                         <th>Pembelian</th>
                                         <th>Penerimaan</th>
 
-                                        <th>Bulan Berjalan</th>
-                                        <th>Nominal Cicilan</th>
+                                        <th>DP</th>
+                                        <th>Cicilan</th>
                                         <th>Jurnal Diproses <br> (Sudah / Belum)</th>
                                         <th>Penyelesaian</th>
 
-                                        <th>Bulan Berjalan</th>
+                                        <th>Periode Tagihan</th>
+                                        <th>Nominal Cicilan</th>
+                                        <th>Sudah Terbayar</th>
+                                        <th>Belum Terbayar</th>
+                                        <th>Jurnal Diproses <br> (Sudah / Belum)</th>
+                                        <th>Penyelesaian</th>
+
+                                        <th>Periode Tagihan</th>
                                         <th>Nominal Cicilan </th>
+                                        <th>Sudah Terbayar</th>
+                                        <th>Belum Terbayar</th>
                                         <th>Jurnal Diproses <br> (Sudah / Belum)</th>
                                         <th>Penyelesaian</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     <tr>
-                                        <td colspan="19" class="ra-empty"><i class="fa fa-spinner fa-spin"></i> Memuat data...</td>
+                                        <td colspan="32" class="ra-empty"><i class="fa fa-spinner fa-spin"></i> Memuat data...</td>
                                     </tr>
                                 </tbody>
                             </table>

@@ -70,7 +70,7 @@
                         </select>
                     </div>
                     <div class="col-xs-12 col-sm-6" style="padding:0 6px; margin-bottom:15px;">
-                        <label for="nama_sewa" style="display:block; font-weight:600; margin-bottom:6px;">Nama Sewa</label>
+                        <label for="nama_sewa" style="display:block; font-weight:600; margin-bottom:6px;">Keterangan Nama Sewa</label>
                         <input type="text" autocomplete="off" class="form-control" id="nama_sewa" value="<?php echo isset($data['nama_sewa']) ? htmlspecialchars($data['nama_sewa']) : ''; ?>" placeholder="Pilih jenis sewa" required>
                     </div>
                 </div>
@@ -87,7 +87,7 @@
                     <div class="col-xs-12 col-sm-3" style="padding:0 6px; margin-bottom:15px;">
                         <label for="tanggal_mulai" style="display:block; font-weight:600; margin-bottom:6px;">Tanggal Mulai Amortisasi</label>
                         <div class="input-group date" id="tanggal_mulai_picker">
-                            <input type="text" class="form-control" placeholder="Pilih Tanggal" id="tanggal_mulai" style="caret-color: transparent; background-color:#E8E8E8;" value="<?php echo isset($data['tanggal_mulai']) ? htmlspecialchars(date('Y-m-d', strtotime($data['tanggal_mulai']))) : ''; ?>" required onkeydown="return false;" onpaste="return false;" ondrop="return false;" autocomplete="off">
+                            <input type="text" class="form-control" placeholder="Pilih Tanggal" id="tanggal_mulai" style="caret-color: transparent; " value="<?php echo isset($data['tanggal_mulai']) ? htmlspecialchars(date('Y-m-d', strtotime($data['tanggal_mulai']))) : ''; ?>" required onkeydown="return false;" onpaste="return false;" ondrop="return false;" autocomplete="off">
                             <span class="input-group-addon"><i class="fa fa-calendar"></i></span>
                         </div>
                     </div>

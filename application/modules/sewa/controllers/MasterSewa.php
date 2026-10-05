@@ -285,6 +285,27 @@ class MasterSewa extends Public_Controller {
         
     }
 
+    private function isTanggalMulaiDalamPeriodeAktif($tanggalMulai)
+    {
+        $tanggal = \DateTime::createFromFormat('!Y-m-d', $tanggalMulai);
+        if (!$tanggal || $tanggal->format('Y-m-d') !== $tanggalMulai) {
+            return false;
+        }
+
+        $m_periode = new \Model\Storage\PeriodeFiskal_model();
+        $periodeAktif = $m_periode
+            ->where('status', 1)
+            ->where('start_date', '<=', $tanggalMulai)
+            ->where('end_date', '>=', $tanggalMulai)
+            ->first();
+
+        if ($periodeAktif) {
+            return true;
+        }
+
+        return $tanggal->format('Y-m') === date('Y-m');
+    }
+
     private function syncTermin($noSewa, $tanggalMulai, $nominalSewa, $durasi, $dp, $nominalCicilan, $durasiCicilan, $tglJatuhTempo)
     {
         if (empty($noSewa)) return;
@@ -302,10 +323,12 @@ class MasterSewa extends Public_Controller {
         if ($dp > 0) {
             $rowDp = new \Model\Storage\MsSewaTermin_model();
             $rowDp->no_sewa          = $noSewa;
+            $rowDp->kode_termin      = $noSewa.'- 001'; 
             $rowDp->no_termin        = '0'; 
             $rowDp->jenis_termin     = 'dp';
             $rowDp->tgl_jatuh_tempo  = $tanggalMulai; 
             $rowDp->nominal          = $dp;
+            // $rowDp->nominal_terbayar = $dp == $nominalSewa ? $dp : 0;
             $rowDp->nominal_terbayar = 0;
             $rowDp->status           = 0;
             $rowDp->save();
@@ -313,11 +336,13 @@ class MasterSewa extends Public_Controller {
 
         $sisaPokok = $nominalSewa - $dp;
         $nilaiCicilan = $durasiCicilan > 0 ? $sisaPokok / $durasiCicilan : 0;
+        $offsetTermin = $dp > 0 ? 1 : 0;
 
         for ($i = 1; $i <= $durasi; $i++) {
             $row = new \Model\Storage\MsSewaTermin_model();
             $row->no_sewa          = $noSewa;
             $row->no_termin        = (string) $i;
+            $row->kode_termin      = $noSewa.'- ' . str_pad($i + $offsetTermin, 3, '0', STR_PAD_LEFT); 
             $row->jenis_termin     = 'cicilan';
             
             $row->tgl_jatuh_tempo  = date('Y-m-d', strtotime($tanggalMulai . " +{$i} month"));
@@ -347,6 +372,8 @@ class MasterSewa extends Public_Controller {
 
             if (empty($namaSewa) || empty($noKontrak) || empty($jenisSewa) || empty($tanggalMulai)) {
                 $this->result['message'] = 'Nama sewa, nomor kontrak, jenis sewa, dan tanggal mulai wajib diisi.';
+            } elseif (!$this->isTanggalMulaiDalamPeriodeAktif($tanggalMulai)) {
+                $this->result['message'] = 'Tanggal mulai harus berada dalam periode fiskal yang aktif.';
             } else {
                 $attachmentName = null;
                 
@@ -401,8 +428,8 @@ class MasterSewa extends Public_Controller {
                     $this->syncAmortisasi($noSewa, $m_sewa->nominal_sewa, $durasiAmortisasi);
                 }
 
-                if ($durasiTermin > 0 && !empty($noSewa)) {
-                // if (!empty($noSewa)) {
+                // if ($durasiTermin > 0 && !empty($noSewa)) {
+                if (!empty($noSewa)) {
 
                     $tglJatuhTempo = $m_sewa->tgl_jatuh_tempo > 0 ? $m_sewa->tgl_jatuh_tempo : 1;
                     
@@ -451,6 +478,10 @@ class MasterSewa extends Public_Controller {
                 $this->result['message'] = 'Nama sewa, nomor kontrak, jenis sewa, tanggal mulai, dan no supplier wajib diisi.';
                 display_json($this->result); return;
             }
+            if (!$this->isTanggalMulaiDalamPeriodeAktif($tanggalMulai)) {
+                $this->result['message'] = 'Tanggal mulai harus berada dalam periode fiskal yang aktif.';
+                display_json($this->result); return;
+            }
 
             // if ($dp > 0 && $durasiCicilan <= 0) {
             //     $this->result['message'] = 'Jika ada DP, Durasi Cicilan wajib diisi.';
@@ -467,6 +498,7 @@ class MasterSewa extends Public_Controller {
             $oldType       = !empty($current->jenis_sewa) ? strtoupper(trim($current->jenis_sewa)) : '';
             $oldTglMulai   = !empty($current->tanggal_mulai) ? date('Y-m-d', strtotime($current->tanggal_mulai)) : '';
             $oldAttachment = !empty($current->attachment) ? $current->attachment : null;
+            $removeAttachment = !empty($params['remove_attachment']);
 
             $noSewa = $oldNoSewa;
             if ($oldType !== $jenisSewa || $oldTglMulai !== date('Y-m-d', strtotime($tanggalMulai))) {
@@ -478,7 +510,7 @@ class MasterSewa extends Public_Controller {
                 display_json($this->result); return;
             }
 
-            $attachmentName = $oldAttachment; 
+            $attachmentName = $removeAttachment ? null : $oldAttachment;
             
             if (!empty($_FILES['file_dokumen']['name'])) {
                 $file = $_FILES['file_dokumen'];
@@ -526,6 +558,13 @@ class MasterSewa extends Public_Controller {
 
             $m_sewa->where('id', $params['id'])->update($data_update);
 
+            if ($removeAttachment && empty($_FILES['file_dokumen']['name']) && $oldAttachment) {
+                $oldFilePath = FCPATH . 'uploads/sewa/' . $oldAttachment;
+                if (file_exists($oldFilePath)) {
+                    @unlink($oldFilePath);
+                }
+            }
+
             $durasiAmortisasi = $data_update['jumlah_bulan'] > 0 ? $data_update['jumlah_bulan'] : $data_update['jumlah_siklus'];
             $durasiTermin     = $data_update['durasi_cicilan'];
 
@@ -538,7 +577,8 @@ class MasterSewa extends Public_Controller {
                 $this->syncAmortisasi($noSewa, $data_update['nominal_sewa'], $durasiAmortisasi);
             }
 
-            if ($durasiTermin > 0 && !empty($noSewa)) {
+            // if ($durasiTermin > 0 && !empty($noSewa)) {
+            if (!empty($noSewa)) {
                 $tglJatuhTempo = $data_update['tgl_jatuh_tempo'] > 0 ? $data_update['tgl_jatuh_tempo'] : 1;
                 
                 $this->syncTermin(
@@ -991,14 +1031,12 @@ class MasterSewa extends Public_Controller {
                 }
             }
 
-            // Kunci ms_swa 
-                $m_sewa = new \Model\Storage\MsSewa_model();
-                $data_update = [
-                    'is_locked'      => 1,
-                ];
-                $m_sewa->where('id', $params['id_sewa'])->update($data_update);
-
-            // End Kunci ms_sewa
+            
+            $m_sewa = new \Model\Storage\MsSewa_model();
+            $data_update = [
+                'is_locked'      => 1,
+            ];
+            $m_sewa->where('id', $params['id_sewa'])->update($data_update);
 
             // // Log Event
             // if ($updatedCount > 0 || $deletedCount > 0) {
@@ -1018,6 +1056,37 @@ class MasterSewa extends Public_Controller {
         }
 
         display_json($this->result);
+    }
+
+
+    public function getActivePeriods()
+    {
+
+        // $periode = [
+        //     'id'         => 15,
+        //     'periode'    => '2026-09',
+        //     'start_date' => '2026-09-01',
+        //     'end_date'   => '2026-09-30',
+        //     'status'     => 1,
+        //     'opr'        => 1,
+        //     'kas_bank'   => 1,
+        //     'memo'       => 1
+        // ];
+
+        $m_periode = new \Model\Storage\PeriodeFiskal_model();
+        $periode = $m_periode->where('status', 1)->orderBy('start_date', 'asc')->get()->toArray();
+        
+        if (!empty($periode)) {
+            echo json_encode([
+                'status' => 1,
+                'data' => $periode
+            ]);
+        } else {
+            echo json_encode([
+                'status' => 0,
+                'message' => 'Tidak ada periode fiskal yang aktif. Silakan hubungi administrator untuk membuka periode.'
+            ]);
+        }
     }
 
 

@@ -56,7 +56,7 @@
                             <div class="col-xs-12 col-sm-4" style="padding:0 6px; margin-bottom:15px;">
                                 <label for="filter_tanggal_mulai" style="display:block; font-weight:600; margin-bottom:6px;">Tanggal Mulai</label>
                                 <div class="input-group date" id="filter_tanggal_mulai_picker">
-                                    <input style="caret-color: transparent; background-color:#F2F2F2;" type="text" class="form-control" id="filter_tanggal_mulai" placeholder="Pilih Tanggal" required onkeydown="return false;" onpaste="return false;" ondrop="return false;" autocomplete="off">
+                                    <input style="caret-color: transparent;" type="text" class="form-control" id="filter_tanggal_mulai" placeholder="Pilih Tanggal" required onkeydown="return false;" onpaste="return false;" ondrop="return false;" autocomplete="off">
                                     <span class="input-group-addon"><i class="fa fa-calendar"></i></span>
                                 </div>
                             </div>

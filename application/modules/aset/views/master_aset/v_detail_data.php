@@ -117,39 +117,49 @@ function getBulanTahun($value)
             </div>
         </div>
 
+        <div class="detail-data">
+            <div class="detail-row">
+                <div class="detail-label">Tgl. Perolehan</div>
+                <div class="detail-value">: <?= isset($data['tgl_perolehan']) ? tglIndonesia($data['tgl_perolehan'], '-' , ' ') : '-' ?></div>
+            </div>
+        </div>
+
         <div class="detail-data detail-grid">
             <div class="detail-col">
-
-                <div class="detail-row">
-                    <div class="detail-label">Tgl. Perolehan</div>
-                    <div class="detail-value">: Rp. <?= isset($data['tgl_perolehan']) ? tglIndonesia($data['tgl_perolehan'], '-' , ' ') : '-' ?></div>
-                </div>
-                
                 <div class="detail-row">
                     <div class="detail-label">Nominal Perolehan</div>
                     <div class="detail-value">: Rp. <?= isset($data['nilai_perolehan']) ? angkaRibuan($data['nilai_perolehan']) : '-' ?></div>
                 </div>
+            </div>
 
+            <div class="detail-col">
                 <div class="detail-row">
-                    <div class="detail-label">Dokumen Attachment</div>
-                    <div class="detail-value">: 
-                        <?php if (!empty($data['attachment'])): ?>
-                            <a href="<?php echo base_url('uploads/aset/' . $data['attachment']); ?>" target="_blank" style="color: #337ab7; text-decoration: none; font-weight: 600;">
-                                <i class="fa fa-file-pdf-o"></i> Lihat / Download Dokumen
-                            </a>
-                        <?php else: ?>
-                            <span style="color: #999;">Tidak ada dokumen</span>
-                        <?php endif; ?>
-                    </div>
+                    <div class="detail-label">DP (Down Payment)</div>
+                    <div class="detail-value">: Rp. <?= !empty($data['dp']) ? angkaRibuan($data['dp']) : '0' ?></div>
                 </div>
-              
+            </div>
+        </div>
+
+        <div class="detail-data detail-grid">
+            <div class="detail-col">
+                <div class="detail-row">
+                    <div class="detail-label">Nominal Cicilan</div>
+                    <div class="detail-value">: Rp. <?= !empty($data['nominal_cicilan']) ? angkaRibuan($data['nominal_cicilan']) : '0' ?></div>
+                </div>
+            </div>
+
+            <div class="detail-col">
+                <div class="detail-row">
+                    <div class="detail-label">Durasi Cicilan</div>
+                    <div class="detail-value">: <?= !empty($data['durasi']) ? (int)$data['durasi'] . ' bulan' : '0 bulan' ?></div>
+                </div>
             </div>
         </div>
         
         <div class="detail-data detail-grid">
             <div class="detail-col">
                 <div class="detail-row">
-                    <div class="detail-label">Unit Pengguna</div>
+                    <div class="detail-label">Unit Terdaftar</div>
                     <div class="detail-value">: <?= isset($data['unit_pengguna']) ? $data['unit_pengguna'] : '-' ?> </div>
                 </div>
             </div>
@@ -191,6 +201,21 @@ function getBulanTahun($value)
                 <div class="detail-row">
                     <div class="detail-label">Keterangan</div>
                     <div class="detail-value">: <?= isset($data['keterangan']) ? $data['keterangan'] : '-' ?></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="detail-data">
+            <div class="detail-row">
+                <div class="detail-label">Dokumen Attachment</div>
+                <div class="detail-value">: 
+                    <?php if (!empty($data['attachment'])): ?>
+                        <a href="<?php echo base_url('uploads/aset/' . $data['attachment']); ?>" target="_blank" style="color: #337ab7; text-decoration: none; font-weight: 600;">
+                            <i class="fa fa-file-pdf-o"></i> Lihat / Download Dokumen
+                        </a>
+                    <?php else: ?>
+                        <span style="color: #999;">Tidak ada dokumen</span>
+                    <?php endif; ?>
                 </div>
             </div>
         </div>
@@ -330,6 +355,100 @@ function getBulanTahun($value)
                             <!-- Colspan 8 disesuaikan dengan jumlah kolom -->
                             <tr>
                                 <td colspan="8" class="text-center text-muted" style="padding: 20px;">Tidak ada data penyusutan fiskal tersedia</td>
+                            </tr>
+                        <?php endif; ?>
+                    </tbody>
+                </table>
+            </div>
+        </fieldset>
+        <br>
+        <fieldset>
+            <legend>Termin Aset</legend>
+
+            <div style="max-height: 300px; overflow-y: auto; border: 1px solid #ddd;"> 
+                <table class="table table-bordered" style="font-size:12px; width:100%; border-collapse: separate; border-spacing: 0; margin-bottom: 0;">
+                    <thead>
+                        <tr>
+                            <th style="height:40px; position: sticky; top: 0; z-index: 2; border-bottom: 2px solid #dee2e6 !important;" class="text-center" width="5%">No</th>
+                            <th style="height:40px; position: sticky; top: 0; z-index: 2; border-bottom: 2px solid #dee2e6 !important;" class="text-center">Kode Termin</th>
+                            <th style="height:40px; position: sticky; top: 0; z-index: 2; border-bottom: 2px solid #dee2e6 !important;" class="text-center">Tgl. Jatuh Tempo</th>
+                            <th style="height:40px; position: sticky; top: 0; z-index: 2; border-bottom: 2px solid #dee2e6 !important;" class="text-center">Jenis Pembayaran</th>
+                            <th style="height:40px; position: sticky; top: 0; z-index: 2; border-bottom: 2px solid #dee2e6 !important;" class="text-center">Nominal</th>
+                            <th style="height:40px; position: sticky; top: 0; z-index: 2; border-bottom: 2px solid #dee2e6 !important;" class="text-center">Nominal Terbayar</th>
+                            <th style="height:40px; position: sticky; top: 0; z-index: 2; border-bottom: 2px solid #dee2e6 !important;" class="text-center" width="10%">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php if (!empty($termin)): ?>
+                            
+                            <?php foreach ($termin as $index => $row): ?>
+                                <tr>
+                                    <!-- kode_termin, kode_aset, nominal, status, jenis_pembayaran, nominal_terbayar -->
+                                    <td class="text-center" style="white-space: nowrap;"><?= $index + 1 ?></td>
+                                    <td class="text-center" style="white-space: nowrap;"><?= $row['kode_termin'] ?></td>
+                                    <td class="text-center" style="white-space: nowrap;">
+                                        <?= !empty($row['tgl_jatuh_tempo']) ? tglIndonesia($row['tgl_jatuh_tempo'], '-', ' ') : '-' ?>
+                                    </td>
+                                    <td class="text-center">
+                                        <?php if ( isset($row['jenis_pembayaran']) && $row['jenis_pembayaran'] !== '' ): ?>
+                                            <?php 
+                                                $jenis = strtolower(trim($row['jenis_pembayaran']));
+                                                $label = '';
+                                                $style = '';
+
+                                                if ( $jenis == 'dp' ) {
+                                                    $label = 'DP';
+                                                    $style = 'background-color:#d1ecf1; color:#0c5460;'; 
+                                                } 
+                                                elseif ( $jenis == 'cicilan' ) {
+                                                    $label = 'Cicilan';
+                                                    $style = 'background-color:#e2e3e5; color:#383d41;'; 
+                                                } 
+                                                elseif ( $jenis == 'pelunasan' ) {
+                                                    $label = 'Pelunasan';
+                                                    $style = 'background-color:#fff3cd; color:#856404;';
+                                                } 
+                                                elseif ( $jenis == 'full_payment' || $jenis == 'lunas' ) {
+                                                    $label = 'Lunas';
+                                                    $style = 'background-color:#d4edda; color:#155724;';
+                                                } 
+                                                else {
+                                                    $label = ucfirst($jenis);
+                                                    $style = 'background-color:#f8f9fa; color:#6c757d;'; 
+                                                }
+                                            ?>
+                                            
+                                            <span style="display:inline-block; padding:4px 10px; border-radius:20px; font-size:12px; font-weight:600; <?php echo $style; ?>">
+                                                <?php echo $label; ?>
+                                            </span>
+
+                                        <?php else: ?>
+                                            <span style="color:#999;">-</span>
+                                        <?php endif; ?>
+                                    </td>
+                                    <td class="text-right" style="white-space: nowrap;">
+                                        <?= !empty($row['nominal']) ? 'Rp ' . number_format($row['nominal'], 2, ',', '.') : '-' ?>
+                                    </td>
+                                    <td class="text-right" style="white-space: nowrap;">
+                                        <?= !empty($row['nominal_terbayar']) ? 'Rp ' . number_format($row['nominal_terbayar'], 2, ',', '.') : '0' ?>
+                                    </td>
+                                    <td class="text-center">
+                                        <?php if (isset($row['status'])): ?>
+                                            <?php if ($row['status'] == 0): ?>
+                                                <span class="badge-status badge-pending">Pending</span>
+                                            <?php else: ?>
+                                                <span class="badge-status badge-done">Lunas</span>
+                                            <?php endif; ?>
+                                        <?php else: ?>
+                                            <span class="text-muted">-</span>
+                                        <?php endif; ?>
+                                    </td>
+                                </tr>
+                            <?php endforeach; ?>
+                        <?php else: ?>
+                            <!-- Colspan 8 disesuaikan dengan jumlah kolom -->
+                            <tr>
+                                <td colspan="8" class="text-center text-muted" style="padding: 20px;">Tidak ada data pembayaran tersedia</td>
                             </tr>
                         <?php endif; ?>
                     </tbody>

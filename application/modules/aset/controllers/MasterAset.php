@@ -233,6 +233,24 @@ class MasterAset extends Public_Controller {
         return $d_conf->count() > 0 ? $d_conf->toArray() : null;
     }
 
+    private function parseNominal($value)
+    {
+        $value = trim((string) $value);
+
+        if ($value === '') {
+            return 0;
+        }
+
+        if (strpos($value, ',') !== false) {
+            $value = explode(',', $value, 2)[0];
+        } elseif (preg_match('/^-?\d+\.\d{1,2}$/', $value)) {
+            $value = substr($value, 0, strrpos($value, '.'));
+        }
+
+        $digits = preg_replace('/\D/', '', $value);
+        return $digits === '' ? 0 : (float) $digits;
+    }
+
     public function add_form()
     {
         $data['data']             = null;
@@ -329,10 +347,15 @@ class MasterAset extends Public_Controller {
             $id_kategori        = trim($params['id_kategori']);
             $tgl_perolehan      = trim($params['tgl_perolehan']);
             $deskripsi          = trim($params['deskripsi_aset']);
-            $nilai_perolehan    = !empty($params['nilai_perolehan']) ? (float) str_replace('.', '', $params['nilai_perolehan']) : 0;
+            $nilai_perolehan    = $this->parseNominal($params['nilai_perolehan'] ?? '');
+            $dp                 = $this->parseNominal($params['dp'] ?? '');
+            $durasi             = !empty($params['durasi']) ? (int) $params['durasi'] : 0;
+            $nominal_cicilan    = $durasi > 0 ? round(($nilai_perolehan - $dp) / $durasi) : 0;
 
             if (empty($id_kategori) || empty($tgl_perolehan) || empty($deskripsi) || $nilai_perolehan <= 0) {
                 $this->result['message'] = 'Kategori, Tanggal Perolehan, Deskripsi, dan Nilai Perolehan wajib diisi.';
+            } elseif ($dp > $nilai_perolehan || $durasi < 0) {
+                $this->result['message'] = 'DP tidak boleh melebihi nilai perolehan dan durasi tidak boleh kurang dari 0.';
             } else {
                 $attachmentName = null;
                 if (!empty($_FILES['file_dokumen']['name'])) {
@@ -366,7 +389,11 @@ class MasterAset extends Public_Controller {
                 $m_aset->document_no      = trim($params['document_no']);
                 $m_aset->tgl_perolehan    = $tgl_perolehan;
                 $m_aset->nilai_perolehan  = $nilai_perolehan;
+                $m_aset->dp               = $dp;
+                $m_aset->nominal_cicilan  = $nominal_cicilan;
+                $m_aset->durasi           = $durasi;
                 $m_aset->unit_pengguna    = trim($params['unit_pengguna']);
+
                 // $m_aset->lokasi_pengguna  = trim($params['lokasi_pengguna']);
                 // $m_aset->pic              = trim($params['pic']);
                 $m_aset->keterangan       = trim($params['keterangan']);
@@ -378,7 +405,7 @@ class MasterAset extends Public_Controller {
                 if (!empty($kode_aset)) {
                     $this->syncKomersial($kode_aset, $id_kategori, $tgl_perolehan, $nilai_perolehan);
                     $this->syncFiskal($kode_aset, $id_kategori, $tgl_perolehan, $nilai_perolehan);
-                    
+                    $this->syncTermin($kode_aset, $tgl_perolehan, $nilai_perolehan, $dp, $durasi);
                 }
 
                 $m_aset->load(['penyusutan_komersial_aset', 'penyusutan_fiskal_aset']);
@@ -427,12 +454,13 @@ class MasterAset extends Public_Controller {
             
             $beban_per_bulan = round($nilai_perolehan / $masa_bulan, 2);
             $akumulasi = 0;
+            $tanggal_awal_bulan = date('Y-m-01', strtotime($tgl_perolehan));
 
             for ($i = 1; $i <= $masa_bulan; $i++) {
                 $row = new \Model\Storage\PenyusutanKomersialAset_model();
             
                 $bulan_ke = $i - 1; 
-                $tgl_jatuh_tempo = date('Y-m-d H:i:s', strtotime("+{$bulan_ke} month", strtotime($tgl_perolehan)));
+                $tgl_jatuh_tempo = date('Y-m-t 00:00:00', strtotime("+{$bulan_ke} month", strtotime($tanggal_awal_bulan)));
 
                 $akumulasi += $beban_per_bulan;
                 $nilai_buku  = $nilai_perolehan - $akumulasi;
@@ -459,6 +487,63 @@ class MasterAset extends Public_Controller {
         }
     }
 
+    private function syncTermin($kode_aset, $tglPerolehan, $nilaiPerolehan, $dp, $durasi, $oldKodeAset = null)
+    {
+        if (empty($kode_aset)) {
+            throw new \Exception('Kode aset kosong saat membuat jadwal pembayaran.');
+        }
+
+        $pembayaran = new \Model\Storage\TerminAset_model();
+        if (!empty($oldKodeAset) && $oldKodeAset !== $kode_aset) {
+            $pembayaran->where('kode_aset', $oldKodeAset)->delete();
+        }
+        $pembayaran->where('kode_aset', $kode_aset)->delete();
+
+        $nomor = 0;
+        $tanggal_awal_bulan = date('Y-m-01', strtotime($tglPerolehan));
+        if ($dp > 0) {
+            $nomor++;
+            $rowDp = new \Model\Storage\TerminAset_model();
+            $rowDp->kode_termin     = $kode_aset . '-' . str_pad($nomor, 3, '0', STR_PAD_LEFT);
+            $rowDp->kode_aset       = $kode_aset;
+            $rowDp->tgl_jatuh_tempo = date('Y-m-t 00:00:00', strtotime($tanggal_awal_bulan));
+            $rowDp->jenis_pembayaran = 'dp';
+            $rowDp->nominal         = $dp;
+            $rowDp->status          = 0;
+            // $rowDp->periode         = date('Y-m-d', strtotime($tglPerolehan));
+            $rowDp->save();
+        }
+
+        $sisaPembayaran = $nilaiPerolehan - $dp;
+        $durasi = (int) $durasi;
+        if ($sisaPembayaran <= 0 || $durasi <= 0) {
+            return;
+        }
+
+        $nominalCicilan = round($sisaPembayaran / $durasi);
+        $totalTerjadwal = 0;
+
+        for ($i = 1; $i <= $durasi; $i++) {
+            $nomor++;
+            $nominal = $i === $durasi
+                ? $sisaPembayaran - $totalTerjadwal
+                : $nominalCicilan;
+            $totalTerjadwal += $nominal;
+
+            $tgl_jatuh_tempo = date('Y-m-t', strtotime("+{$i} month", strtotime($tanggal_awal_bulan)));
+
+            $row = new \Model\Storage\TerminAset_model();
+            $row->kode_termin     = $kode_aset . '-' . str_pad($nomor, 3, '0', STR_PAD_LEFT);
+            $row->kode_aset       = $kode_aset;
+            $row->tgl_jatuh_tempo = $tgl_jatuh_tempo;
+            $row->jenis_pembayaran = 'cicilan';
+            $row->nominal         = $nominal;
+            $row->status          = 0;
+            // $row->periode         = date('Y-m-d', strtotime($tglPerolehan . " +{$i} month"));
+            $row->save();
+        }
+    }
+
     public function edit_data()
     {
         $params = $this->input->post('params');
@@ -470,10 +555,17 @@ class MasterAset extends Public_Controller {
             $tgl_perolehan   = trim($params['tgl_perolehan']);
             $deskripsi       = trim($params['deskripsi_aset']);
             $unit_pengguna   = trim($params['unit_pengguna']);
-            $nilai_perolehan = !empty($params['nilai_perolehan']) ? (float) str_replace('.', '', $params['nilai_perolehan']) : 0;
+            $nilai_perolehan = $this->parseNominal($params['nilai_perolehan'] ?? '');
+            $dp              = $this->parseNominal($params['dp'] ?? '');
+            $durasi          = !empty($params['durasi']) ? (int) $params['durasi'] : 0;
+            $nominal_cicilan = $durasi > 0 ? round(($nilai_perolehan - $dp) / $durasi) : 0;
 
             if (empty($id_kategori) || empty($tgl_perolehan) || empty($deskripsi) || $nilai_perolehan <= 0) {
                 $this->result['message'] = 'Kategori, Tanggal Perolehan, Deskripsi, dan Nilai Perolehan wajib diisi.';
+                display_json($this->result); return;
+            }
+            if ($dp > $nilai_perolehan || $durasi < 0) {
+                $this->result['message'] = 'DP tidak boleh melebihi nilai perolehan dan durasi tidak boleh kurang dari 0.';
                 display_json($this->result); return;
             }
 
@@ -533,6 +625,9 @@ class MasterAset extends Public_Controller {
                 'tgl_perolehan'   => $tgl_perolehan,
                 'unit_pengguna'   => $unit_pengguna,
                 'nilai_perolehan' => $nilai_perolehan,
+                'dp'              => $dp,
+                'nominal_cicilan' => $nominal_cicilan,
+                'durasi'          => $durasi,
                 // 'lokasi_pengguna'    => trim($params['lokasi_pengguna']),
                 // 'pic'             => trim($params['pic']),
                 'keterangan'      => trim($params['keterangan']),
@@ -548,6 +643,7 @@ class MasterAset extends Public_Controller {
             if (!empty($kode_aset)) {
                 $this->syncKomersial($kode_aset, $id_kategori, $tgl_perolehan, $nilai_perolehan);
                 $this->syncFiskal($kode_aset, $id_kategori, $tgl_perolehan, $nilai_perolehan);
+                $this->syncTermin($kode_aset, $tgl_perolehan, $nilai_perolehan, $dp, $durasi, $oldKodeAsset);
             }
 
             $model_for_log  = $m_aset->with(['penyusutan_komersial_aset', 'penyusutan_fiskal_aset'])->where('id', $params['id'])->first();
@@ -584,22 +680,21 @@ class MasterAset extends Public_Controller {
             $kode_aset = $current->kode_aset;
 
             $dt_log = $m_aset->with(['penyusutan_komersial_aset', 'penyusutan_fiskal_aset'])->where('id', $id)->first();
+            
             if (!$dt_log) {
                 $this->result['message'] = 'Data aset tidak ditemukan.';
                 display_json($this->result);
                 return;
-
             }
 
             $kdAsset         = !empty($dt_log->kode_aset) ? trim($dt_log->kode_aset) : '';
             $userNama       = $this->userdata['detail_user']['nama_detuser'] ?? 'System';
             $deskripsi_log  = "di-delete oleh {$userNama}";
             Modules::run('base/event/delete', $dt_log, $deskripsi_log, 'ms_aset', $id, null);
-
-            
         
             \Model\Storage\PenyusutanKomersialAset_model::where('kode_aset', $kode_aset)->delete();
             \Model\Storage\PenyusutanFiskalAset_model::where('kode_aset', $kode_aset)->delete();
+            \Model\Storage\TerminAset_model::where('kode_aset', $kode_aset)->delete();
 
             if (!empty($current->attachment)) {
                 $uploadPath = FCPATH . 'uploads/aset/' . $current->attachment;
@@ -608,10 +703,9 @@ class MasterAset extends Public_Controller {
                 }
             }
 
-        
             $m_aset->where('id', $id)->delete();
 
-            $this->result['status'] = 1;
+            $this->result['status']  = 1;
             $this->result['message'] = 'Data berhasil dihapus';
             
         } catch (\Illuminate\Database\QueryException $e) {
@@ -1073,7 +1167,9 @@ class MasterAset extends Public_Controller {
 
                     $sql_fiskal     = "select id, kode_aset, kode_fiskal, tanggal_jatuh_tempo, beban_penyusutan, akumulasi_penyusutan, nilai_buku_akhir, status from penyusutan_fiskal_aset where kode_aset = '" . trim($d_aset->kode_aset) . "'";
                     $fiskal      = $m_conf->hydrateRaw($sql_fiskal);
-                    
+
+                    $sql_termin     = "select kode_termin, kode_aset, nominal, status, jenis_pembayaran, nominal_terbayar, tgl_jatuh_tempo from termin_aset where kode_aset = '" . trim($d_aset->kode_aset) . "'";
+                    $termin      = $m_conf->hydrateRaw($sql_termin);
 
                     if ( $komersial && method_exists($komersial, 'count') && $komersial->count() > 0 ) {
                         $viewData['komersial'] = $komersial->toArray();
@@ -1082,12 +1178,17 @@ class MasterAset extends Public_Controller {
                     if ( $fiskal && method_exists($fiskal, 'count') && $fiskal->count() > 0 ) {
                         $viewData['fiskal'] = $fiskal->toArray();
                     }
+
+                    if ( $termin && method_exists($termin, 'count') && $termin->count() > 0 ) {
+                        $viewData['termin'] = $termin->toArray();
+                    }
                 }
             }
         } catch (\Illuminate\Database\QueryException $e) {
             $viewData['data']       = [];
             $viewData['komersial']   = [];
             $viewData['fiskal']   = [];
+            $viewData['termin'] = [];
         }
 
         // cetak_r($viewData);die;
@@ -1132,6 +1233,7 @@ class MasterAset extends Public_Controller {
             $akumulasi          = 0;
             $nilai_buku_awal    = $nilai_perolehan;
             $beban_per_bulan    = 0;
+            $tanggal_awal_bulan = date('Y-m-01', strtotime($tgl_perolehan));
             
             $tahun_perolehan    = (int) date('Y', strtotime($tgl_perolehan));
             $tahun_kalkulasi    = $tahun_perolehan; 
@@ -1139,8 +1241,8 @@ class MasterAset extends Public_Controller {
             for ($i = 1; $i <= $masa_bulan; $i++) {
                 $row                = new \Model\Storage\PenyusutanFiskalAset_model();
                 $bulan_ke           = $i - 1; 
-                $tgl_periode        = strtotime("+{$bulan_ke} month", strtotime($tgl_perolehan));
-                $tgl_jatuh_tempo    = date('Y-m-d H:i:s', $tgl_periode);
+                $tgl_periode        = strtotime("+{$bulan_ke} month", strtotime($tanggal_awal_bulan));
+                $tgl_jatuh_tempo    = date('Y-m-t 00:00:00', $tgl_periode);
                 $tahun_periode      = (int) date('Y', $tgl_periode);
 
                 if ($tahun_periode > $tahun_kalkulasi) {
@@ -1204,16 +1306,14 @@ class MasterAset extends Public_Controller {
                 try {
                     $this->syncKomersial($kode_aset, $id_kategori, $tgl_perolehan, $nilai_perolehan);
                     $this->syncFiskal($kode_aset, $id_kategori, $tgl_perolehan, $nilai_perolehan);
+                    $this->syncTermin($kode_aset, $tgl_perolehan, $nilai_perolehan, $dp, $durasi);
                 } catch (\Exception $e) {
                     echo "Error syncing asset {$kode_aset}: " . $e->getMessage() . "<br>";
                 }
             }
         }
 
-        // if (!empty($kode_aset)) {
-        //     $this->syncKomersial($kode_aset, $id_kategori, $tgl_perolehan, $nilai_perolehan);
-        //     $this->syncFiskal($kode_aset, $id_kategori, $tgl_perolehan, $nilai_perolehan);
-        // }
+        echo "Proses generate ulang selesai.";
     }
 
     

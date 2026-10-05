@@ -482,16 +482,4 @@
     font-variant-numeric: tabular-nums;
 }
 
-/* empty state */
-.ra-empty {
-    padding: 50px 20px;
-    text-align: center;
-    color: var(--ra-muted);
-}
 
-.ra-empty i {
-    font-size: 30px;
-    color: #d6dae3;
-    margin-bottom: 10px;
-    display: block;
-}

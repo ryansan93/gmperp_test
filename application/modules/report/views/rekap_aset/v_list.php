@@ -24,7 +24,7 @@
 <?php if ( !empty($list) && count($list) > 0 ){ ?>
 <?php $no = 1; ?>
     <?php foreach($list as $row){ ?>
-        <tr>
+        <tr class="tr_loop">
             <td class="text-center"><?php echo $no++; ?></td>
             <td>
                 <?php echo !empty($row['kode_aset']) ? $row['kode_aset'] : '-'; ?>
@@ -64,10 +64,37 @@
                 <?php endif; ?>
             </td>
 
-
+            <td class="text-right">
+                <?php echo !empty($row['nominal_dp']) ? 'Rp ' . number_format($row['nominal_dp'], 0, ',', '.') : '-'; ?>
+            </td>
+            <td class="text-right">
+                <?php echo !empty($row['nominal_cicilan']) ? 'Rp ' . number_format($row['nominal_cicilan'], 0, ',', '.') : '-'; ?>
+            </td>
+            <td class="text-center">
+                <?php echo !empty($row['sudah_bayar']) ? $row['sudah_bayar'] : '0'; ?>
+                /
+                <?php echo !empty($row['belum_bayar']) ? $row['belum_bayar'] : '0'; ?>
+            </td>
+            <td class="text-center">
+                <?php 
+                    $sdh_byr = (int)($row['sudah_bayar'] ?? 0);
+                    $blm_byr = (int)($row['belum_bayar'] ?? 0);
+                    $total_byr = $sdh_byr + $blm_byr;
+                    $persen_byr = $total_byr > 0 ? round(($sdh_byr / $total_byr) * 100, 2) : 0;
+                ?>
+                <span class="badge <?php echo $persen_byr == 100 ? 'badge-success' : ($persen_byr > 0 ? 'badge-warning' : 'badge-secondary'); ?>" style="font-size: 12px; padding: 5px 10px;">
+                    <?php echo $persen_byr; ?>%
+                </span>
+            </td>
             <td><?php echo formatBulanTahun($row['bb_komersial']) ?></td>
             <td class="text-right">
                 <?php echo !empty($row['nominal_komersial']) ? 'Rp ' . number_format($row['nominal_komersial'], 0, ',', '.') : '-'; ?>
+            </td>
+            <td class="text-right">
+                <?php echo !empty($row['komerisal_sdh_bayar']) ? 'Rp ' . number_format($row['komerisal_sdh_bayar'], 0, ',', '.') : '-'; ?>
+            </td>
+            <td class="text-right">
+                <?php echo !empty($row['komerisal_blm_bayar']) ? 'Rp ' . number_format($row['komerisal_blm_bayar'], 0, ',', '.') : '-'; ?>
             </td>
             <?php 
                 $sdh_kom = (int)($row['total_sdh_proses_komersial'] ?? 0);
@@ -91,7 +118,12 @@
             <td class="text-right">
                 <?php echo !empty($row['nominal_fiskal']) ? 'Rp ' . number_format($row['nominal_fiskal'], 0, ',', '.') : '-'; ?>
             </td>
-            
+            <td class="text-right">
+                <?php echo !empty($row['fiskal_sdh_bayar']) ? 'Rp ' . number_format($row['fiskal_sdh_bayar'], 0, ',', '.') : '-'; ?>
+            </td>
+            <td class="text-right">
+                <?php echo !empty($row['fiskal_blm_bayar']) ? 'Rp ' . number_format($row['fiskal_blm_bayar'], 0, ',', '.') : '-'; ?>
+            </td>
             <td class="text-center"><?php echo $sdh_fis; ?> / <?php echo $blm_fis; ?></td>
             <td class="text-center">
                 <span class="badge <?php echo $persen_fis == 100 ? 'badge-success' : ($persen_fis > 0 ? 'badge-warning' : 'badge-secondary'); ?>" style="font-size: 12px; padding: 5px 10px;">
@@ -102,7 +134,7 @@
     <?php } ?>
 <?php } else { ?>
     <tr>
-        <td colspan="17" class="text-center text-muted" style="padding: 20px;">
+        <td colspan="32" class="text-center text-muted" style="padding: 20px;">
             <i class="fa fa-inbox" style="font-size: 24px; margin-bottom: 10px; display: block;"></i>
             Tidak ada data penerimaan tersedia
         </td>

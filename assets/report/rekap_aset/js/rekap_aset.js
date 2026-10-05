@@ -31,7 +31,7 @@ let ra = {
             select.select2({
                 width: '100%',
                 allowClear: true, 
-                placeholder: isFilter ? "Semua Kategori" : "Pilih data...", 
+                placeholder: isFilter ? "Semua Data" : "Pilih data...", 
                 dropdownParent: parentElement,
                 theme: 'bootstrap'
             });
@@ -104,7 +104,7 @@ let ra = {
 
     exportData: function (event) {
         
-        let hasData = $("#table-rekap-aset tbody tr").filter(function() {
+        let hasData = $("#table-rekap-aset tbody .tr_loop").filter(function() {
             return $(this).find('td').text().trim() !== 'Tidak ada data tersedia';
         }).length > 0;
 

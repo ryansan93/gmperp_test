@@ -243,8 +243,8 @@
                     <thead>
                         <tr>
                             <th style="height:40px; position: sticky; top: 0; z-index: 2; border-bottom: 2px solid #dee2e6 !important;" class="text-center" width="5%">No</th>
-                            <th style="height:40px; position: sticky; top: 0; z-index: 2; border-bottom: 2px solid #dee2e6 !important;" class="text-center">No. Sewa</th>
-                            <th style="height:40px; position: sticky; top: 0; z-index: 2; border-bottom: 2px solid #dee2e6 !important;" class="text-center">No. Termin</th>
+                            <!-- <th style="height:40px; position: sticky; top: 0; z-index: 2; border-bottom: 2px solid #dee2e6 !important;" class="text-center">No. Sewa</th> -->
+                            <th style="height:40px; position: sticky; top: 0; z-index: 2; border-bottom: 2px solid #dee2e6 !important;" class="text-center">Kode Termin</th>
                             <th style="height:40px; position: sticky; top: 0; z-index: 2; border-bottom: 2px solid #dee2e6 !important;" class="text-center">Jenis Termin</th>
                             <th style="height:40px; position: sticky; top: 0; z-index: 2; border-bottom: 2px solid #dee2e6 !important;" class="text-center">Jatuh Tempo</th>
                             <th style="height:40px; position: sticky; top: 0; z-index: 2; border-bottom: 2px solid #dee2e6 !important;" class="text-center">Nominal (Rp)</th>
@@ -257,8 +257,8 @@
                             <?php foreach($termin as $index => $row): ?>
                                 <tr>
                                     <td class="text-center"><?= $index + 1 ?></td>
-                                    <td class="text-center"><?= isset($row['no_sewa']) ? $row['no_sewa'] : '-' ?></td>
-                                    <td class="text-center"><?= isset($row['no_termin']) ? $row['no_termin'] : '-' ?></td>
+                                    <!-- <td class="text-center">< ?= isset($row['no_sewa']) ? $row['no_sewa'] : '-' ?></td> -->
+                                    <td class="text-center"><?= isset($row['kode_termin']) ? $row['kode_termin'] : '-' ?></td>
                                     
                                     <!-- Jenis Termin -->
                                     <td class="text-center">
@@ -268,26 +268,25 @@
                                                 $label = '';
                                                 $style = '';
 
-                                                // Tentukan Label dan Warna berdasarkan Jenis Termin
                                                 if ( $jenis == 'dp' ) {
                                                     $label = 'DP';
-                                                    $style = 'background-color:#d1ecf1; color:#0c5460;'; // Biru (Info)
+                                                    $style = 'background-color:#d1ecf1; color:#0c5460;'; 
                                                 } 
                                                 elseif ( $jenis == 'cicilan' ) {
                                                     $label = 'Cicilan';
-                                                    $style = 'background-color:#e2e3e5; color:#383d41;'; // Abu-abu (Secondary)
+                                                    $style = 'background-color:#e2e3e5; color:#383d41;'; 
                                                 } 
                                                 elseif ( $jenis == 'pelunasan' ) {
                                                     $label = 'Pelunasan';
-                                                    $style = 'background-color:#fff3cd; color:#856404;'; // Kuning (Warning)
+                                                    $style = 'background-color:#fff3cd; color:#856404;';
                                                 } 
                                                 elseif ( $jenis == 'full_payment' || $jenis == 'lunas' ) {
                                                     $label = 'Lunas';
-                                                    $style = 'background-color:#d4edda; color:#155724;'; // Hijau (Success)
+                                                    $style = 'background-color:#d4edda; color:#155724;';
                                                 } 
                                                 else {
                                                     $label = ucfirst($jenis);
-                                                    $style = 'background-color:#f8f9fa; color:#6c757d;'; // Default
+                                                    $style = 'background-color:#f8f9fa; color:#6c757d;'; 
                                                 }
                                             ?>
                                             
