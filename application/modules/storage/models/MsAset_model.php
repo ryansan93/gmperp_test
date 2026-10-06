@@ -19,5 +19,10 @@ class MsAset_model extends Conf{
 		return $this->hasMany(\Model\Storage\PenyusutanFiskalAset_model::class, 'kode_aset', 'kode_aset');
 	}
 
+	public function termin_aset()
+	{
+		return $this->hasMany(\Model\Storage\TerminAset_model::class, 'kode_aset', 'kode_aset');
+	}
+
 }
 

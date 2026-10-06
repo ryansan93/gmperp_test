@@ -373,7 +373,11 @@ function getBulanTahun($value)
                             <th style="height:40px; position: sticky; top: 0; z-index: 2; border-bottom: 2px solid #dee2e6 !important;" class="text-center">Kode Termin</th>
                             <th style="height:40px; position: sticky; top: 0; z-index: 2; border-bottom: 2px solid #dee2e6 !important;" class="text-center">Tgl. Jatuh Tempo</th>
                             <th style="height:40px; position: sticky; top: 0; z-index: 2; border-bottom: 2px solid #dee2e6 !important;" class="text-center">Jenis Pembayaran</th>
+                            <th style="height:40px; position: sticky; top: 0; z-index: 2; border-bottom: 2px solid #dee2e6 !important;" class="text-center">Total Pokok</th>
+                            <th style="height:40px; position: sticky; top: 0; z-index: 2; border-bottom: 2px solid #dee2e6 !important;" class="text-center">Pokok</th>
+                            <th style="height:40px; position: sticky; top: 0; z-index: 2; border-bottom: 2px solid #dee2e6 !important;" class="text-center">Bunga</th>
                             <th style="height:40px; position: sticky; top: 0; z-index: 2; border-bottom: 2px solid #dee2e6 !important;" class="text-center">Nominal</th>
+                            <th style="height:40px; position: sticky; top: 0; z-index: 2; border-bottom: 2px solid #dee2e6 !important;" class="text-center">Sisa Pokok Hutang</th>
                             <th style="height:40px; position: sticky; top: 0; z-index: 2; border-bottom: 2px solid #dee2e6 !important;" class="text-center">Nominal Terbayar</th>
                             <th style="height:40px; position: sticky; top: 0; z-index: 2; border-bottom: 2px solid #dee2e6 !important;" class="text-center" width="10%">Status</th>
                         </tr>
@@ -427,7 +431,19 @@ function getBulanTahun($value)
                                         <?php endif; ?>
                                     </td>
                                     <td class="text-right" style="white-space: nowrap;">
+                                        <?= isset($row['total_pokok']) ? 'Rp ' . number_format($row['total_pokok'], 2, ',', '.') : '-' ?>
+                                    </td>
+                                    <td class="text-right" style="white-space: nowrap;">
+                                        <?= isset($row['pokok']) ? 'Rp ' . number_format($row['pokok'], 2, ',', '.') : '-' ?>
+                                    </td>
+                                    <td class="text-right" style="white-space: nowrap;">
+                                        <?= isset($row['bunga']) ? 'Rp ' . number_format($row['bunga'], 2, ',', '.') : '-' ?>
+                                    </td>
+                                    <td class="text-right" style="white-space: nowrap;">
                                         <?= !empty($row['nominal']) ? 'Rp ' . number_format($row['nominal'], 2, ',', '.') : '-' ?>
+                                    </td>
+                                    <td class="text-right" style="white-space: nowrap;">
+                                        <?= isset($row['sisa_pokok_hutang']) ? 'Rp ' . number_format($row['sisa_pokok_hutang'], 2, ',', '.') : '-' ?>
                                     </td>
                                     <td class="text-right" style="white-space: nowrap;">
                                         <?= !empty($row['nominal_terbayar']) ? 'Rp ' . number_format($row['nominal_terbayar'], 2, ',', '.') : '0' ?>
@@ -448,7 +464,7 @@ function getBulanTahun($value)
                         <?php else: ?>
                             <!-- Colspan 8 disesuaikan dengan jumlah kolom -->
                             <tr>
-                                <td colspan="8" class="text-center text-muted" style="padding: 20px;">Tidak ada data pembayaran tersedia</td>
+                                <td colspan="12" class="text-center text-muted" style="padding: 20px;">Tidak ada data pembayaran tersedia</td>
                             </tr>
                         <?php endif; ?>
                     </tbody>

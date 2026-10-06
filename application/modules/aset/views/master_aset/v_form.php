@@ -86,24 +86,29 @@
                 </div>
 
                 <div class="row" style="margin:0 -20px;">
-                    <div class="col-xs-12 col-sm-4" style="padding:0 6px; margin-bottom:15px;">
+                    <div class="col-xs-12 col-sm-3" style="padding:0 6px; margin-bottom:15px;">
                         <label for="dp" style="display:block; font-weight:600; margin-bottom:6px;">DP (Down Payment) (Rp)</label>
                         <div class="input-group">
                             <span class="input-group-addon">Rp</span>
                             <input type="text" class="form-control" autocomplete="off" id="dp" value="<?php echo isset($data['dp']) ? number_format((float)$data['dp'], 0, ',', '.') : ''; ?>" placeholder="Masukkan DP" inputmode="numeric">
                         </div>
                     </div>
-                    <div class="col-xs-12 col-sm-4" style="padding:0 6px; margin-bottom:15px;">
+                    <div class="col-xs-12 col-sm-3" style="padding:0 6px; margin-bottom:15px;">
                         <label for="durasi" style="display:block; font-weight:600; margin-bottom:6px;">Durasi (Bulan)</label>
                         <input type="number" class="form-control" id="durasi" min="0" step="1" value="<?php echo isset($data['durasi']) ? htmlspecialchars($data['durasi']) : ''; ?>" placeholder="Masukkan durasi dalam bulan">
                     </div>
-                    <div class="col-xs-12 col-sm-4" style="padding:0 6px; margin-bottom:15px;">
+                    <div class="col-xs-12 col-sm-3" style="padding:0 6px; margin-bottom:15px;">
+                        <label for="bunga" style="display:block; font-weight:600; margin-bottom:6px;">Bunga (%)</label>
+                        <input type="number" class="form-control" id="bunga" min="0" step="0.01" value="<?php echo isset($data['bunga']) ? htmlspecialchars($data['bunga']) : ''; ?>" placeholder="Masukkan bunga dalam persen">
+                    </div>
+                    <div class="col-xs-12 col-sm-3" style="padding:0 6px; margin-bottom:15px;">
                         <label for="nominal_cicilan" style="display:block; font-weight:600; margin-bottom:6px;">Nominal Cicilan (Rp)</label>
                         <div class="input-group">
                             <span class="input-group-addon">Rp</span>
                             <input type="text" class="form-control" autocomplete="off" id="nominal_cicilan" value="<?php echo isset($data['nominal_cicilan']) ? number_format((float)$data['nominal_cicilan'], 0, ',', '.') : ''; ?>" placeholder="Terhitung otomatis" inputmode="numeric" readonly>
                         </div>
                     </div>
+                   
                 </div>
                 
                 <div class="row" style="margin:0 -20px;">

@@ -16,6 +16,7 @@ class MasterAset extends Public_Controller {
     private $pathView = 'aset/master_aset/';
     private $url;
     private $hakAkses;
+    private const BUNGA_PERSEN = 8.0;
 
     function __construct()
     {
@@ -252,6 +253,76 @@ class MasterAset extends Public_Controller {
         return $digits === '' ? 0 : (float) $digits;
     }
 
+    private function parseBungaPersen($value)
+    {
+        $value = trim((string) $value);
+        if ($value === '') {
+            return 0;
+        }
+
+        $value = str_replace(',', '.', $value);
+        if (!is_numeric($value) || (float) $value < 0) {
+            throw new \InvalidArgumentException('Bunga harus berupa angka 0 atau lebih.');
+        }
+
+        return (float) $value;
+    }
+
+    private function getTerminSelectFields()
+    {
+        $fields = [
+            'kode_termin',
+            'kode_aset',
+            'nominal',
+            'status',
+            'jenis_pembayaran',
+            'nominal_terbayar',
+            'tgl_jatuh_tempo',
+        ];
+
+        $m_conf = new \Model\Storage\Conf();
+        $sql = "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'termin_aset'";
+        $columns = $m_conf->hydrateRaw($sql);
+        $existing = [];
+
+        if ($columns && method_exists($columns, 'toArray')) {
+            foreach ($columns->toArray() as $row) {
+                if (!empty($row['COLUMN_NAME'])) {
+                    $existing[] = strtoupper(trim($row['COLUMN_NAME']));
+                }
+            }
+        }
+
+        foreach (['POKOK', 'BUNGA', 'CICILAN', 'TOTAL_POKOK', 'SISA_POKOK_HUTANG'] as $extra) {
+            if (in_array($extra, $existing, true)) {
+                $fields[] = strtolower($extra);
+            }
+        }
+
+        return implode(', ', $fields);
+    }
+
+    private function hitungNominalCicilan($nilaiPerolehan, $dp, $durasi, $bungaPersen = null)
+    {
+        $sisaPembayaran = max((float) $nilaiPerolehan - (float) $dp, 0);
+        $durasi = (int) $durasi;
+
+        if ($durasi <= 0 || $sisaPembayaran <= 0) {
+            return 0;
+        }
+
+        $bungaPersen = $bungaPersen === null ? self::BUNGA_PERSEN : (float) $bungaPersen;
+        if ($bungaPersen <= 0) {
+            return $sisaPembayaran / $durasi;
+        }
+
+        $rate = ($bungaPersen / 100) / 12;
+        $factor = pow(1 + $rate, $durasi);
+        $cicilan = $sisaPembayaran * (($rate * $factor) / ($factor - 1));
+
+        return $cicilan;
+    }
+
     public function add_form()
     {
         $data['data']             = null;
@@ -350,11 +421,14 @@ class MasterAset extends Public_Controller {
             $deskripsi          = trim($params['deskripsi_aset']);
             $nilai_perolehan    = $this->parseNominal($params['nilai_perolehan'] ?? '');
             $dp                 = $this->parseNominal($params['dp'] ?? '');
+            $bunga              = $this->parseBungaPersen($params['bunga'] ?? '');
             $durasi             = !empty($params['durasi']) ? (int) $params['durasi'] : 0;
-            $nominal_cicilan    = $durasi > 0 ? round(($nilai_perolehan - $dp) / $durasi) : 0;
+            $nominal_cicilan    = round($this->hitungNominalCicilan($nilai_perolehan, $dp, $durasi, $bunga));
 
             if (empty($id_kategori) || empty($tgl_perolehan) || empty($deskripsi) || $nilai_perolehan <= 0) {
                 $this->result['message'] = 'Kategori, Tanggal Perolehan, Deskripsi, dan Nilai Perolehan wajib diisi.';
+            } elseif ($nilai_perolehan > $dp && $durasi > 0 && trim((string) ($params['bunga'] ?? '')) === '') {
+                $this->result['message'] = 'Bunga wajib diisi sebelum nominal cicilan dihitung.';
             } elseif ($dp > $nilai_perolehan || $durasi < 0) {
                 $this->result['message'] = 'DP tidak boleh melebihi nilai perolehan dan durasi tidak boleh kurang dari 0.';
             } else {
@@ -391,6 +465,7 @@ class MasterAset extends Public_Controller {
                 $m_aset->tgl_perolehan    = $tgl_perolehan;
                 $m_aset->nilai_perolehan  = $nilai_perolehan;
                 $m_aset->dp               = $dp;
+                $m_aset->bunga            = $bunga;
                 $m_aset->nominal_cicilan  = $nominal_cicilan;
                 $m_aset->durasi           = $durasi;
                 $m_aset->unit_pengguna    = trim($params['unit_pengguna']);
@@ -406,10 +481,10 @@ class MasterAset extends Public_Controller {
                 if (!empty($kode_aset)) {
                     $this->syncKomersial($kode_aset, $id_kategori, $tgl_perolehan, $nilai_perolehan);
                     $this->syncFiskal($kode_aset, $id_kategori, $tgl_perolehan, $nilai_perolehan);
-                    $this->syncTermin($kode_aset, $tgl_perolehan, $nilai_perolehan, $dp, $durasi);
+                    $this->syncTermin($kode_aset, $tgl_perolehan, $nilai_perolehan, $dp, $durasi, null, $bunga);
                 }
 
-                $m_aset->load(['penyusutan_komersial_aset', 'penyusutan_fiskal_aset']);
+                $m_aset->load(['penyusutan_komersial_aset', 'penyusutan_fiskal_aset', 'termin_aset']);
                 $userNama      = $this->userdata['detail_user']['nama_detuser'] ?? 'System';
                 $deskripsi_log = "Data aset {$kode_aset} di-submit oleh {$userNama}";
                 Modules::run('base/event/save', $m_aset, $deskripsi_log, null, $m_aset->id, null);
@@ -488,13 +563,15 @@ class MasterAset extends Public_Controller {
         }
     }
 
-    private function syncTermin($kode_aset, $tglPerolehan, $nilaiPerolehan, $dp, $durasi, $oldKodeAset = null)
+    private function syncTermin($kode_aset, $tglPerolehan, $nilaiPerolehan, $dp, $durasi, $oldKodeAset = null, $bungaPersen = null)
     {
         if (empty($kode_aset)) {
             throw new \Exception('Kode aset kosong saat membuat jadwal pembayaran.');
         }
 
         $pembayaran = new \Model\Storage\TerminAset_model();
+        // cetak_r($pembayaran, 1);
+
         if (!empty($oldKodeAset) && $oldKodeAset !== $kode_aset) {
             $pembayaran->where('kode_aset', $oldKodeAset)->delete();
         }
@@ -509,7 +586,11 @@ class MasterAset extends Public_Controller {
             $rowDp->kode_aset       = $kode_aset;
             $rowDp->tgl_jatuh_tempo = date('Y-m-t 00:00:00', strtotime($tanggal_awal_bulan));
             $rowDp->jenis_pembayaran = 'dp';
-            $rowDp->nominal         = $dp;
+            $rowDp->nominal         = (int) round($dp);
+            $rowDp->pokok           = 0;
+            $rowDp->bunga           = 0;
+            $rowDp->total_pokok     = 0;
+            $rowDp->sisa_pokok_hutang = (int) round(max($nilaiPerolehan - $dp, 0));
             $rowDp->status          = 0;
             // $rowDp->periode         = date('Y-m-d', strtotime($tglPerolehan));
             $rowDp->save();
@@ -521,15 +602,31 @@ class MasterAset extends Public_Controller {
             return;
         }
 
-        $nominalCicilan = round($sisaPembayaran / $durasi);
-        $totalTerjadwal = 0;
+        $bungaPersen    = $bungaPersen === null ? self::BUNGA_PERSEN : (float) $bungaPersen;
+        $nominalCicilan = $this->hitungNominalCicilan($sisaPembayaran, 0, $durasi, $bungaPersen);
+        
+        $saldoAwal      = $sisaPembayaran;
+        // cetak_r($saldoAwal, 1);
 
         for ($i = 1; $i <= $durasi; $i++) {
             $nomor++;
-            $nominal = $i === $durasi
-                ? $sisaPembayaran - $totalTerjadwal
-                : $nominalCicilan;
-            $totalTerjadwal += $nominal;
+            $totalPokok     = (int) round($saldoAwal);
+            $bungaPresisi   = $saldoAwal * ($bungaPersen / 100) / 12;
+            $bunga          = (int) round($bungaPresisi);
+            $pokokPresisi   = $i === $durasi
+                ? max($saldoAwal, 0)
+                : max($nominalCicilan - $bungaPresisi, 0);
+            $pokok          = (int) round($pokokPresisi);
+            $nominal        = (int) round($nominalCicilan);
+
+            if ($i === $durasi) {
+                $pokokPresisi = max($saldoAwal, 0);
+                $pokok        = (int) round($pokokPresisi);
+                $nominal    = (int) round($pokok + $bungaPresisi);
+            }
+
+            $saldoAwal = max($saldoAwal - $pokokPresisi, 0);
+            $sisaPokokHutang = (int) round($saldoAwal);
 
             $tgl_jatuh_tempo = date('Y-m-t', strtotime("+{$i} month", strtotime($tanggal_awal_bulan)));
 
@@ -539,6 +636,10 @@ class MasterAset extends Public_Controller {
             $row->tgl_jatuh_tempo = $tgl_jatuh_tempo;
             $row->jenis_pembayaran = 'cicilan';
             $row->nominal         = $nominal;
+            $row->pokok           = $pokok;
+            $row->bunga           = $bunga;
+            $row->total_pokok     = $totalPokok;
+            $row->sisa_pokok_hutang = $sisaPokokHutang;
             $row->status          = 0;
             // $row->periode         = date('Y-m-d', strtotime($tglPerolehan . " +{$i} month"));
             $row->save();
@@ -558,11 +659,16 @@ class MasterAset extends Public_Controller {
             $unit_pengguna   = trim($params['unit_pengguna']);
             $nilai_perolehan = $this->parseNominal($params['nilai_perolehan'] ?? '');
             $dp              = $this->parseNominal($params['dp'] ?? '');
+            $bunga           = $this->parseBungaPersen($params['bunga'] ?? '');
             $durasi          = !empty($params['durasi']) ? (int) $params['durasi'] : 0;
-            $nominal_cicilan = $durasi > 0 ? round(($nilai_perolehan - $dp) / $durasi) : 0;
+            $nominal_cicilan = round($this->hitungNominalCicilan($nilai_perolehan, $dp, $durasi, $bunga));
 
             if (empty($id_kategori) || empty($tgl_perolehan) || empty($deskripsi) || $nilai_perolehan <= 0) {
                 $this->result['message'] = 'Kategori, Tanggal Perolehan, Deskripsi, dan Nilai Perolehan wajib diisi.';
+                display_json($this->result); return;
+            }
+            if ($nilai_perolehan > $dp && $durasi > 0 && trim((string) ($params['bunga'] ?? '')) === '') {
+                $this->result['message'] = 'Bunga wajib diisi sebelum nominal cicilan dihitung.';
                 display_json($this->result); return;
             }
             if ($dp > $nilai_perolehan || $durasi < 0) {
@@ -627,6 +733,7 @@ class MasterAset extends Public_Controller {
                 'unit_pengguna'   => $unit_pengguna,
                 'nilai_perolehan' => $nilai_perolehan,
                 'dp'              => $dp,
+                'bunga'           => $bunga,
                 'nominal_cicilan' => $nominal_cicilan,
                 'durasi'          => $durasi,
                 // 'lokasi_pengguna'    => trim($params['lokasi_pengguna']),
@@ -644,10 +751,10 @@ class MasterAset extends Public_Controller {
             if (!empty($kode_aset)) {
                 $this->syncKomersial($kode_aset, $id_kategori, $tgl_perolehan, $nilai_perolehan);
                 $this->syncFiskal($kode_aset, $id_kategori, $tgl_perolehan, $nilai_perolehan);
-                $this->syncTermin($kode_aset, $tgl_perolehan, $nilai_perolehan, $dp, $durasi, $oldKodeAsset);
+                $this->syncTermin($kode_aset, $tgl_perolehan, $nilai_perolehan, $dp, $durasi, $oldKodeAsset, $bunga);
             }
 
-            $model_for_log  = $m_aset->with(['penyusutan_komersial_aset', 'penyusutan_fiskal_aset'])->where('id', $params['id'])->first();
+            $model_for_log  = $m_aset->with(['penyusutan_komersial_aset', 'penyusutan_fiskal_aset', 'termin_aset'])->where('id', $params['id'])->first();
             $userNama       = $this->userdata['detail_user']['nama_detuser'] ?? 'System';
             $deskripsi_log  = "Update data aset {$kode_aset} oleh {$userNama}";
             Modules::run('base/event/update', $model_for_log, $deskripsi_log, 'ms_aset', $params['id'], null);
@@ -1142,6 +1249,7 @@ class MasterAset extends Public_Controller {
             'data'          => [],
             'komersial'     => [],
             'fiskal'        => [],
+            'termin'        => [],
         ];
 
         try {
@@ -1174,8 +1282,9 @@ class MasterAset extends Public_Controller {
                     $sql_fiskal     = "select id, kode_aset, kode_fiskal, tanggal_jatuh_tempo, beban_penyusutan, akumulasi_penyusutan, nilai_buku_akhir, status from penyusutan_fiskal_aset where kode_aset = '" . trim($d_aset->kode_aset) . "'";
                     $fiskal      = $m_conf->hydrateRaw($sql_fiskal);
 
-                    $sql_termin     = "select kode_termin, kode_aset, nominal, status, jenis_pembayaran, nominal_terbayar, tgl_jatuh_tempo from termin_aset where kode_aset = '" . trim($d_aset->kode_aset) . "'";
-                    $termin      = $m_conf->hydrateRaw($sql_termin);
+                    $terminFields = $this->getTerminSelectFields();
+                    $sql_termin = "select {$terminFields} from termin_aset where kode_aset = '" . trim($d_aset->kode_aset) . "' order by kode_aset, kode_termin asc";
+                    $termin = $m_conf->hydrateRaw($sql_termin);
 
                     if ( $komersial && method_exists($komersial, 'count') && $komersial->count() > 0 ) {
                         $viewData['komersial'] = $komersial->toArray();
@@ -1192,9 +1301,9 @@ class MasterAset extends Public_Controller {
             }
         } catch (\Illuminate\Database\QueryException $e) {
             $viewData['data']       = [];
-            $viewData['komersial']   = [];
-            $viewData['fiskal']   = [];
-            $viewData['termin'] = [];
+            $viewData['komersial']  = [];
+            $viewData['fiskal']     = [];
+            $viewData['termin']     = [];
         }
 
         // cetak_r($viewData);die;
@@ -1308,6 +1417,7 @@ class MasterAset extends Public_Controller {
             $tgl_perolehan  = $d['tgl_perolehan'] ?? null;
             $nilai_perolehan= $d['nilai_perolehan'] ?? null;
             $dp             = $d['dp'] ?? 0;
+            $bunga          = $d['bunga'] ?? self::BUNGA_PERSEN;
             $durasi         = $d['durasi'] ?? 0;
 
             if (empty($id) || empty($kode_aset)) {
@@ -1318,7 +1428,7 @@ class MasterAset extends Public_Controller {
             try {
                 $this->syncKomersial($kode_aset, $id_kategori, $tgl_perolehan, $nilai_perolehan);
                 $this->syncFiskal($kode_aset, $id_kategori, $tgl_perolehan, $nilai_perolehan);
-                $this->syncTermin($kode_aset, $tgl_perolehan, $nilai_perolehan, $dp, $durasi);
+                $this->syncTermin($kode_aset, $tgl_perolehan, $nilai_perolehan, $dp, $durasi, null, $bunga);
 
                 \Model\Storage\MsAset_model::where('id', $id)->update([
                     'keterangan' => null

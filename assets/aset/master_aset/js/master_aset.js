@@ -155,7 +155,7 @@ let ma = {
             });
         }
 
-        $('#nilai_perolehan, #dp, #durasi')
+        $('#nilai_perolehan, #dp, #durasi, #bunga')
             .off('input.maCicilan change.maCicilan')
             .on('input.maCicilan change.maCicilan', ma.calculate_nominal_cicilan);
         $('#nilai_perolehan, #dp')
@@ -182,6 +182,12 @@ let ma = {
         var nilaiPerolehan = parseInt(ma.toBackendNominal($('#nilai_perolehan').val()), 10) || 0;
         var dp = parseInt(ma.toBackendNominal($('#dp').val()), 10) || 0;
         var durasi = parseInt($('#durasi').val(), 10) || 0;
+        var bungaValue = $('#bunga').val();
+        if (bungaValue === '') {
+            $('#nominal_cicilan').val('');
+            return;
+        }
+        var bungaPersen = parseFloat(bungaValue) || 0;
         var sisaPembayaran = Math.max(nilaiPerolehan - dp, 0);
 
         if (nilaiPerolehan > 0 && sisaPembayaran === 0) {
@@ -189,9 +195,17 @@ let ma = {
             $('#durasi').val('0');
         }
 
-        var nominalCicilan = durasi > 0 && sisaPembayaran > 0
-            ? Math.round(sisaPembayaran / durasi)
-            : 0;
+        var nominalCicilan = 0;
+        if (durasi > 0 && sisaPembayaran > 0) {
+            if (bungaPersen > 0) {
+                var rate = (bungaPersen / 100) / 12;
+                var factor = Math.pow(1 + rate, durasi);
+                nominalCicilan = sisaPembayaran * ((rate * factor) / (factor - 1));
+            } else {
+                nominalCicilan = sisaPembayaran / durasi;
+            }
+            nominalCicilan = Math.round(nominalCicilan);
+        }
 
         $('#nominal_cicilan').val(nominalCicilan > 0 ? ma.formatRupiah(nominalCicilan) : '');
     },
@@ -279,6 +293,7 @@ let ma = {
         var nilai_perolehan = $('#nilai_perolehan').val();
         var dp              = $('#dp').val();
         var nominal_cicilan = $('#nominal_cicilan').val();
+        var bunga           = $('#bunga').val();
         var durasi          = $('#durasi').val();
         var unit_pengguna   = $('#unit_pengguna').val();
         var keterangan      = $('#keterangan').val();
@@ -306,6 +321,7 @@ let ma = {
         formData.append('params[tgl_perolehan]', ma.toBackendDate(tgl_perolehan));
         formData.append('params[nilai_perolehan]', ma.toBackendNominal(nilai_perolehan));
         formData.append('params[dp]', ma.toBackendNominal(dp));
+        formData.append('params[bunga]', bunga);
         formData.append('params[nominal_cicilan]', ma.toBackendNominal(nominal_cicilan));
         formData.append('params[durasi]', durasi || '0');
         formData.append('params[unit_pengguna]', unit_pengguna);
@@ -363,6 +379,7 @@ let ma = {
         var nilai_perolehan = $('#nilai_perolehan').val();
         var dp = $('#dp').val();
         var nominal_cicilan = $('#nominal_cicilan').val();
+        var bunga = $('#bunga').val();
         var durasi = $('#durasi').val();
         var unit_pengguna = $('#unit_pengguna').val();
         // var lokasi_pengguna = $('#lokasi_pengguna').val();
@@ -387,6 +404,7 @@ let ma = {
         formData.append('params[tgl_perolehan]', ma.toBackendDate(tgl_perolehan));
         formData.append('params[nilai_perolehan]', ma.toBackendNominal(nilai_perolehan));
         formData.append('params[dp]', ma.toBackendNominal(dp));
+        formData.append('params[bunga]', bunga);
         formData.append('params[nominal_cicilan]', ma.toBackendNominal(nominal_cicilan));
         formData.append('params[durasi]', durasi || '0');
         formData.append('params[unit_pengguna]', unit_pengguna);
