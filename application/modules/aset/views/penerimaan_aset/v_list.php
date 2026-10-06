@@ -7,16 +7,22 @@
         }
     ?>
 
+    <?php $groupIndex = 0; ?>
     <?php foreach ( $grouped as $kategori => $rows ) : ?>
-        <tr>
-            <td colspan="10" class="text-left" style="font-weight:bold; background:#f5f5f5; padding:8px 12px;">
-                <i class="fa fa-folder-open" style="margin-right:6px;"></i> <?php echo htmlspecialchars($kategori); ?>
-                <span class="badge" style="background:#337ab7; margin-left:8px;"><?php echo count($rows); ?> Aset</span>
+        <?php $groupId = 'penerimaan-category-' . $groupIndex++; ?>
+        <tr class="penerimaan-category-header">
+            <td colspan="10">
+                <button type="button" class="penerimaan-category-toggle" data-group-id="<?php echo $groupId; ?>" aria-expanded="true">
+                    <i class="fa fa-folder-open penerimaan-category-folder" aria-hidden="true"></i>
+                    <span><?php echo htmlspecialchars($kategori, ENT_QUOTES, 'UTF-8'); ?></span>
+                    <span class="badge"><?php echo count($rows); ?> Aset</span>
+                    <i class="fa fa-chevron-down penerimaan-category-chevron" aria-hidden="true"></i>
+                </button>
             </td>
         </tr>
 
         <?php foreach ( $rows as $key => $row ) : ?>
-            <tr class="tr_loop">
+            <tr class="tr_loop penerimaan-category-item" data-group-id="<?php echo $groupId; ?>">
 
                 <td class="text-center"><?php echo $key + 1; ?></td>
                 

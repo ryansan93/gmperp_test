@@ -8,6 +8,7 @@ let pa = {
         pa.init_select2();
         pa.init_datepickers();
         pa.bind_search_filter();
+        pa.bind_category_accordion();
     },
 
     
@@ -86,6 +87,25 @@ let pa = {
                 pa.filterData();
             }, 300);
         });
+    },
+
+    bind_category_accordion: function () {
+        $(document).off('click.paCategoryAccordion', '.penerimaan-category-toggle')
+            .on('click.paCategoryAccordion', '.penerimaan-category-toggle', function () {
+                var toggle = $(this);
+                var groupId = toggle.attr('data-group-id');
+                var isExpanded = toggle.attr('aria-expanded') === 'true';
+                var rows = $('#table-penerimaan tbody tr.penerimaan-category-item').filter(function () {
+                    return $(this).attr('data-group-id') === groupId;
+                });
+
+                toggle.attr('aria-expanded', isExpanded ? 'false' : 'true');
+                toggle.find('.penerimaan-category-folder')
+                    .toggleClass('fa-folder-open', !isExpanded)
+                    .toggleClass('fa-folder', isExpanded);
+                toggle.find('.penerimaan-category-chevron').toggleClass('is-collapsed', isExpanded);
+                rows.stop(true, true).fadeToggle(180);
+            });
     },
 
     init_datepickers: function () {
