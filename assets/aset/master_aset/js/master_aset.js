@@ -12,17 +12,6 @@ let ma = {
         ma.bind_category_accordion();
     },
 
-    config_form: function () {
-        var isLocked = $('#config-form').val();
-
-        if (isLocked == '1') {
-            $('form.form-horizontal').find('input:not([type="hidden"]), select, textarea').prop('disabled', true);
-            $('form.form-horizontal').find('.select2').css('background-color', '#eee');
-            $('button[onclick="ma.edit_data()"]').prop('disabled', true).hide();
-            $('form.form-horizontal').css('opacity', '0.8');
-        }
-    },
-
     bind_tab_events: function () {
         $('a[data-toggle="tab"]').off('click.maTab').on('click.maTab', function (e) {
             e.preventDefault();
@@ -54,7 +43,7 @@ let ma = {
 
     init_select2: function () {
         if ($.fn.select2) {
-            $('#id_kategori, #filter_kategori_aset, #unit_pengguna, #filter_pic, #pic, #lokasi_pengguna').each(function () {
+            $('#id_kategori, #filter_kategori_aset, #unit_pengguna, #kode_pembiayaan').each(function () {
                 var select = $(this);
                 
                 var isFilter = select.attr('id').indexOf('filter_') === 0;
@@ -144,70 +133,13 @@ let ma = {
     },
 
     init_nominal_aset: function () {
-        var nominalTargets = $('#nilai_perolehan, #dp');
-        if (nominalTargets.length) {
-            nominalTargets.each(function () {
-                var target = $(this);
-                target.val(ma.formatRupiah(target.val()));
-                target.off('input.maNominalAset').on('input.maNominalAset', function () {
-                    $(this).val(ma.formatRupiah($(this).val()));
-                });
+        var nominalTarget = $('#nilai_perolehan');
+        if (nominalTarget.length) {
+            nominalTarget.val(ma.formatRupiah(nominalTarget.val()));
+            nominalTarget.off('input.maNominalAset').on('input.maNominalAset', function () {
+                $(this).val(ma.formatRupiah($(this).val()));
             });
         }
-
-        $('#nilai_perolehan, #dp, #durasi, #bunga')
-            .off('input.maCicilan change.maCicilan')
-            .on('input.maCicilan change.maCicilan', ma.calculate_nominal_cicilan);
-        $('#nilai_perolehan, #dp')
-            .off('input.maDpLimit change.maDpLimit')
-            .on('input.maDpLimit change.maDpLimit', ma.enforce_dp_limit);
-        ma.enforce_dp_limit();
-        ma.calculate_nominal_cicilan();
-    },
-
-    enforce_dp_limit: function () {
-        var nilaiPerolehan = parseInt(ma.toBackendNominal($('#nilai_perolehan').val()), 10) || 0;
-        var dp = parseInt(ma.toBackendNominal($('#dp').val()), 10) || 0;
-
-        if (dp > nilaiPerolehan) {
-            $('#dp').val(ma.formatRupiah(nilaiPerolehan));
-            ma.calculate_nominal_cicilan();
-        }
-
-        $('#dp').attr('aria-invalid', 'false').css({ 'border': '', 'box-shadow': '' });
-        return true;
-    },
-
-    calculate_nominal_cicilan: function () {
-        var nilaiPerolehan = parseInt(ma.toBackendNominal($('#nilai_perolehan').val()), 10) || 0;
-        var dp = parseInt(ma.toBackendNominal($('#dp').val()), 10) || 0;
-        var durasi = parseInt($('#durasi').val(), 10) || 0;
-        var bungaValue = $('#bunga').val();
-        if (bungaValue === '') {
-            $('#nominal_cicilan').val('');
-            return;
-        }
-        var bungaPersen = parseFloat(bungaValue) || 0;
-        var sisaPembayaran = Math.max(nilaiPerolehan - dp, 0);
-
-        if (nilaiPerolehan > 0 && sisaPembayaran === 0) {
-            durasi = 0;
-            $('#durasi').val('0');
-        }
-
-        var nominalCicilan = 0;
-        if (durasi > 0 && sisaPembayaran > 0) {
-            if (bungaPersen > 0) {
-                var rate = (bungaPersen / 100) / 12;
-                var factor = Math.pow(1 + rate, durasi);
-                nominalCicilan = sisaPembayaran * ((rate * factor) / (factor - 1));
-            } else {
-                nominalCicilan = sisaPembayaran / durasi;
-            }
-            nominalCicilan = Math.round(nominalCicilan);
-        }
-
-        $('#nominal_cicilan').val(nominalCicilan > 0 ? ma.formatRupiah(nominalCicilan) : '');
     },
 
     open_action_tab: function (html) {
@@ -217,7 +149,6 @@ let ma = {
         ma.init_datepickers();
         ma.init_nominal_aset();
         $('a[href="#action"]').trigger('click');
-        ma.config_form();
     },
 
     add_form: function () {
@@ -285,30 +216,22 @@ let ma = {
 
     save_data: function () {
 
-        ma.calculate_nominal_cicilan();
         var id_kategori     = $('#id_kategori').val();
         var deskripsi_aset = $('#deskripsi_aset').val();
-        var document_no     = $('#document_no').val();
         var tgl_perolehan   = $('#tgl_perolehan').val();
         var nilai_perolehan = $('#nilai_perolehan').val();
-        var dp              = $('#dp').val();
-        var nominal_cicilan = $('#nominal_cicilan').val();
-        var bunga           = $('#bunga').val();
-        var durasi          = $('#durasi').val();
         var unit_pengguna   = $('#unit_pengguna').val();
-        var keterangan      = $('#keterangan').val();
+        var kode_pembiayaan = $('#kode_pembiayaan').val();
         
         var kode_aset      = $('#kode_aset').val() || null;
 
         if ($.trim(id_kategori) === '') { ma.showFieldError('#id_kategori', 'Kategori aset wajib diisi.'); return; }
-        if ($.trim(tgl_perolehan) === '') { ma.showFieldError('#tgl_perolehan', 'Tanggal perolehan wajib diisi.'); return; }
+        if ($.trim(unit_pengguna) === '') { ma.showFieldError('#unit_pengguna', 'Unit aset wajib diisi.'); return; }
         if ($.trim(deskripsi_aset) === '') { ma.showFieldError('#deskripsi_aset', 'Deskripsi aset wajib diisi.'); return; }
         if ($.trim(nilai_perolehan) === '' || parseFloat(ma.toBackendNominal(nilai_perolehan)) <= 0) {
-            ma.showFieldError('#nilai_perolehan', 'Nilai perolehan wajib diisi dan lebih dari 0.'); return;
+            ma.showFieldError('#nilai_perolehan', 'Harga beli wajib diisi dan lebih dari 0.'); return;
         }
-        ma.enforce_dp_limit();
-
-
+        if ($.trim(kode_pembiayaan) === '') { ma.showFieldError('#kode_pembiayaan', 'Jenis pembiayaan wajib diisi.'); return; }
         var formData = new FormData();
 
         if (kode_aset) {
@@ -317,21 +240,12 @@ let ma = {
         
         formData.append('params[id_kategori]', id_kategori);
         formData.append('params[deskripsi_aset]', deskripsi_aset);
-        formData.append('params[document_no]', document_no);
         formData.append('params[tgl_perolehan]', ma.toBackendDate(tgl_perolehan));
         formData.append('params[nilai_perolehan]', ma.toBackendNominal(nilai_perolehan));
-        formData.append('params[dp]', ma.toBackendNominal(dp));
-        formData.append('params[bunga]', bunga);
-        formData.append('params[nominal_cicilan]', ma.toBackendNominal(nominal_cicilan));
-        formData.append('params[durasi]', durasi || '0');
         formData.append('params[unit_pengguna]', unit_pengguna);
-        formData.append('params[keterangan]', keterangan);
+        formData.append('params[kode_pembiayaan]', kode_pembiayaan);
 
         var fileInput = document.getElementById('file_dokumen');
-
-        // console.log('fileInput:', fileInput.files[0]);
-
-        if ($.trim(fileInput.files[0]) === '') { ma.showFieldError('#file_dokumen', 'File dokumen wajib diisi.'); return; }
 
         if (fileInput && fileInput.files.length > 0) {
             formData.append('file_dokumen', fileInput.files[0]);
@@ -369,49 +283,34 @@ let ma = {
     },
 
     edit_data: function () {
-        ma.calculate_nominal_cicilan();
         var id = $('#id_aset').val();
         var kode_aset = $('#kode_aset').val();
         var id_kategori = $('#id_kategori').val();
         var deskripsi_aset = $('#deskripsi_aset').val();
-        var document_no = $('#document_no').val();
         var tgl_perolehan = $('#tgl_perolehan').val();
         var nilai_perolehan = $('#nilai_perolehan').val();
-        var dp = $('#dp').val();
-        var nominal_cicilan = $('#nominal_cicilan').val();
-        var bunga = $('#bunga').val();
-        var durasi = $('#durasi').val();
         var unit_pengguna = $('#unit_pengguna').val();
+        var kode_pembiayaan = $('#kode_pembiayaan').val();
         // var lokasi_pengguna = $('#lokasi_pengguna').val();
         // var pic = $('#pic').val();
         // var status = $('#status').val() || 'Aktif';
-        var keterangan = $('#keterangan').val();
-
         if ($.trim(kode_aset) === '') { ma.showFieldError('#kode_aset', 'Kode aset wajib diisi.'); return; }
         if ($.trim(id_kategori) === '') { ma.showFieldError('#id_kategori', 'Kategori aset wajib diisi.'); return; }
-        if ($.trim(tgl_perolehan) === '') { ma.showFieldError('#tgl_perolehan', 'Tanggal perolehan wajib diisi.'); return; }
+        if ($.trim(unit_pengguna) === '') { ma.showFieldError('#unit_pengguna', 'Unit aset wajib diisi.'); return; }
+        if ($.trim(deskripsi_aset) === '') { ma.showFieldError('#deskripsi_aset', 'Deskripsi aset wajib diisi.'); return; }
         if ($.trim(nilai_perolehan) === '' || parseFloat(ma.toBackendNominal(nilai_perolehan)) <= 0) {
-            ma.showFieldError('#nilai_perolehan', 'Nilai perolehan wajib diisi dan lebih dari 0.'); return;
+            ma.showFieldError('#nilai_perolehan', 'Harga beli wajib diisi dan lebih dari 0.'); return;
         }
-        ma.enforce_dp_limit();
-
+        if ($.trim(kode_pembiayaan) === '') { ma.showFieldError('#kode_pembiayaan', 'Jenis pembiayaan wajib diisi.'); return; }
         var formData = new FormData();
         formData.append('params[id]', id);
         formData.append('params[kode_aset]', kode_aset);
         formData.append('params[id_kategori]', id_kategori);
         formData.append('params[deskripsi_aset]', deskripsi_aset);
-        formData.append('params[document_no]', document_no);
         formData.append('params[tgl_perolehan]', ma.toBackendDate(tgl_perolehan));
         formData.append('params[nilai_perolehan]', ma.toBackendNominal(nilai_perolehan));
-        formData.append('params[dp]', ma.toBackendNominal(dp));
-        formData.append('params[bunga]', bunga);
-        formData.append('params[nominal_cicilan]', ma.toBackendNominal(nominal_cicilan));
-        formData.append('params[durasi]', durasi || '0');
         formData.append('params[unit_pengguna]', unit_pengguna);
-        // formData.append('params[lokasi_pengguna]', lokasi_pengguna);
-        // formData.append('params[pic]', pic);
-        // formData.append('params[status]', status);
-        formData.append('params[keterangan]', keterangan);
+        formData.append('params[kode_pembiayaan]', kode_pembiayaan);
 
         var fileInput = document.getElementById('file_dokumen');
         if (fileInput && fileInput.files.length > 0) {
@@ -495,7 +394,7 @@ let ma = {
             type: 'POST',
             data: {
                 id_kategori: $('#filter_kategori_aset').val() || '',
-                filter_status: ma.toBackendDate($('#filter_status').val() || ''),
+                tanggal_mulai: ma.toBackendDate($('#filter_tanggal_mulai').val() || ''),
                 search: $('#search_aset').val() || ''
             },
             dataType: 'HTML',

@@ -55,7 +55,7 @@ let pa = {
 
     init_select2: function () {
         if ($.fn.select2) {
-            $('#kode_aset, #filter_kategori_aset, #unit_pengguna, #filter_pic, #pic, #lokasi_pengguna').each(function () {
+            $('#kode_aset, #filter_kategori_aset, #filter_unit, #unit_pengguna, #filter_pic, #pic, #lokasi_pengguna').each(function () {
                 var select = $(this);
                 
                 var isFilter = select.attr('id').indexOf('filter_') === 0;
@@ -445,6 +445,7 @@ let pa = {
     resetFilter: function (event) {
         if (event) { event.preventDefault(); }
         $('#filter_kategori_aset').val('').trigger('change');
+        $('#filter_unit').val('').trigger('change');
         $('#filter_tanggal_mulai').val('');
         $('#search_penerimaan').val('');
         pa.filterData(event);
@@ -458,6 +459,7 @@ let pa = {
             type: 'POST',
             data: {
                 id_kategori: $('#filter_kategori_aset').val() || '',
+                id_unit: $('#filter_unit').val() || '',
                 tanggal_mulai: pa.toBackendDate($('#filter_tanggal_mulai').val() || ''),
                 search: $('#search_penerimaan').val() || ''
             },

@@ -45,6 +45,7 @@ class PenerimaanAset extends Public_Controller {
             $content['title_panel']     = 'Penerimaan Aset';
             $content['kategori_aset']   = $this->get_kategori_aset_list();
             $content['unit_pengguna']   = $this->get_unit_list();
+            // $content['unit']            = $this->get_unit_list();   
             $data['title_menu']         = 'Penerimaan Aset';
 
             $data['view'] = $this->load->view($this->pathView . 'v_index', $content, TRUE);
@@ -60,6 +61,7 @@ class PenerimaanAset extends Public_Controller {
         $m_penerimaan    = new \Model\Storage\PenerimaanAset_model();
         
         $filter_kategori = trim($this->input->post('id_kategori'));
+        $filter_unit     = trim($this->input->post('id_unit'));
         $filter_tanggal  = trim($this->input->post('tanggal_mulai'));
         $search          = trim($this->input->post('search'));
 
@@ -98,6 +100,11 @@ class PenerimaanAset extends Public_Controller {
 
         if (!empty($filter_kategori)) {
             $query->where('mak.kategori_name', $filter_kategori);
+        }
+
+        if (!empty($filter_unit)) {
+            // cetak_r($filter_unit, 1);
+            $query->where('penerimaan_aset.lokasi_pengguna', $filter_unit);
         }
 
         if (!empty($filter_tanggal)) {

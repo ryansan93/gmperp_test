@@ -1,13 +1,10 @@
-<!-- <input type="hidden" id="config-form" value="< ?php echo (($status_aset ?? 0) == 1) ? 1 : 0; ?>"> -->
 <style>
-    /* Memaksa background abu-abu saat Select2 di-disable */
     .select2-container--disabled .select2-selection--single {
-        background-color: #e9ecef !important; /* Warna abu-abu */
-        cursor: not-allowed !important;      /* Kursor jadi tanda larang */
+        background-color: #e9ecef !important;
+        cursor: not-allowed !important;
         opacity: 0.8;
     }
 
-    /* Menghilangkan tombol 'x' (clear) saat disabled */
     .select2-container--disabled .select2-selection__clear {
         display: none !important;
     }
@@ -41,7 +38,7 @@
                 <?php endif; ?>
 
                 <div class="row" style="margin:0 -20px;">
-                    <div class="col-xs-12 col-sm-6" style="padding:0 6px; margin-bottom:15px;">
+                    <div class="col-xs-12 col-sm-12" style="padding:0 6px; margin-bottom:15px;">
                         <label for="id_kategori" style="display:block; font-weight:600; margin-bottom:6px;">Kategori Aset <span class="text-danger">*</span></label>
                         <select <?php echo $is_received == 1 ? 'disabled' : ''; ?> id="id_kategori" class="form-control" required>
                             <option value="">-- Pilih Kategori --</option>
@@ -62,79 +59,69 @@
                             </small>
                         <?php endif; ?>
                     </div>
-                    <div class="col-xs-12 col-sm-6" style="padding:0 6px; margin-bottom:15px;">
-                        <label for="document_no" style="display:block; font-weight:600; margin-bottom:6px;">No. Faktur / Bukti</label>
-                        <input type="text" autocomplete="off" class="form-control" id="document_no" value="<?php echo isset($data['document_no']) ? htmlspecialchars($data['document_no']) : ''; ?>" placeholder="Contoh: KP-0003, BCA125113058">
-                    </div>
                 </div>
 
                 <div class="row" style="margin:0 -20px;">
-                    <div class="col-xs-12 col-sm-6" style="padding:0 6px; margin-bottom:15px;">
+                    <div class="col-xs-12 col-sm-12" style="padding:0 6px; margin-bottom:15px;">
                         <label for="tgl_perolehan" style="display:block; font-weight:600; margin-bottom:6px;">Tanggal Perolehan <span class="text-danger">*</span></label>
                         <div class="input-group date" id="tgl_perolehan_picker">
                             <input type="text" class="form-control" placeholder="Pilih Tanggal" id="tgl_perolehan" style="caret-color: transparent; background-color:#fff;" value="<?php echo isset($data['tgl_perolehan']) ? htmlspecialchars(date('Y-m-d', strtotime($data['tgl_perolehan']))) : ''; ?>" required onkeydown="return false;" onpaste="return false;" ondrop="return false;" autocomplete="off">
                             <span class="input-group-addon"><i class="fa fa-calendar"></i></span>
                         </div>
                     </div>
-                    <div class="col-xs-12 col-sm-6" style="padding:0 6px; margin-bottom:15px;">
-                        <label for="nilai_perolehan" style="display:block; font-weight:600; margin-bottom:6px;">Nilai Perolehan (Rp) <span class="text-danger">*</span></label>
-                        <div class="input-group">
-                            <span class="input-group-addon">Rp</span>
-                            <input type="text" class="form-control" autocomplete="off" id="nilai_perolehan" value="<?php echo isset($data['nilai_perolehan']) ? number_format((float)$data['nilai_perolehan'], 0, ',', '.') : ''; ?>" placeholder="Masukkan nilai perolehan" inputmode="numeric">
-                        </div>
-                    </div>
-                </div>
-
-                <div class="row" style="margin:0 -20px;">
-                    <div class="col-xs-12 col-sm-3" style="padding:0 6px; margin-bottom:15px;">
-                        <label for="dp" style="display:block; font-weight:600; margin-bottom:6px;">DP (Down Payment) (Rp)</label>
-                        <div class="input-group">
-                            <span class="input-group-addon">Rp</span>
-                            <input type="text" class="form-control" autocomplete="off" id="dp" value="<?php echo isset($data['dp']) ? number_format((float)$data['dp'], 0, ',', '.') : ''; ?>" placeholder="Masukkan DP" inputmode="numeric">
-                        </div>
-                    </div>
-                    <div class="col-xs-12 col-sm-3" style="padding:0 6px; margin-bottom:15px;">
-                        <label for="durasi" style="display:block; font-weight:600; margin-bottom:6px;">Durasi (Bulan)</label>
-                        <input type="number" class="form-control" id="durasi" min="0" step="1" value="<?php echo isset($data['durasi']) ? htmlspecialchars($data['durasi']) : ''; ?>" placeholder="Masukkan durasi dalam bulan">
-                    </div>
-                    <div class="col-xs-12 col-sm-3" style="padding:0 6px; margin-bottom:15px;">
-                        <label for="bunga" style="display:block; font-weight:600; margin-bottom:6px;">Bunga (%)</label>
-                        <input type="number" class="form-control" id="bunga" min="0" step="0.01" value="<?php echo isset($data['bunga']) ? htmlspecialchars($data['bunga']) : ''; ?>" placeholder="Masukkan bunga dalam persen">
-                    </div>
-                    <div class="col-xs-12 col-sm-3" style="padding:0 6px; margin-bottom:15px;">
-                        <label for="nominal_cicilan" style="display:block; font-weight:600; margin-bottom:6px;">Nominal Cicilan (Rp)</label>
-                        <div class="input-group">
-                            <span class="input-group-addon">Rp</span>
-                            <input type="text" class="form-control" autocomplete="off" id="nominal_cicilan" value="<?php echo isset($data['nominal_cicilan']) ? number_format((float)$data['nominal_cicilan'], 0, ',', '.') : ''; ?>" placeholder="Terhitung otomatis" inputmode="numeric" readonly>
-                        </div>
-                    </div>
-                   
                 </div>
                 
                 <div class="row" style="margin:0 -20px;">
-                    <div class="col-xs-12 col-sm-6" style="padding:0 6px; margin-bottom:15px;">
-                        <label for="unit_pengguna" style="display:block; font-weight:600; margin-bottom:6px;">Unit Terdaftar</label>
+                    <div class="col-xs-12 col-sm-12" style="padding:0 6px; margin-bottom:15px;">
+                        <label for="unit_pengguna" style="display:block; font-weight:600; margin-bottom:6px;">Unit Aset</label>
                         <select name="unit_pengguna" id="unit_pengguna">
                             <option value="">-- Pilih Data --</option>
-                            <option <?php echo isset($data['unit_pengguna']) && $data['unit_pengguna'] == 'Head Office' ? 'selected' : ''; ?> value="Head Office">Head Office (HO)</option>
+                            <option <?php echo isset($data['unit_pengguna']) && $data['unit_pengguna'] == 'HO' ? 'selected' : ''; ?> value="HO">Head Office (HO)</option>
+                            <?php foreach($unit as $u){ ?>
+                                <option <?php echo isset($data['unit_pengguna']) && $data['unit_pengguna'] == 'HO' ? 'selected' : ''; ?> value="<?php echo $u['kode'] ?>"><?php echo ucwords(strtolower($u['nama'])) ?></option>
+                            <?php } ?>
                         </select>
                     </div>
                 </div>
-
 
                 <div class="form-group" style="margin-bottom: 15px;">
                     <label for="deskripsi_aset" style="display:block; font-weight:600; margin-bottom:6px;">Deskripsi Aset <span class="text-danger">*</span></label>
                     <textarea class="form-control" id="deskripsi_aset" rows="3" placeholder="Contoh: DELL LATITUDE 7490 Core I5-8350U 8GB/ SSD 238 GB + Windows 11 Pro" required><?php echo isset($data['deskripsi_aset']) ? htmlspecialchars($data['deskripsi_aset']) : ''; ?></textarea>
                 </div>
 
-                <div class="form-group" style="margin-bottom: 15px;">
-                    <label for="keterangan" style="display:block; font-weight:600; margin-bottom:6px;">Keterangan / Catatan</label>
-                    <textarea class="form-control" id="keterangan" rows="2" placeholder="Contoh: Sebelumnya dipakai Mas Irwan, Kendaraan dihapuskan terkena pencurian"><?php echo isset($data['keterangan']) ? htmlspecialchars($data['keterangan']) : ''; ?></textarea>
+                <div class="row" style="margin:0 -20px;">
+                    <div class="col-xs-12 col-sm-12" style="padding:0 6px; margin-bottom:15px;">
+                        <label for="nilai_perolehan" style="display:block; font-weight:600; margin-bottom:6px;">Harga Beli (Rp) <span class="text-danger">*</span></label>
+                        <div class="input-group">
+                            <span class="input-group-addon">Rp</span>
+                            <input type="text" class="form-control" autocomplete="off" id="nilai_perolehan" value="<?php echo isset($data['nilai_perolehan']) ? number_format((float)$data['nilai_perolehan'], 0, ',', '.') : ''; ?>" placeholder="Masukkan harga beli" inputmode="numeric">
+                        </div>
+                    </div>
                 </div>
 
-                
+                 <div class="row" style="margin:0 -20px;">
+                    <div class="col-xs-12 col-sm-12" style="padding:0 6px; margin-bottom:15px;">
+                        <label for="kode_pembiayaan" style="display:block; font-weight:600; margin-bottom:6px;">Jenis Pembiayaan <span class="text-danger">*</span></label>
+                        <select name="kode_pembiayaan" id="kode_pembiayaan" class="form-control" required>
+                            <option value="">-- Pilih Jenis Pembiayaan --</option>
+                            <?php if (!empty($jenis_pembiayaan)) : ?>
+                                <?php foreach ($jenis_pembiayaan as $row) : ?>
+                                    <?php
+                                        $kodeJenisPembiayaan = trim($row['kode_jenis_pembiayaan']);
+                                        $namaPembiayaan = trim($row['nama_pembiayaan']);
+                                        $selectedPembiayaan = isset($data['kode_jenis_pembiayaan']) ? $data['kode_jenis_pembiayaan'] === $kodeJenisPembiayaan : (isset($data['jenis_pembiayaan']) && $data['jenis_pembiayaan'] === $namaPembiayaan);
+                                    ?>
+                                    <option value="<?php echo htmlspecialchars($kodeJenisPembiayaan); ?>" <?php echo $selectedPembiayaan ? 'selected' : ''; ?>>
+                                        <?php echo htmlspecialchars($namaPembiayaan); ?>
+                                    </option>
+                                <?php endforeach; ?>
+                            <?php endif; ?>
+                        </select>
+                    </div>
+                </div>
+
                 <div class="row" style="margin:0 -20px;">
-                    <div class="col-xs-12 col-sm-6" style="padding:0 6px; margin-bottom:15px;">
+                    <div class="col-xs-12 col-sm-12" style="padding:0 6px; margin-bottom:15px;">
                         <label for="file_dokumen" style="display:block; font-weight:600; margin-bottom:6px;">
                             <i class="fa fa-paperclip"></i> Dokumen Pendukung
                             <small style="font-weight:normal; color:#888;">(PDF / JPG / PNG, Maks 5MB)</small>
@@ -178,14 +165,6 @@
                 <div class="form-group" style="margin-bottom: 0;">
                     <div style="padding-top: 5px; display: flex; justify-content: space-between; align-items: center;">
                         
-                        <!-- <div>
-                            < ?php if ( isset($data['id']) && $data['status'] == 'Aktif' ) : ?>
-                                <button type="button" class="btn btn-info" onclick="ma.open_depreciation_bootbox()" style="margin-right: 8px;"> 
-                                    <i class="fa fa-calculator"></i> Lihat Penyusutan
-                                </button>
-                            < ?php endif; ?>
-                        </div> -->
-
                         <div>
                             <button type="button" class="btn btn-default" onclick="$('a[href=\'#history\']').trigger('click');" style="margin-right: 8px;">
                                 Batal

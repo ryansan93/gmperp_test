@@ -1063,10 +1063,10 @@ class MasterSewa extends Public_Controller {
     {
 
         // $periode = [
-        //     'id'         => 15,
-        //     'periode'    => '2026-09',
-        //     'start_date' => '2026-09-01',
-        //     'end_date'   => '2026-09-30',
+        //     'id'         => 16,
+        //     'periode'    => '2026-10',
+        //     'start_date' => '2026-10-01',
+        //     'end_date'   => '2026-10-31',
         //     'status'     => 1,
         //     'opr'        => 1,
         //     'kas_bank'   => 1,

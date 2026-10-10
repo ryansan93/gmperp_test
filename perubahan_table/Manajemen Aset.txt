@@ -4,3 +4,133 @@ create table penyusutan_komersial_aset		=> Belum ada di live
 create table penyusutan_fiskal_aset		=> Belum ada di live
 create table ms_kelompok			=> Belum ada di live
 create table penerimaan_aset			=> Belum ada di live
+
+-- Jalankan di database yang sudah memiliki tabel ms_aset dan ms_pembiayaan.
+-- Kolom ini wajib ada karena aplikasi menyimpan kode master pada setiap aset.
+IF COL_LENGTH('dbo.ms_aset', 'kode_pembiayaan') IS NULL
+	ALTER TABLE dbo.ms_aset ADD kode_pembiayaan varchar(10) NULL
+GO
+
+-- Migrasikan nilai lama jika kolom jenis_pembiayaan masih tersedia.
+-- Baris lama yang tidak cocok dengan master dibiarkan NULL untuk diperiksa manual.
+IF COL_LENGTH('dbo.ms_aset', 'jenis_pembiayaan') IS NOT NULL
+BEGIN
+	EXEC(N'
+		UPDATE aset
+		SET kode_pembiayaan = pembiayaan.kode_pembiayaan
+		FROM dbo.ms_aset aset
+		INNER JOIN dbo.ms_pembiayaan pembiayaan
+			ON UPPER(LTRIM(RTRIM(aset.jenis_pembiayaan))) = UPPER(LTRIM(RTRIM(pembiayaan.kode_pembiayaan)))
+		WHERE aset.kode_pembiayaan IS NULL;
+
+		UPDATE aset
+		SET kode_pembiayaan = pembiayaan.kode_pembiayaan
+		FROM dbo.ms_aset aset
+		INNER JOIN dbo.ms_pembiayaan pembiayaan
+			ON UPPER(LTRIM(RTRIM(aset.jenis_pembiayaan))) = UPPER(LTRIM(RTRIM(pembiayaan.nama_pembiayaan)))
+		WHERE aset.kode_pembiayaan IS NULL;
+	')
+END
+GO
+
+
+-- Ubah kode master yang sudah ada menjadi PMB01, PMB02, dan seterusnya,
+-- sekaligus menjaga referensi aset. Jalankan saat tabel ms_pembiayaan sudah terisi.
+BEGIN TRANSACTION
+
+SELECT
+	id,
+	kode_pembiayaan AS kode_lama,
+	'PMB' + CASE
+		WHEN nomor < 10 THEN '0' + CAST(nomor AS varchar(10))
+		ELSE CAST(nomor AS varchar(10))
+	END AS kode_baru
+INTO #pemetaan_pembiayaan
+FROM (
+	SELECT id, kode_pembiayaan, ROW_NUMBER() OVER (ORDER BY id) AS nomor
+	FROM dbo.ms_pembiayaan
+) data
+
+-- Pindahkan referensi terlebih dahulu ke kode sementara untuk menghindari bentrok kode.
+UPDATE aset
+SET kode_pembiayaan = 'X' + RIGHT('000000000' + CAST(pemetaan.id AS varchar(9)), 9)
+FROM dbo.ms_aset aset
+INNER JOIN #pemetaan_pembiayaan pemetaan
+	ON aset.kode_pembiayaan = pemetaan.kode_lama
+
+UPDATE pembiayaan
+SET kode_pembiayaan = 'X' + RIGHT('000000000' + CAST(pemetaan.id AS varchar(9)), 9)
+FROM dbo.ms_pembiayaan pembiayaan
+INNER JOIN #pemetaan_pembiayaan pemetaan ON pembiayaan.id = pemetaan.id
+
+UPDATE pembiayaan
+SET kode_pembiayaan = pemetaan.kode_baru
+FROM dbo.ms_pembiayaan pembiayaan
+INNER JOIN #pemetaan_pembiayaan pemetaan ON pembiayaan.id = pemetaan.id
+
+UPDATE aset
+SET kode_pembiayaan = pemetaan.kode_baru
+FROM dbo.ms_aset aset
+INNER JOIN #pemetaan_pembiayaan pemetaan
+	ON aset.kode_pembiayaan = 'X' + RIGHT('000000000' + CAST(pemetaan.id AS varchar(9)), 9)
+
+DROP TABLE #pemetaan_pembiayaan
+COMMIT TRANSACTION
+GO
+
+create table ms_pembiayaan (
+	id int identity(1,1) primary key,
+	kode_pembiayaan varchar(10) not null unique,
+	nama_pembiayaan varchar(100) not null unique
+)						=> Belum ada di live
+
+-- kode_aset mengacu ke ms_aset.kode_aset; id_supplier dan id_leasing mengacu ke pelanggan.id.
+IF OBJECT_ID('dbo.pembiayaan_aset', 'U') IS NULL
+BEGIN
+	CREATE TABLE dbo.pembiayaan_aset (
+		id bigint identity(1,1) primary key,
+		kode_pembiayaan varchar(20) not null unique,
+		kode_aset varchar(50) not null unique,
+		id_supplier bigint not null,
+		id_leasing bigint null
+	)
+END
+GO
+
+-- Hapus kolom lama jika tabel pembiayaan_aset sudah pernah dibuat.
+IF COL_LENGTH('dbo.pembiayaan_aset', 'status') IS NOT NULL
+BEGIN
+	DECLARE @statusDefaultConstraint sysname
+	SELECT @statusDefaultConstraint = dc.name
+	FROM sys.default_constraints dc
+	INNER JOIN sys.columns c
+		ON c.object_id = dc.parent_object_id
+		AND c.column_id = dc.parent_column_id
+	WHERE dc.parent_object_id = OBJECT_ID('dbo.pembiayaan_aset')
+		AND c.name = 'status'
+
+	IF @statusDefaultConstraint IS NOT NULL
+		EXEC(N'ALTER TABLE dbo.pembiayaan_aset DROP CONSTRAINT ' + QUOTENAME(@statusDefaultConstraint))
+
+	ALTER TABLE dbo.pembiayaan_aset DROP COLUMN status
+END
+GO
+
+IF COL_LENGTH('dbo.pembiayaan_aset', 'tgl_pembiayaan') IS NOT NULL
+	ALTER TABLE dbo.pembiayaan_aset DROP COLUMN tgl_pembiayaan
+GO
+
+IF OBJECT_ID('dbo.pembiayaan_tdp_aset', 'U') IS NULL
+BEGIN
+	CREATE TABLE dbo.pembiayaan_tdp_aset (
+		id bigint identity(1,1) primary key,
+		kode_pembiayaan varchar(20) not null,
+		tanggal date not null,
+		deskripsi nvarchar(255) null,
+		nominal decimal(15,2) not null,
+		is_pengurang_pokok bit not null constraint DF_pembiayaan_tdp_aset_is_pengurang_pokok default 1,
+		created_at datetime default getdate(),
+		updated_at datetime default getdate()
+	)
+END
+GO

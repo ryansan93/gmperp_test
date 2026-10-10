@@ -47,6 +47,23 @@
                                     <span class="input-group-addon"><i class="fa fa-calendar"></i></span>
                                 </div>
                             </div>
+
+
+                            <div class="col-xs-12 col-sm-4" style="padding:0 6px; margin-bottom:15px;">
+                                <label for="filter_unit" style="display:block; font-weight:600; margin-bottom:6px;">Unit</label>
+                                <select id="filter_unit" class="select2" style="width:100%;">
+                                    <option value="">Semua Kategori</option>
+                                    <?php if ( !empty($unit_pengguna) ) : ?>
+                                        <?php foreach ( $unit_pengguna as $row ) : ?>
+                                            <?php $kode = isset($row['kode']) ? trim($row['kode']) : ''; ?>
+                                            <?php $nama = isset($row['nama']) ? trim($row['nama']) : ''; ?>
+                                            <option value="<?php echo htmlspecialchars($kode); ?>">
+                                                <?php echo htmlspecialchars($kode . ' - ' . $nama); ?>
+                                            </option>
+                                        <?php endforeach; ?>
+                                    <?php endif; ?>
+                                </select>
+                            </div>
                         </div>
 
                         <div class="row" style="padding:0 10px;">

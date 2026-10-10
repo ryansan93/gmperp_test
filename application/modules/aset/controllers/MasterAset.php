@@ -1,23 +1,10 @@
 <?php defined('BASEPATH') OR exit('No direct script access allowed');
 
-use PhpOffice\PhpSpreadsheet\Cell\DataType;
-use PhpOffice\PhpSpreadsheet\Spreadsheet;
-use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
-use PhpOffice\PhpSpreadsheet\Style\Border;
-use PhpOffice\PhpSpreadsheet\Style\NumberFormat;
-use PhpOffice\PhpSpreadsheet\Shared\Date;
-use PhpOffice\PhpSpreadsheet\Style\Alignment;
-use PhpOffice\PhpSpreadsheet\Style\Fill;
-use PhpOffice\PhpSpreadsheet\Style\Protection;
-use Dompdf\Dompdf;
-
 class MasterAset extends Public_Controller {
 
     private $pathView = 'aset/master_aset/';
     private $url;
     private $hakAkses;
-    private const BUNGA_PERSEN = 8.0;
-
     function __construct()
     {
         parent::__construct();
@@ -45,7 +32,7 @@ class MasterAset extends Public_Controller {
             $content['akses']           = $this->hakAkses;
             $content['title_panel']     = 'Master Aset';
             $content['kategori_aset']   = $this->get_kategori_aset_list();
-            $content['unit_pengguna']   = $this->get_unit_list();
+            // $content['unit']            = $this->get_unit_list();
             $data['title_menu']         = 'Master Aset';
 
             $data['view'] = $this->load->view($this->pathView . 'v_index', $content, TRUE);
@@ -54,86 +41,6 @@ class MasterAset extends Public_Controller {
             showErrorAkses();
         }
     }
-
-    // public function list_data()
-    // {
-    //     $akses           = hakAkses($this->url);
-    //     $m_aset          = new \Model\Storage\MsAset_model();
-        
-    //     $filter_kategori = trim($this->input->post('id_kategori'));
-    //     $filter_tanggal  = trim($this->input->post('tanggal_mulai'));
-        
-    //     $search          = trim($this->input->post('search'));
-
-    //     $query = $m_aset
-    //         ->select(
-    //             'ms_aset.*', 
-    //             'ms_aset_kategori.kategori_name as nama_kategori',
-    //             'ms_aset_kategori.kategori_kode', 
-    //             'karyawan.nama as nama_pic',
-    //             new \Illuminate\Database\Query\Expression('(SELECT TOP 1 nama FROM wilayah WHERE kode = ms_aset.lokasi_pengguna) as nama_unit'),
-                
-    //             // new \Illuminate\Database\Query\Expression("
-    //             //     CASE WHEN EXISTS (
-    //             //         SELECT 1 FROM penyusutan_komersial_aset 
-    //             //         WHERE penyusutan_komersial_aset.kode_aset = ms_aset.kode_aset 
-    //             //         AND penyusutan_komersial_aset.status = 1
-    //             //     ) OR EXISTS (
-    //             //         SELECT 1 FROM penyusutan_fiskal_aset 
-    //             //         WHERE penyusutan_fiskal_aset.kode_aset = ms_aset.kode_aset 
-    //             //         AND penyusutan_fiskal_aset.status = 1
-    //             //     ) THEN 1 ELSE 0 END AS is_locked
-    //             // ")
-
-    //             new \Illuminate\Database\Query\Expression("
-    //                 CASE WHEN EXISTS (
-    //                     SELECT 1 FROM penyusutan_komersial_aset 
-    //                     WHERE penyusutan_komersial_aset.kode_aset = ms_aset.kode_aset 
-    //                     AND penyusutan_komersial_aset.status = 1
-    //                 ) OR EXISTS (
-    //                     SELECT 1 FROM penyusutan_fiskal_aset 
-    //                     WHERE penyusutan_fiskal_aset.kode_aset = ms_aset.kode_aset 
-    //                     AND penyusutan_fiskal_aset.status = 1
-    //                 ) OR EXISTS (
-    //                     SELECT 1 FROM penerimaan_aset 
-    //                     WHERE penerimaan_aset.kode_aset = ms_aset.kode_aset
-    //                 ) THEN 1 ELSE 0 END AS is_locked
-    //             ")
-    //         )
-    //         ->leftJoin('ms_aset_kategori', 'ms_aset_kategori.id', '=', 'ms_aset.id_kategori')
-    //         ->leftJoin('karyawan', function ($join) {
-    //             $join->on('karyawan.nik', '=', 'ms_aset.pic')
-    //                 ->where('karyawan.status', '=', '1');
-    //         });
-
-    //     if (!empty($filter_kategori)) {
-    //         $query->where('ms_aset_kategori.kategori_name', $filter_kategori);
-    //     }
-
-    //     if (!empty($filter_tanggal)) {
-    //         $query->where('ms_aset.tgl_perolehan', $filter_tanggal);
-    //     }
-
-    //     if (!empty($search)) {
-
-    //         $like = '%' . $search . '%';
-            
-    //         $query->where(function($q) use ($like) {
-    //             $q->where('ms_aset.kode_aset', 'like', $like)
-    //             ->orWhere('ms_aset.deskripsi_aset', 'like', $like)
-    //             ->orWhere('ms_aset_kategori.kategori_name', 'like', $like)
-    //             ->orWhere('karyawan.nama', 'like', $like);
-    //         });
-    //     }
-
-    //     $d_aset = $query->orderBy('ms_aset.id', 'desc')->get()->toArray();
-
-    //     $content['akses']   = $akses;
-    //     $content['list']    = $d_aset;
-        
-    //     $html = $this->load->view($this->pathView . 'v_list', $content, TRUE);
-    //     echo $html;
-    // }
 
     public function list_data()
     {
@@ -211,30 +118,6 @@ class MasterAset extends Public_Controller {
         return $m_kategori->orderBy('id', 'asc')->get()->toArray();
     }
 
-    private function get_unit_list()
-    {
-        $m_conf = new \Model\Storage\Conf();
-        $sql = " SELECT kode, MAX(nama) AS nama
-                    FROM wilayah
-                    WHERE jenis = 'UN'
-                    GROUP BY kode
-                    ORDER BY kode ASC; ";
-
-        $d_conf = $m_conf->hydrateRaw($sql);
-        return $d_conf->count() > 0 ? $d_conf->toArray() : null;
-    }
-
-    private function get_pic_list()
-    {
-        $m_conf = new \Model\Storage\Conf();
-        $sql = " select k.nik, k.nama, j.nama as nama_jabatan  from karyawan k
-                inner join jabatan j on k.jabatan = j.kode
-                where status = 1";
-
-        $d_conf = $m_conf->hydrateRaw($sql);
-        return $d_conf->count() > 0 ? $d_conf->toArray() : null;
-    }
-
     private function parseNominal($value)
     {
         $value = trim((string) $value);
@@ -253,82 +136,16 @@ class MasterAset extends Public_Controller {
         return $digits === '' ? 0 : (float) $digits;
     }
 
-    private function parseBungaPersen($value)
-    {
-        $value = trim((string) $value);
-        if ($value === '') {
-            return 0;
-        }
-
-        $value = str_replace(',', '.', $value);
-        if (!is_numeric($value) || (float) $value < 0) {
-            throw new \InvalidArgumentException('Bunga harus berupa angka 0 atau lebih.');
-        }
-
-        return (float) $value;
-    }
-
-    private function getTerminSelectFields()
-    {
-        $fields = [
-            'kode_termin',
-            'kode_aset',
-            'nominal',
-            'status',
-            'jenis_pembayaran',
-            'nominal_terbayar',
-            'tgl_jatuh_tempo',
-        ];
-
-        $m_conf = new \Model\Storage\Conf();
-        $sql = "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'termin_aset'";
-        $columns = $m_conf->hydrateRaw($sql);
-        $existing = [];
-
-        if ($columns && method_exists($columns, 'toArray')) {
-            foreach ($columns->toArray() as $row) {
-                if (!empty($row['COLUMN_NAME'])) {
-                    $existing[] = strtoupper(trim($row['COLUMN_NAME']));
-                }
-            }
-        }
-
-        foreach (['POKOK', 'BUNGA', 'CICILAN', 'TOTAL_POKOK', 'SISA_POKOK_HUTANG'] as $extra) {
-            if (in_array($extra, $existing, true)) {
-                $fields[] = strtolower($extra);
-            }
-        }
-
-        return implode(', ', $fields);
-    }
-
-    private function hitungNominalCicilan($nilaiPerolehan, $dp, $durasi, $bungaPersen = null)
-    {
-        $sisaPembayaran = max((float) $nilaiPerolehan - (float) $dp, 0);
-        $durasi = (int) $durasi;
-
-        if ($durasi <= 0 || $sisaPembayaran <= 0) {
-            return 0;
-        }
-
-        $bungaPersen = $bungaPersen === null ? self::BUNGA_PERSEN : (float) $bungaPersen;
-        if ($bungaPersen <= 0) {
-            return $sisaPembayaran / $durasi;
-        }
-
-        $rate = ($bungaPersen / 100) / 12;
-        $factor = pow(1 + $rate, $durasi);
-        $cicilan = $sisaPembayaran * (($rate * $factor) / ($factor - 1));
-
-        return $cicilan;
-    }
-
     public function add_form()
     {
         $data['data']             = null;
         $data['kategori_aset']    = $this->get_kategori_aset_list();
-        $data['unit']             = $this->get_unit_list();
-        $data['pic']              = $this->get_pic_list();
+        $data['unit']            = $this->get_unit_list();
+        $data['jenis_pembiayaan'] = \Model\Storage\MsPembiayaan_model::orderBy('nama_pembiayaan', 'asc')
+            ->get()
+            ->toArray();
+
+            // cetak_r($data['jenis_pembiayaan'], 1);
         $this->load->view($this->pathView . 'v_form', $data);
     }
 
@@ -345,35 +162,12 @@ class MasterAset extends Public_Controller {
 
         $data['data']             = $d_aset->toArray();
         $data['kategori_aset']    = $this->get_kategori_aset_list();
-        $data['unit']             = $this->get_unit_list();
-        $data['pic']              = $this->get_pic_list();
+        $data['jenis_pembiayaan'] = \Model\Storage\MsPembiayaan_model::orderBy('nama_pembiayaan', 'asc')
+            ->get()
+            ->toArray();
         $data['data']['is_received'] = $is_received;
 
-        // $data['status_aset']      = $this->check_status_aset($data['data']['kode_aset']);
-
         $this->load->view($this->pathView . 'v_form', $data);
-    }
-
-
-    public function check_status_aset($kode_aset)
-    {
-        if (empty($kode_aset)) {
-            return 0;
-        }
-
-        $countKomersial = \Model\Storage\PenyusutanKomersialAset_model::where('kode_aset', $kode_aset)
-            ->where('status', 1)
-            ->count();
-
-
-            //  cetak_r($countKomersial, 1);
-
-
-        $countFiskal = \Model\Storage\PenyusutanFiskalAset_model::where('kode_aset', $kode_aset)
-            ->where('status', 1)
-            ->count();
-
-        return ($countKomersial > 0 || $countFiskal > 0) ? 1 : 0;
     }
 
     private function generateKodeAsset($id_kategori, $tgl_perolehan = null)
@@ -411,26 +205,28 @@ class MasterAset extends Public_Controller {
 
     public function save_data()
     {
+        if (empty($this->hakAkses['a_submit'])) {
+            $this->result['message'] = 'Anda tidak memiliki akses untuk menambahkan aset.';
+            display_json($this->result);
+            return;
+        }
+
         $params = $this->input->post('params');
+        $params = is_array($params) ? $params : [];
 
         try {
             $m_aset = new \Model\Storage\MsAset_model();
 
-            $id_kategori        = trim($params['id_kategori']);
-            $tgl_perolehan      = trim($params['tgl_perolehan']);
-            $deskripsi          = trim($params['deskripsi_aset']);
+            $id_kategori        = trim((string) ($params['id_kategori'] ?? ''));
+            $tgl_perolehan      = trim((string) ($params['tgl_perolehan'] ?? ''));
+            $deskripsi          = trim((string) ($params['deskripsi_aset'] ?? ''));
+            $unit_pengguna      = trim((string) ($params['unit_pengguna'] ?? ''));
+            $kode_pembiayaan    = trim((string) ($params['kode_pembiayaan'] ?? ''));
             $nilai_perolehan    = $this->parseNominal($params['nilai_perolehan'] ?? '');
-            $dp                 = $this->parseNominal($params['dp'] ?? '');
-            $bunga              = $this->parseBungaPersen($params['bunga'] ?? '');
-            $durasi             = !empty($params['durasi']) ? (int) $params['durasi'] : 0;
-            $nominal_cicilan    = round($this->hitungNominalCicilan($nilai_perolehan, $dp, $durasi, $bunga));
+            $pembiayaanValid    = \Model\Storage\MsPembiayaan_model::where('kode_jenis_pembiayaan', $kode_pembiayaan)->exists();
 
-            if (empty($id_kategori) || empty($tgl_perolehan) || empty($deskripsi) || $nilai_perolehan <= 0) {
-                $this->result['message'] = 'Kategori, Tanggal Perolehan, Deskripsi, dan Nilai Perolehan wajib diisi.';
-            } elseif ($nilai_perolehan > $dp && $durasi > 0 && trim((string) ($params['bunga'] ?? '')) === '') {
-                $this->result['message'] = 'Bunga wajib diisi sebelum nominal cicilan dihitung.';
-            } elseif ($dp > $nilai_perolehan || $durasi < 0) {
-                $this->result['message'] = 'DP tidak boleh melebihi nilai perolehan dan durasi tidak boleh kurang dari 0.';
+            if (empty($id_kategori) || empty($tgl_perolehan) || empty($unit_pengguna) || empty($deskripsi) || $nilai_perolehan <= 0 || !$pembiayaanValid) {
+                $this->result['message'] = 'Kategori, Tanggal Perolehan, Unit, Deskripsi, Harga Beli, dan Jenis Pembiayaan wajib diisi.';
             } else {
                 $attachmentName = null;
                 if (!empty($_FILES['file_dokumen']['name'])) {
@@ -458,40 +254,23 @@ class MasterAset extends Public_Controller {
 
                 $kode_aset = $this->generateKodeAsset($id_kategori, $tgl_perolehan);
 
-                $m_aset->kode_aset       = $kode_aset;
-                $m_aset->id_kategori     = $id_kategori;
-                $m_aset->deskripsi_aset  = $deskripsi;
-                $m_aset->document_no      = trim($params['document_no']);
-                $m_aset->tgl_perolehan    = $tgl_perolehan;
-                $m_aset->nilai_perolehan  = $nilai_perolehan;
-                $m_aset->dp               = $dp;
-                $m_aset->bunga            = $bunga;
-                $m_aset->nominal_cicilan  = $nominal_cicilan;
-                $m_aset->durasi           = $durasi;
-                $m_aset->unit_pengguna    = trim($params['unit_pengguna']);
+                // cetak_r($params, 1);
 
-                // $m_aset->lokasi_pengguna  = trim($params['lokasi_pengguna']);
-                // $m_aset->pic              = trim($params['pic']);
-                $m_aset->keterangan       = trim($params['keterangan']);
-                $m_aset->attachment       = $attachmentName;
+                $m_aset->kode_aset              = $kode_aset;
+                $m_aset->id_kategori            = $id_kategori;
+                $m_aset->deskripsi_aset         = $deskripsi;
+                $m_aset->kode_pembiayaan        = $kode_pembiayaan;
+                $m_aset->tgl_perolehan          = $tgl_perolehan;
+                $m_aset->nilai_perolehan        = $nilai_perolehan;
+                $m_aset->unit_pengguna          = $unit_pengguna;
+                $m_aset->attachment             = $attachmentName;
                 // cetak_r($m_aset, 1);
                 $m_aset->save();
                 
-                
-                if (!empty($kode_aset)) {
-                    $this->syncKomersial($kode_aset, $id_kategori, $tgl_perolehan, $nilai_perolehan);
-                    $this->syncFiskal($kode_aset, $id_kategori, $tgl_perolehan, $nilai_perolehan);
-                    $this->syncTermin($kode_aset, $tgl_perolehan, $nilai_perolehan, $dp, $durasi, null, $bunga);
-                }
 
-                $m_aset->load(['penyusutan_komersial_aset', 'penyusutan_fiskal_aset', 'termin_aset']);
                 $userNama      = $this->userdata['detail_user']['nama_detuser'] ?? 'System';
                 $deskripsi_log = "Data aset {$kode_aset} di-submit oleh {$userNama}";
                 Modules::run('base/event/save', $m_aset, $deskripsi_log, null, $m_aset->id, null);
-
-                // $userNama      = $this->userdata['detail_user']['nama_detuser'] ?? 'System';
-                // $deskripsi_log = "Data aset {$kode_aset} di-submit oleh {$userNama}";
-                // Modules::run('base/event/save', $m_aset, $deskripsi_log, null, $m_aset->id, null);
 
                 $this->result['status']  = 1;
                 $this->result['message'] = 'Data berhasil disimpan';
@@ -506,179 +285,47 @@ class MasterAset extends Public_Controller {
     }
 
 
-    private function syncKomersial($kode_aset, $id_kategori, $tgl_perolehan, $nilai_perolehan)
-    {
-        try {
-            if (empty($kode_aset) || empty($id_kategori)) {
-                throw new \Exception("Kode aset atau ID kategori kosong.");
-            }
-
-            $kategori = \Model\Storage\MsAsetKategori_model::find($id_kategori);
-
-            if (!$kategori) {
-                throw new \Exception("Kategori dengan ID {$id_kategori} tidak ditemukan.");
-            }
-
-            $masa_bulan = (int) $kategori->masa_manfaat_komersial;
-
-            if ($masa_bulan <= 0) {
-                throw new \Exception("Masa manfaat komersial pada kategori ini kosong/nol.");
-            }
-        
-            $jadwal = new \Model\Storage\PenyusutanKomersialAset_model();
-            $jadwal->where('kode_aset', $kode_aset)->delete();
-            
-            $beban_per_bulan = round($nilai_perolehan / $masa_bulan, 2);
-            $akumulasi = 0;
-            $tanggal_awal_bulan = date('Y-m-01', strtotime($tgl_perolehan));
-
-            for ($i = 1; $i <= $masa_bulan; $i++) {
-                $row = new \Model\Storage\PenyusutanKomersialAset_model();
-            
-                $bulan_ke = $i - 1; 
-                $tgl_jatuh_tempo = date('Y-m-t 00:00:00', strtotime("+{$bulan_ke} month", strtotime($tanggal_awal_bulan)));
-
-                $akumulasi += $beban_per_bulan;
-                $nilai_buku  = $nilai_perolehan - $akumulasi;
-
-                if ($i == $masa_bulan && $nilai_buku < 0) {
-                    $akumulasi -= $beban_per_bulan; 
-                    $beban_per_bulan = $nilai_perolehan - $akumulasi; 
-                    $akumulasi += $beban_per_bulan;
-                    $nilai_buku = 0;
-                }
-
-                $row->kode_aset              = $kode_aset;
-                $row->kode_komersial         = $kode_aset . '-' . str_pad($i, 3, '0', STR_PAD_LEFT);
-                $row->tanggal_jatuh_tempo    = $tgl_jatuh_tempo;
-                $row->beban_penyusutan       = round($beban_per_bulan, 2);
-                $row->akumulasi_penyusutan   = round($akumulasi, 2);
-                $row->nilai_buku_akhir       = round($nilai_buku, 2);
-                $row->status                 = 0; 
-                
-                $row->save();
-            }
-        } catch (\Exception $e) {
-            throw new \Exception("Gagal sync komersial: " . $e->getMessage());
-        }
-    }
-
-    private function syncTermin($kode_aset, $tglPerolehan, $nilaiPerolehan, $dp, $durasi, $oldKodeAset = null, $bungaPersen = null)
-    {
-        if (empty($kode_aset)) {
-            throw new \Exception('Kode aset kosong saat membuat jadwal pembayaran.');
-        }
-
-        $pembayaran = new \Model\Storage\TerminAset_model();
-        // cetak_r($pembayaran, 1);
-
-        if (!empty($oldKodeAset) && $oldKodeAset !== $kode_aset) {
-            $pembayaran->where('kode_aset', $oldKodeAset)->delete();
-        }
-        $pembayaran->where('kode_aset', $kode_aset)->delete();
-
-        $nomor = 0;
-        $tanggal_awal_bulan = date('Y-m-01', strtotime($tglPerolehan));
-        if ($dp > 0) {
-            $nomor++;
-            $rowDp = new \Model\Storage\TerminAset_model();
-            $rowDp->kode_termin     = $kode_aset . '-' . str_pad($nomor, 3, '0', STR_PAD_LEFT);
-            $rowDp->kode_aset       = $kode_aset;
-            $rowDp->tgl_jatuh_tempo = date('Y-m-t 00:00:00', strtotime($tanggal_awal_bulan));
-            $rowDp->jenis_pembayaran = 'dp';
-            $rowDp->nominal         = (int) round($dp);
-            $rowDp->pokok           = 0;
-            $rowDp->bunga           = 0;
-            $rowDp->total_pokok     = 0;
-            $rowDp->sisa_pokok_hutang = (int) round(max($nilaiPerolehan - $dp, 0));
-            $rowDp->status          = 0;
-            // $rowDp->periode         = date('Y-m-d', strtotime($tglPerolehan));
-            $rowDp->save();
-        }
-
-        $sisaPembayaran = $nilaiPerolehan - $dp;
-        $durasi = (int) $durasi;
-        if ($sisaPembayaran <= 0 || $durasi <= 0) {
-            return;
-        }
-
-        $bungaPersen    = $bungaPersen === null ? self::BUNGA_PERSEN : (float) $bungaPersen;
-        $nominalCicilan = $this->hitungNominalCicilan($sisaPembayaran, 0, $durasi, $bungaPersen);
-        
-        $saldoAwal      = $sisaPembayaran;
-        // cetak_r($saldoAwal, 1);
-
-        for ($i = 1; $i <= $durasi; $i++) {
-            $nomor++;
-            $totalPokok     = (int) round($saldoAwal);
-            $bungaPresisi   = $saldoAwal * ($bungaPersen / 100) / 12;
-            $bunga          = (int) round($bungaPresisi);
-            $pokokPresisi   = $i === $durasi
-                ? max($saldoAwal, 0)
-                : max($nominalCicilan - $bungaPresisi, 0);
-            $pokok          = (int) round($pokokPresisi);
-            $nominal        = (int) round($nominalCicilan);
-
-            if ($i === $durasi) {
-                $pokokPresisi = max($saldoAwal, 0);
-                $pokok        = (int) round($pokokPresisi);
-                $nominal    = (int) round($pokok + $bungaPresisi);
-            }
-
-            $saldoAwal = max($saldoAwal - $pokokPresisi, 0);
-            $sisaPokokHutang = (int) round($saldoAwal);
-
-            $tgl_jatuh_tempo = date('Y-m-t', strtotime("+{$i} month", strtotime($tanggal_awal_bulan)));
-
-            $row = new \Model\Storage\TerminAset_model();
-            $row->kode_termin     = $kode_aset . '-' . str_pad($nomor, 3, '0', STR_PAD_LEFT);
-            $row->kode_aset       = $kode_aset;
-            $row->tgl_jatuh_tempo = $tgl_jatuh_tempo;
-            $row->jenis_pembayaran = 'cicilan';
-            $row->nominal         = $nominal;
-            $row->pokok           = $pokok;
-            $row->bunga           = $bunga;
-            $row->total_pokok     = $totalPokok;
-            $row->sisa_pokok_hutang = $sisaPokokHutang;
-            $row->status          = 0;
-            // $row->periode         = date('Y-m-d', strtotime($tglPerolehan . " +{$i} month"));
-            $row->save();
-        }
-    }
 
     public function edit_data()
     {
+        if (empty($this->hakAkses['a_edit'])) {
+            $this->result['message'] = 'Anda tidak memiliki akses untuk mengubah aset.';
+            display_json($this->result);
+            return;
+        }
+
         $params = $this->input->post('params');
+        $params = is_array($params) ? $params : [];
 
         try {
             $m_aset = new \Model\Storage\MsAset_model();
-            
-            $id_kategori     = trim($params['id_kategori']);
-            $tgl_perolehan   = trim($params['tgl_perolehan']);
-            $deskripsi       = trim($params['deskripsi_aset']);
-            $unit_pengguna   = trim($params['unit_pengguna']);
-            $nilai_perolehan = $this->parseNominal($params['nilai_perolehan'] ?? '');
-            $dp              = $this->parseNominal($params['dp'] ?? '');
-            $bunga           = $this->parseBungaPersen($params['bunga'] ?? '');
-            $durasi          = !empty($params['durasi']) ? (int) $params['durasi'] : 0;
-            $nominal_cicilan = round($this->hitungNominalCicilan($nilai_perolehan, $dp, $durasi, $bunga));
 
-            if (empty($id_kategori) || empty($tgl_perolehan) || empty($deskripsi) || $nilai_perolehan <= 0) {
-                $this->result['message'] = 'Kategori, Tanggal Perolehan, Deskripsi, dan Nilai Perolehan wajib diisi.';
-                display_json($this->result); return;
-            }
-            if ($nilai_perolehan > $dp && $durasi > 0 && trim((string) ($params['bunga'] ?? '')) === '') {
-                $this->result['message'] = 'Bunga wajib diisi sebelum nominal cicilan dihitung.';
-                display_json($this->result); return;
-            }
-            if ($dp > $nilai_perolehan || $durasi < 0) {
-                $this->result['message'] = 'DP tidak boleh melebihi nilai perolehan dan durasi tidak boleh kurang dari 0.';
-                display_json($this->result); return;
-            }
-
-            $current = $m_aset->where('id', $params['id'])->first();
+            $current = $m_aset->where('id', $params['id'] ?? null)->first();
             if (!$current) {
                 $this->result['message'] = 'Data aset tidak ditemukan.';
+                display_json($this->result);
+                return;
+            }
+
+            $id_kategori     = trim((string) ($params['id_kategori'] ?? ''));
+            $tgl_perolehan   = trim((string) ($params['tgl_perolehan'] ?? ''));
+            $deskripsi       = trim((string) ($params['deskripsi_aset'] ?? ''));
+            $unit_pengguna   = trim((string) ($params['unit_pengguna'] ?? $current->unit_pengguna));
+            $kode_pembiayaan = trim((string) ($params['kode_pembiayaan'] ?? $current->kode_pembiayaan));
+            $nilai_perolehan = $this->parseNominal($params['nilai_perolehan'] ?? '');
+            if (!array_key_exists('nilai_perolehan', $params)) {
+                $nilai_perolehan = $this->parseNominal($current->nilai_perolehan);
+            }
+
+            if (empty($id_kategori) || empty($tgl_perolehan) || empty($unit_pengguna) || empty($deskripsi) || $nilai_perolehan <= 0) {
+                $this->result['message'] = 'Kategori, Tanggal Perolehan, Unit, Deskripsi, dan Harga Beli wajib diisi.';
+                display_json($this->result); return;
+            }
+
+            $pembiayaanValid = \Model\Storage\MsPembiayaan_model::where('kode_jenis_pembiayaan', $kode_pembiayaan)
+                ->exists();
+            if (!$pembiayaanValid) {
+                $this->result['message'] = 'Jenis pembiayaan tidak ditemukan.';
                 display_json($this->result); return;
             }
 
@@ -728,33 +375,24 @@ class MasterAset extends Public_Controller {
                 'kode_aset'      => $kode_aset,
                 'id_kategori'     => $id_kategori,
                 'deskripsi_aset' => $deskripsi,
-                'document_no'     => trim($params['document_no']),
+                'kode_pembiayaan' => $kode_pembiayaan,
                 'tgl_perolehan'   => $tgl_perolehan,
                 'unit_pengguna'   => $unit_pengguna,
                 'nilai_perolehan' => $nilai_perolehan,
-                'dp'              => $dp,
-                'bunga'           => $bunga,
-                'nominal_cicilan' => $nominal_cicilan,
-                'durasi'          => $durasi,
-                // 'lokasi_pengguna'    => trim($params['lokasi_pengguna']),
-                // 'pic'             => trim($params['pic']),
-                'keterangan'      => trim($params['keterangan']),
                 'attachment'      => $attachmentName,
             ];
 
             $m_aset->where('id', $params['id'])->update($data_update);
 
-            if (!empty($oldKodeAsset)) {
-                (new \Model\Storage\PenyusutanKomersialAset_model())->where('kode_aset', $oldKodeAsset)->delete();
-            }
+            // if (!empty($oldKodeAsset) && $oldKodeAsset !== $kode_aset) {
+            //     \Model\Storage\PenyusutanKomersialAset_model::where('kode_aset', $oldKodeAsset)->delete();
+            //     \Model\Storage\PenyusutanFiskalAset_model::where('kode_aset', $oldKodeAsset)->delete();
+            // }
 
-            if (!empty($kode_aset)) {
-                $this->syncKomersial($kode_aset, $id_kategori, $tgl_perolehan, $nilai_perolehan);
-                $this->syncFiskal($kode_aset, $id_kategori, $tgl_perolehan, $nilai_perolehan);
-                $this->syncTermin($kode_aset, $tgl_perolehan, $nilai_perolehan, $dp, $durasi, $oldKodeAsset, $bunga);
-            }
+            // $model_for_log  = $m_aset->with(['penyusutan_komersial_aset', 'penyusutan_fiskal_aset', 'termin_aset'])->where('id', $params['id'])->first();
 
-            $model_for_log  = $m_aset->with(['penyusutan_komersial_aset', 'penyusutan_fiskal_aset', 'termin_aset'])->where('id', $params['id'])->first();
+            // $model_for_log  = $m_aset->with(['penyusutan_komersial_aset', 'penyusutan_fiskal_aset'])->where('id', $params['id'])->first();
+
             $userNama       = $this->userdata['detail_user']['nama_detuser'] ?? 'System';
             $deskripsi_log  = "Update data aset {$kode_aset} oleh {$userNama}";
             Modules::run('base/event/update', $model_for_log, $deskripsi_log, 'ms_aset', $params['id'], null);
@@ -773,6 +411,12 @@ class MasterAset extends Public_Controller {
 
     public function delete_data()
     {
+        if (empty($this->hakAkses['a_delete'])) {
+            $this->result['message'] = 'Anda tidak memiliki akses untuk menghapus aset.';
+            display_json($this->result);
+            return;
+        }
+
         $id = $this->input->post('params');
 
         try {
@@ -793,7 +437,9 @@ class MasterAset extends Public_Controller {
                 return;
             }
 
+            // $dt_log = $m_aset->with(['penyusutan_komersial_aset', 'penyusutan_fiskal_aset', 'termin_aset'])->where('id', $id)->first();
             $dt_log = $m_aset->with(['penyusutan_komersial_aset', 'penyusutan_fiskal_aset'])->where('id', $id)->first();
+
             
             if (!$dt_log) {
                 $this->result['message'] = 'Data aset tidak ditemukan.';
@@ -1245,206 +891,48 @@ class MasterAset extends Public_Controller {
     public function detail_data()
     {
         $id = $this->input->post('params');
-        $viewData = [
-            'data'          => [],
-            'komersial'     => [],
-            'fiskal'        => [],
-            'termin'        => [],
-        ];
+        $d_aset = (new \Model\Storage\MsAset_model())
+            ->select(
+                'ms_aset.kode_aset',
+                'ms_aset.id_kategori',
+                'ms_aset.deskripsi_aset',
+                'ms_aset.kode_pembiayaan',
+                'ms_aset.tgl_perolehan',
+                'ms_aset.nilai_perolehan',
+                'ms_aset.unit_pengguna',
+                'ms_aset.attachment',
+                'ms_aset_kategori.kategori_name',
+                'ms_pembiayaan.nama_pembiayaan'
+            )
+            ->leftJoin('ms_aset_kategori', 'ms_aset_kategori.id', '=', 'ms_aset.id_kategori')
+            ->leftJoin('ms_pembiayaan', 'ms_pembiayaan.kode_jenis_pembiayaan', '=', 'ms_aset.kode_pembiayaan')
+            ->where('ms_aset.id', $id)
+            ->first();
 
-        try {
-            $m_aset = new \Model\Storage\MsAset_model();
-            $d_aset = $m_aset->select(
-                    'ms_aset.*',
-                    'ms_aset_kategori.kategori_name',
-                    'ms_aset_kategori.masa_manfaat_komersial',
-                    'ms_aset_kategori.masa_manfaat_fiskal',
-                    'ms_kelompok.nama_kelompok',
-                    'ms_kelompok.trf_garis_lurus',
-                    'ms_kelompok.trf_saldo_menurun'
-                )
-                ->leftJoin('ms_aset_kategori', 'ms_aset_kategori.id', '=', 'ms_aset.id_kategori')
-                ->leftJoin('ms_kelompok', 'ms_kelompok.id', '=', 'ms_aset_kategori.id_kelompok')
-                ->where('ms_aset.id', $id)
-                ->first();
-
-            // cetak_r($d_aset, 1);
-
-            if ( $d_aset ) {
-                $viewData['data'] = $d_aset->toArray();
-
-                if ( !empty($d_aset->kode_aset) ) {
-                    $m_conf = new \Model\Storage\Conf();
-
-                    $sql_komersial  = "select id, kode_aset, kode_komersial, tanggal_jatuh_tempo, beban_penyusutan, akumulasi_penyusutan, nilai_buku_akhir, status from penyusutan_komersial_aset where kode_aset = '" . trim($d_aset->kode_aset) . "'";
-                    $komersial      = $m_conf->hydrateRaw($sql_komersial);
-
-                    $sql_fiskal     = "select id, kode_aset, kode_fiskal, tanggal_jatuh_tempo, beban_penyusutan, akumulasi_penyusutan, nilai_buku_akhir, status from penyusutan_fiskal_aset where kode_aset = '" . trim($d_aset->kode_aset) . "'";
-                    $fiskal      = $m_conf->hydrateRaw($sql_fiskal);
-
-                    $terminFields = $this->getTerminSelectFields();
-                    $sql_termin = "select {$terminFields} from termin_aset where kode_aset = '" . trim($d_aset->kode_aset) . "' order by kode_aset, kode_termin asc";
-                    $termin = $m_conf->hydrateRaw($sql_termin);
-
-                    if ( $komersial && method_exists($komersial, 'count') && $komersial->count() > 0 ) {
-                        $viewData['komersial'] = $komersial->toArray();
-                    }
-
-                    if ( $fiskal && method_exists($fiskal, 'count') && $fiskal->count() > 0 ) {
-                        $viewData['fiskal'] = $fiskal->toArray();
-                    }
-
-                    if ( $termin && method_exists($termin, 'count') && $termin->count() > 0 ) {
-                        $viewData['termin'] = $termin->toArray();
-                    }
-                }
-            }
-        } catch (\Illuminate\Database\QueryException $e) {
-            $viewData['data']       = [];
-            $viewData['komersial']  = [];
-            $viewData['fiskal']     = [];
-            $viewData['termin']     = [];
-        }
-
-        // cetak_r($viewData);die;
-
+        $viewData['data'] = $d_aset ? $d_aset->toArray() : [];
         echo $this->load->view($this->pathView . 'v_detail_data', $viewData, TRUE);
     }
 
 
-    private function syncFiskal($kode_aset, $id_kategori, $tgl_perolehan, $nilai_perolehan)
+    public function get_unit_list()
     {
-        try {
-            if (empty($kode_aset) || empty($id_kategori)) {
-                throw new \Exception("Kode aset atau ID kategori kosong.");
-            }
+        $m_conf     = new \Model\Storage\Conf();
+        $sql = " SELECT kode, MAX(nama) AS nama
+                    FROM wilayah
+                    WHERE jenis = 'UN'
+                    GROUP BY kode
+                    ORDER BY kode ASC; ";
 
-            $kategori = \Model\Storage\MsAsetKategori_model::find($id_kategori);
-
-            if (!$kategori) {
-                throw new \Exception("Kategori dengan ID {$id_kategori} tidak ditemukan.");
-            }
-
-            if (empty($kategori->id_kelompok)) {
-                throw new \Exception("Kategori ini belum memiliki Kelompok Aset yang dipilih.");
-            }
-
-            $kelompok = \Model\Storage\MsKelompok_model::find($kategori->id_kelompok);
-
-            if (!$kelompok) {
-                throw new \Exception("Data Kelompok Aset tidak ditemukan.");
-            }
-
-            $masa_bulan    = (int) $kategori->masa_manfaat_fiskal;       
-            $tarif_tahunan = (float) $kelompok->trf_saldo_menurun;  
-
-            if ($masa_bulan <= 0 || $tarif_tahunan <= 0) {
-                throw new \Exception("Masa manfaat fiskal (di kategori) atau Tarif Saldo Menurun (di kelompok) kosong/nol.");
-            }
-
-            $jadwal = new \Model\Storage\PenyusutanFiskalAset_model();
-            $jadwal->where('kode_aset', $kode_aset)->delete();
-            
-            $akumulasi          = 0;
-            $nilai_buku_awal    = $nilai_perolehan;
-            $beban_per_bulan    = 0;
-            $tanggal_awal_bulan = date('Y-m-01', strtotime($tgl_perolehan));
-            
-            $tahun_perolehan    = (int) date('Y', strtotime($tgl_perolehan));
-            $tahun_kalkulasi    = $tahun_perolehan; 
-
-            for ($i = 1; $i <= $masa_bulan; $i++) {
-                $row                = new \Model\Storage\PenyusutanFiskalAset_model();
-                $bulan_ke           = $i - 1; 
-                $tgl_periode        = strtotime("+{$bulan_ke} month", strtotime($tanggal_awal_bulan));
-                $tgl_jatuh_tempo    = date('Y-m-t 00:00:00', $tgl_periode);
-                $tahun_periode      = (int) date('Y', $tgl_periode);
-
-                if ($tahun_periode > $tahun_kalkulasi) {
-                    $beban_tahunan = $nilai_buku_awal * ($tarif_tahunan / 100);
-                    $beban_per_bulan = $beban_tahunan / 12;
-                    $tahun_kalkulasi = $tahun_periode;
-                    
-                } elseif ($i == 1) {
-            
-                    $beban_tahunan      = $nilai_buku_awal * ($tarif_tahunan / 100);
-                    $beban_per_bulan    = $beban_tahunan / 12;
-                }
-
-                if ($i == $masa_bulan) {
-                    $sisa_yang_harus_disusutkan = $nilai_perolehan - $akumulasi; 
-                    $beban_per_bulan            = $sisa_yang_harus_disusutkan; 
-                    $akumulasi                  = $nilai_perolehan;
-                    $nilai_buku_akhir           = 0;
-                } else {
-                    $akumulasi          += $beban_per_bulan;
-                    $nilai_buku_akhir   = $nilai_perolehan - $akumulasi;
-                }
-
-                $row->kode_aset              = $kode_aset;
-                $row->kode_fiskal            = $kode_aset . '-' . str_pad($i, 3, '0', STR_PAD_LEFT);
-                $row->tanggal_jatuh_tempo    = $tgl_jatuh_tempo;
-                $row->beban_penyusutan       = round($beban_per_bulan, 2);
-                $row->akumulasi_penyusutan   = round($akumulasi, 2);
-                $row->nilai_buku_akhir       = round($nilai_buku_akhir, 2);
-                $row->status                 = 0; 
-                
-                $row->save();
-
-                $nilai_buku_awal = $nilai_buku_akhir;
-            }
-            
-        } catch (\Exception $e) {
-            throw new \Exception("Gagal sync fiskal: " . $e->getMessage());
+        $d_conf     = $m_conf->hydrateRaw( $sql );
+        
+        $data       = null;
+        if ( $d_conf->count() > 0 ) {
+            $data = $d_conf->toArray();
         }
+
+        return $data;
     }
 
 
 
-    public function generateUlang()
-    {
-        $m_conf = new \Model\Storage\Conf();
-        $sql = "select * from ms_aset where keterangan = 'inject_data'";
-
-        $d_conf = $m_conf->hydrateRaw($sql);
-        $result = $d_conf->count() > 0 ? $d_conf->toArray() : [];
-        $errors = [];
-
-        foreach ($result as $d) {
-            $id             = $d['id'] ?? null;
-            $kode_aset      = $d['kode_aset'] ?? null;
-            $id_kategori    = $d['id_kategori'] ?? null;
-            $tgl_perolehan  = $d['tgl_perolehan'] ?? null;
-            $nilai_perolehan= $d['nilai_perolehan'] ?? null;
-            $dp             = $d['dp'] ?? 0;
-            $bunga          = $d['bunga'] ?? self::BUNGA_PERSEN;
-            $durasi         = $d['durasi'] ?? 0;
-
-            if (empty($id) || empty($kode_aset)) {
-                $errors[] = 'Data aset tidak memiliki ID atau kode aset.';
-                continue;
-            }
-
-            try {
-                $this->syncKomersial($kode_aset, $id_kategori, $tgl_perolehan, $nilai_perolehan);
-                $this->syncFiskal($kode_aset, $id_kategori, $tgl_perolehan, $nilai_perolehan);
-                $this->syncTermin($kode_aset, $tgl_perolehan, $nilai_perolehan, $dp, $durasi, null, $bunga);
-
-                \Model\Storage\MsAset_model::where('id', $id)->update([
-                    'keterangan' => null
-                ]);
-            } catch (\Exception $e) {
-                $errors[] = "Error syncing asset {$kode_aset}: " . $e->getMessage();
-            }
-        }
-
-        if (!empty($errors)) {
-            echo implode("<br>", array_map('htmlspecialchars', $errors));
-            return;
-        }
-
-        redirect('aset/MasterAset');
-    }
-
-    
 }
