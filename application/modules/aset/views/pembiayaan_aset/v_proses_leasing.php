@@ -240,17 +240,7 @@
                             <div class="form-group">
                                 <label for="tgl_dp">Tanggal DP</label>
                                 <div class="input-group date" id="tgl_dp_picker">
-                                    <input
-                                        type="text"
-                                        id="tgl_dp"
-                                        class="form-control"
-                                        placeholder="Pilih Tanggal"
-                                        style="caret-color:transparent; background-color:#fff;"
-                                        onkeydown="return false;"
-                                        onpaste="return false;"
-                                        ondrop="return false;"
-                                        value="<?php echo !empty($dp[0]['tanggal_dp']) ? htmlspecialchars($dp[0]['tanggal_dp'], ENT_QUOTES) : ''; ?>"
-                                        autocomplete="off">
+                                    <input type="text" id="tgl_dp" class="form-control" placeholder="Pilih Tanggal" style="caret-color:transparent; background-color:<?php echo !empty($dp) ? '#efefef' : '#fff'?>;" onkeydown="return false;" onpaste="return false;" ondrop="return false;" value="<?php echo !empty($dp[0]['tanggal_dp']) ? htmlspecialchars($dp[0]['tanggal_dp'], ENT_QUOTES) : ''; ?>" autocomplete="off" <?php echo !empty($dp) ? 'readonly' : ''?>>
                                     <span class="input-group-addon"><i class="fa fa-calendar"></i></span>
                                 </div>
                             </div>

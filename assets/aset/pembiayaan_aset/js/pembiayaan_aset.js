@@ -769,16 +769,15 @@ var pba = {
             return;
         }
 
-        // ===== RUMUS ANUITAS =====
-        var monthlyRate = (annualRate / 100) / 12;
-        var totalMonths = tenor;
+        var monthlyRate          = (annualRate / 100) / 12;
+        var totalMonths          = tenor;
         
         var baseInstallmentCents = Math.round(
             principalCents * (monthlyRate / (1 - Math.pow(1 + monthlyRate, -totalMonths)))
         );
 
-        var totalPaymentCents = baseInstallmentCents * tenor;
-        var totalInterestCents = totalPaymentCents - principalCents;
+        var totalPaymentCents   = baseInstallmentCents * tenor;
+        var totalInterestCents  = totalPaymentCents - principalCents;
 
         $('#cicilan-nominal-bulanan').text(formatMoney(baseInstallmentCents));
         $('#cicilan-tenor-label').text(tenor);
@@ -787,40 +786,55 @@ var pba = {
         $('#cicilan-selisih-pembulatan').text('');
         $('#simpan-detail-cicilan').prop('disabled', $('#simpan-detail-cicilan').attr('data-can-save') !== '1');
 
-        // ===== GENERATE TABEL =====
         tbody.empty();
         
-        var currentBalanceCents = principalCents;
-        var totalBungaTerakumulasi = 0;
+        var currentBalance = principalCents; 
         
         var startDate = moment(panel.attr('data-tanggal-dasar') || panel.attr('data-tanggal-pembiayaan'), 'YYYY-MM-DD', true);
         if (!startDate.isValid()) startDate = moment();
 
+        var hasDpAngsuran1 = panel.attr('data-has-dp-angsuran-1') === '1' || panel.attr('data-dp-angsuran-1') === '1';
+        // console.log(hasDpAngsuran1)
+        // return false
+
         for (var i = 1; i <= tenor; i++) {
             var dueDate = startDate.clone().add(i, 'months');
             
-            var bungaCents = Math.round(currentBalanceCents * monthlyRate);
-            var pokokCents = baseInstallmentCents - bungaCents;
+            var bunga = currentBalance * monthlyRate;
+            var pokok = baseInstallmentCents - bunga;
+            var nominal = baseInstallmentCents;
             
             if (i === tenor) {
-                pokokCents = currentBalanceCents;
-                bungaCents = baseInstallmentCents - pokokCents;
+                pokok = currentBalance;
+                bunga = baseInstallmentCents - pokok;
+                
+                if (bunga < 0) {
+                    bunga = 0;
+                    nominal = pokok; 
+                }
             }
             
-            currentBalanceCents -= pokokCents;
-            if (currentBalanceCents < 0) currentBalanceCents = 0;
+            currentBalance -= pokok;
+            if (currentBalance < 0) currentBalance = 0;
             
-            totalBungaTerakumulasi += bungaCents;
+            var displayPokok = Math.round(pokok);
+            var displayBunga = Math.round(bunga);
+            var displayBalance = Math.round(currentBalance);
+            var displayNominal = Math.round(nominal);
+
+            var isDpAngsuran1 = (i === 1 && hasDpAngsuran1);
+            var jenisLabel  = isDpAngsuran1 ? '<span class="label label-success">DP</span>' : '<span class="label label-default">CICILAN</span>';
+            var statusLabel = isDpAngsuran1 ? '<span class="label label-success">Lunas</span>' : '<span class="label label-warning">Pending</span>';
 
             var row = $('<tr>');
             row.append($('<td class="text-center">').text(i));                                          
             row.append($('<td class="text-left">').text(dueDate.format('DD MMMM YYYY')));               
-            row.append($('<td class="text-center">').html('<span class="label label-default">CICILAN</span>')); 
-            row.append($('<td class="text-right">').text(formatMoney(pokokCents)));                      
-            row.append($('<td class="text-right">').text(formatMoney(bungaCents)));                      
-            row.append($('<td class="text-right">').text(formatMoney(baseInstallmentCents)));            
-            row.append($('<td class="text-right">').text(formatMoney(currentBalanceCents)));             
-            row.append($('<td class="text-center">').html('<span class="label label-warning">Pending</span>')); 
+            row.append($('<td class="text-center">').html(jenisLabel)); 
+            row.append($('<td class="text-right">').text(formatMoney(displayPokok)));                      
+            row.append($('<td class="text-right">').text(formatMoney(displayBunga)));                      
+            row.append($('<td class="text-right">').text(formatMoney(displayNominal)));            
+            row.append($('<td class="text-right">').text(formatMoney(displayBalance)));             
+            row.append($('<td class="text-center">').html(statusLabel)); 
             tbody.append(row);
         }
     },
@@ -843,10 +857,7 @@ var pba = {
             var rawText = $(selector).text();
             var withoutThousands = String(rawText).replace(/\./g, '');
             var withDotDecimal = withoutThousands.replace(',', '.');
-            
-            // 3. Parse sebagai float, lalu bulatkan ke integer
             var value = parseFloat(withDotDecimal) || 0;
-            
             return String(Math.round(value));
         };
 
