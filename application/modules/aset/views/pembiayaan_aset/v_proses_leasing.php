@@ -490,11 +490,11 @@
                         Simpan Detail Cicilan
                     </button>
 
-                    <!-- < ?php if ($cicilanTersimpan == 1){?>
+                    <?php if ($cicilanTersimpan == 1){?>
                         <button type="button" id="edit-detail-cicilan" onclick="pba.edit_leasing(this, event)" class="btn btn-warning">
                             Edit Detail Cicilan 
                         </button>
-                    < ?php } ?> -->
+                    <?php } ?>
              
 
                 </div>

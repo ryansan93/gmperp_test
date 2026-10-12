@@ -323,7 +323,8 @@
                             </div>
                             <div class="row" style="margin-top:10px;">
                                 <div class="col-xs-6"><strong>Diajukan</strong></div>
-                                <div class="col-xs-6 text-right"><strong><?php echo number_format(($total_pembelian ?? 0), 0, ',', '.'); ?></strong></div>
+                                <?php $diajukan = $total_pembelian - $tandaJadiTotal  ?>
+                                <div class="col-xs-6 text-right"><strong><?php echo number_format(($diajukan ?? 0), 0, ',', '.'); ?></strong></div>
                             </div>
                         
                         <?php } else {?>

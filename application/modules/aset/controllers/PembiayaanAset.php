@@ -2418,6 +2418,8 @@ class PembiayaanAset extends Public_Controller
             } else if ($pembiayaan['jenis_biaya']  == 'PMB01'){
 
                 // CASH
+
+                // cetak_r($params, 1);
                 $total_pengurang_pokok = 0;
                 if (!empty($params['rows']) && is_array($params['rows'])) {
                     foreach ($params['rows'] as $tdp) {
