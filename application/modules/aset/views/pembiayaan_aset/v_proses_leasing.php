@@ -179,7 +179,7 @@
                                                 }
                                             ?>
                                             <tr>
-                                                <td><?php echo htmlspecialchars($tanggalTdp); ?></td>
+                                                <td><?php echo htmlspecialchars(tglIndonesia($tanggalTdp, '-', ' ')); ?></td>
                                                 <td><?php echo htmlspecialchars($item['deskripsi'] ?? '-'); ?></td>
                                                 <td class="text-right">Rp <?php echo number_format((float) $item['nominal'], 0, ',', '.'); ?></td>
                                                 <td><?php echo !empty($item['is_pengurang_pokok']) ? 'Ya' : 'Tidak'; ?></td>

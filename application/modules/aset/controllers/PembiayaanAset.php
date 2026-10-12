@@ -1767,11 +1767,14 @@ class PembiayaanAset extends Public_Controller
         $params = is_array($params) ? $params : [];
 
         try {
-            $kodePembiayaan = trim((string) ($params['kode_pembiayaan'] ?? ''));
-            $hargaBeli      = trim((string) ($params['harga_beli'] ?? ''));
-            $biayaLain      = trim((string) ($params['biaya_lain'] ?? '0'));
+
+            $kodePembiayaan = $params['kode_pembiayaan'];
+            $hargaBeli      = $params['harga_beli'];
+            $biayaLain      =$params['biaya_lain'];
             $jumlahTermin   = filter_var($params['jumlah_termin'] ?? null, FILTER_VALIDATE_INT);
             $rows           = $params['rows'] ?? null;
+
+            
 
             if ($kodePembiayaan === '') {
                 $this->result['message'] = 'Kode pembiayaan tidak valid.';
@@ -1812,6 +1815,7 @@ class PembiayaanAset extends Public_Controller
                             $tdpCents += $this->moneyToCents(((array) $tdpRow)['nominal'] ?? '0');
                         }
 
+                        
                         $sisaDijadwalkanCents = $totalPembelianCents - $tdpCents;
                         if ($sisaDijadwalkanCents < 0) {
                             throw new \RuntimeException('Total TDP melebihi total pembelian.');
@@ -1852,7 +1856,7 @@ class PembiayaanAset extends Public_Controller
                                 'kode_pembiayaan' => $kodePembiayaan,
                                 'termin_ke' => $terminKe,
                                 'jatuh_tempo' => $jatuhTempo,
-                                'nominal' => $this->centsToMoney($nominalCents),
+                                'nominal' => (int) substr($nominalCents, 0, -2),
                                 'status' => 'Belum',
                             ];
                         }
@@ -1863,15 +1867,18 @@ class PembiayaanAset extends Public_Controller
                             );
                         }
 
+                        
                         $connection->table('pembiayaan_tempo_rencana_aset')->insert([
-                            'kode_pembiayaan' => $kodePembiayaan,
-                            'harga_beli_aset' => $this->centsToMoney($hargaCents),
-                            'biaya_lain' => $this->centsToMoney($biayaCents),
-                            'total_pembelian' => $this->centsToMoney($totalPembelianCents),
-                            'dikurangi_tanda_jadi' => $this->centsToMoney($tdpCents),
-                            'sisa_dijadwalkan' => $this->centsToMoney($sisaDijadwalkanCents),
-                            'jumlah_termin' => $jumlahTermin,
+                            'kode_pembiayaan'       => $kodePembiayaan,
+                            'harga_beli_aset'       => (int) substr($hargaCents, 0, -2),
+                            'biaya_lain'            => (int) substr($biayaCents, 0, -2),
+                            'total_pembelian'       => (int) substr($totalPembelianCents, 0, -2),
+                            'dikurangi_tanda_jadi'  => (int) substr($tdpCents, 0, -2),
+                            'sisa_dijadwalkan'      => (int) substr($sisaDijadwalkanCents, 0, -2),
+                            'jumlah_termin'         => (int) substr($jumlahTermin, 0, -2),
                         ]);
+                        // cetak_r(123,1);
+
 
                         $connection->table('pembiayaan_tempo_detail_aset')->insert($insertedDetails);
 
@@ -2292,7 +2299,7 @@ class PembiayaanAset extends Public_Controller
                                 'kode_pembiayaan' => $kodePembiayaan,
                                 'termin_ke' => $terminKe,
                                 'jatuh_tempo' => $jatuhTempo,
-                                'nominal' => $this->centsToMoney($nominalCents),
+                                'nominal' => (int) substr($nominalCents, 0, -2),
                                 'status' => 'Belum',
                             ];
                         }
@@ -2312,13 +2319,13 @@ class PembiayaanAset extends Public_Controller
                             ->delete();
 
                         $connection->table('pembiayaan_tempo_rencana_aset')->insert([
-                            'kode_pembiayaan' => $kodePembiayaan,
-                            'harga_beli_aset' => $this->centsToMoney($hargaCents),
-                            'biaya_lain' => $this->centsToMoney($biayaCents),
-                            'total_pembelian' => $this->centsToMoney($totalPembelianCents),
-                            'dikurangi_tanda_jadi' => $this->centsToMoney($tdpCents),
-                            'sisa_dijadwalkan' => $this->centsToMoney($sisaDijadwalkanCents),
-                            'jumlah_termin' => $jumlahTermin,
+                            'kode_pembiayaan'       => $kodePembiayaan,
+                            'harga_beli_aset'       => (int) substr($hargaCents, 0, -2),
+                            'biaya_lain'            => (int) substr($biayaCents, 0, -2),
+                            'total_pembelian'       => (int) substr($totalPembelianCents, 0, -2),
+                            'dikurangi_tanda_jadi'  => (int) substr($tdpCents, 0, -2),
+                            'sisa_dijadwalkan'      => (int) substr($sisaDijadwalkanCents, 0, -2),
+                            'jumlah_termin'         => $jumlahTermin,
                         ]);
 
                         $connection->table('pembiayaan_tempo_detail_aset')->insert($insertedDetails);

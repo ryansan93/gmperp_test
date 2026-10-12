@@ -137,7 +137,7 @@
                                 <tbody id="tdp-history">
                                     <?php if (!empty($tdp)) : foreach ($tdp as $item) : ?>
                                         <tr>
-                                            <td><?php echo htmlspecialchars($item['tanggal'] ?? '-'); ?></td>
+                                            <td><?php echo htmlspecialchars(tglIndonesia($item['tanggal'], '-', ' ') ?? '-'); ?></td>
                                             <td><?php echo htmlspecialchars($item['deskripsi'] ?? '-'); ?></td>
                                             <td class="text-right">Rp <?php echo number_format((float) $item['nominal'], 0, ',', '.'); ?></td>
                                             <td><?php echo !empty($item['is_pengurang_pokok']) ? 'Ya' : 'Tidak'; ?></td>
@@ -167,7 +167,7 @@
                 <div class="panel-body">
                     <div class="row" style="margin-bottom:15px;">
                         <div class="col-xs-12">
-                            <strong>Harga beli aset:</strong> <?php echo $hargaBeli; ?> <span class="text-muted">(dari master aset)</span>
+                            <strong>Harga beli aset: </strong>Rp. <?php echo $hargaBeli; ?> <span class="text-muted"></span>
                         </div>
                     </div>
 

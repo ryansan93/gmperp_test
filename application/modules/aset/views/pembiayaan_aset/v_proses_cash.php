@@ -328,7 +328,7 @@
                         
                         <?php } else {?>
                             <hr style="margin: 15px 0;">
-                            ikie
+                            
                             <div class="row">
                                 <div class="col-xs-6"><strong>Total pembelian</strong></div>
                                 <div class="col-xs-6 text-right"><strong id="total-pembelian">0,00</strong></div>
