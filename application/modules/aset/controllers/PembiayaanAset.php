@@ -579,7 +579,7 @@ class PembiayaanAset extends Public_Controller
                         } elseif ($jenisBiaya === 'PMB02') {
                             \Model\Storage\PembiayaanTempoRencanaAset_model::where('kode_pembiayaan', $kodePembiayaan)->update($dataUpdate);
                         } elseif ($jenisBiaya === 'PMB03') {
-                            \Model\Storage\PembiayaanTempoDetailAset_model::where('kode_pembiayaan', $kodePembiayaan)->update($dataUpdate);
+                            \Model\Storage\PembiayaanTempoRencanaAset_model::where('kode_pembiayaan', $kodePembiayaan)->update($dataUpdate);
                         }
                     } else {
                         throw new \Exception('Data TDP tidak ditemukan atau sudah berubah.');
@@ -899,11 +899,8 @@ class PembiayaanAset extends Public_Controller
                         $sql_angsuran = "SELECT angsuran_ke FROM pembiayaan_dp_aset WHERE jenis_komponen = 'ANGSURAN' AND kode_pembiayaan = '" . $kodePembiayaan . "'";
                         $data_angsuran = $m_conf->hydrateRaw($sql_angsuran)->toArray();
 
-                        // PERBAIKAN: Paksa ubah semua nilai menjadi Integer (angka)
+                        
                         $paidAngsuranList = array_map('intval', array_column($data_angsuran, 'angsuran_ke'));
-
-                        // (Opsional) Untuk memastikan datanya benar, bisa di-uncomment sementara:
-                        // cetak_r($paidAngsuranList, 1); 
 
                         for ($i = 1; $i <= $tenor; $i++) {
                             $monthOffset = $i - 1;
@@ -2466,6 +2463,115 @@ class PembiayaanAset extends Public_Controller
                 ];
     
                 \Model\Storage\PembiayaanCicilanAset_model::where('kode_pembiayaan', $kodePembiayaan)->update($data_pelunasan);
+
+                // UPDATE CICILAN
+                
+                $m_conf = new \Model\Storage\Conf();
+                $connection = $this->getConnection();
+
+                $connection->table('pembiayaan_cicilan_detail_aset')->where('kode_pembiayaan', $kodePembiayaan)->delete();
+                
+                $sql_pokok_hutang = " SELECT dikurangi_tanda_jadi, bunga_flat_persen, tenor_bulan, pokok_hutang from pembiayaan_cicilan_aset where kode_pembiayaan =  '" . $kodePembiayaan . "'";
+                $pokokHutang = $m_conf->hydrateRaw($sql_pokok_hutang)->toArray();
+
+                $sisaPokok = $pokokHutang[0]['pokok_hutang'] - $pokokHutang[0]['dikurangi_tanda_jadi'];
+                $tenor      = $pokokHutang[0]['tenor_bulan'];
+                $bunga      = $pokokHutang[0]['bunga_flat_persen'];
+
+                
+                $detailCicilan = [];
+
+                $sql_angsuran = "SELECT angsuran_ke FROM pembiayaan_dp_aset WHERE jenis_komponen = 'ANGSURAN' AND kode_pembiayaan = '" . $kodePembiayaan . "'";
+                $data_angsuran = $m_conf->hydrateRaw($sql_angsuran)->toArray();
+
+                $paidAngsuranList = array_map('intval', array_column($data_angsuran, 'angsuran_ke'));
+
+                $monthlyRate = ($bunga / 100) / 12;
+
+                
+                $cicilanTetap = (int) round(
+                    $sisaPokok * (
+                        $monthlyRate / (1 - pow(1 + $monthlyRate, -$tenor))
+                    )
+                );
+
+                $baseDueDate = '';
+                $dpRows = $connection->table('pembiayaan_dp_aset')
+                    ->selectRaw('CONVERT(varchar(10), jatuh_tempo, 23) as jatuh_tempo')
+                    ->where('kode_pembiayaan', $kodePembiayaan)
+                    ->where('jenis_komponen', 'ANGSURAN')
+                    ->get();
+                $dpRow = !empty($dpRows) ? (array) reset($dpRows) : [];
+                
+
+                if (!empty($dpRow['jatuh_tempo'])) {
+                    $baseDueDate = (string) $dpRow['jatuh_tempo'];
+                } else {
+                    $pembiayaanRows = $connection->table('pembiayaan_aset')
+                        ->selectRaw('CONVERT(varchar(10), tgl_pembiayaan, 23) as tgl_pembiayaan')
+                        ->where('kode_pembiayaan', $kodePembiayaan)
+                        ->get();
+                    $pembiayaanRow = !empty($pembiayaanRows) ? (array) reset($pembiayaanRows) : [];
+                    $baseDueDate = (string) ($pembiayaanRow['tgl_pembiayaan'] ?? '');
+                }
+
+
+                for ($i = 1; $i <= $tenor; $i++) {
+                    $monthOffset = $i - 1;
+                    $dueDate = $this->addMonthsClamped($baseDueDate, $monthOffset);
+
+                    $sisaPokokSebelumnya = $sisaPokok;
+
+                    if ($i === $tenor) {
+                        $pokokBln     = $sisaPokok;
+                        $bungaBln     = $cicilanTetap - $pokokBln;
+                        $totalCicilan = $cicilanTetap;
+                    } else {
+                        $bungaBln     = $sisaPokok * $monthlyRate;   
+                        $pokokBln     = $cicilanTetap - $bungaBln;
+                        $totalCicilan = $cicilanTetap;
+                    }
+
+                    $sisaPokok = $sisaPokok - $pokokBln;
+                    if ($sisaPokok < 0) {
+                        $sisaPokok = 0;
+                    }
+
+                    $jenisCicilan = 'Cicilan';
+                    $statusCicilan = 0;
+
+                    if (in_array($i, $paidAngsuranList)) {
+                        $jenisCicilan = 'DP'; 
+                        $statusCicilan = 1;
+                    }
+
+                    $detailCicilan[] = [
+                        'kode_pembiayaan'         => $kodePembiayaan,
+                        'kode_cicilan_pembiayaan' => $kodePembiayaan . '-' . str_pad((string) $i, 3, '0', STR_PAD_LEFT),
+                        'angsuran_ke'             => $i,
+                        'jatuh_tempo'             => $dueDate,
+                        'total_pokok'             => (int) round($sisaPokokSebelumnya),
+                        'pokok'                   => (int) round($pokokBln),
+                        'bunga'                   => (int) round($bungaBln),
+                        'nominal'                 => (int) round($totalCicilan),
+                        'sisa_pokok_hutang'       => (int) round($sisaPokok),
+                        'jenis_cicilan'           => $jenisCicilan,
+                        'status'                  => $statusCicilan,
+                    ];
+                }
+
+                if (!empty($detailCicilan)) {
+                    $connection->table('pembiayaan_cicilan_detail_aset')->insert($detailCicilan);
+                }
+
+                $connection->table('pembiayaan_aset')->where('kode_pembiayaan', $kodePembiayaan)->update([
+                    'status' => 'SELESAI',
+                ]);
+                // END UPDATE CICILAN
+
+
+
+
                 // END Leasin
 
             }

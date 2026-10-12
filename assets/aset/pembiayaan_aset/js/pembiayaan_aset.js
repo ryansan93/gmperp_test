@@ -780,6 +780,8 @@ var pba = {
         var totalInterestCents  = totalPaymentCents - principalCents;
 
         $('#cicilan-nominal-bulanan').text(formatMoney(baseInstallmentCents));
+        $('.dp-installment-row').find('.dp-nominal').val(formatMoney(baseInstallmentCents));
+
         $('#cicilan-tenor-label').text(tenor);
         $('#cicilan-total-bunga').text(formatMoney(totalInterestCents));
         $('#cicilan-total-ar').text(formatMoney(totalPaymentCents));
