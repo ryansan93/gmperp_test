@@ -77,7 +77,7 @@ var pba = {
             var isFilter = select.attr('id') === 'filter_kategori_aset';
             select.select2({
                 width: '100%',
-                allowClear: isFilter,
+                allowClear: true, 
                 placeholder: isFilter ? 'All' : 'Pilih data...',
                 dropdownParent: isFilter ? $('#history') : $('#tab-action-content')
             });
@@ -262,26 +262,26 @@ var pba = {
             //     }
             // })
             
-            .off('click.tempoRemove', '.tempo-remove-row')
-            .on('click.tempoRemove', '.tempo-remove-row', function () {
-                if (!canMutate) {
-                    return;
-                }
-                $(this).closest('.tempo-row').remove();
-                pba.renumber_tempo_rows();
-                pba.hitung_tempo();
-            })
+            // .off('click.tempoRemove', '.tempo-remove-row')
+            // .on('click.tempoRemove', '.tempo-remove-row', function () {
+            //     if (!canMutate) {
+            //         return;
+            //     }
+            //     $(this).closest('.tempo-row').remove();
+            //     pba.renumber_tempo_rows();
+            //     pba.hitung_tempo();
+            // })
             // Submit form
-            .off('submit.tempoSave', '#form-tempo')
-            .on('submit.tempoSave', '#form-tempo', function (event) {
-                event.preventDefault();
-                pba.save_rencana_tempo();
-            })
+            // .off('submit.tempoSave', '#form-tempo')
+            // .on('submit.tempoSave', '#form-tempo', function (event) {
+            //     event.preventDefault();
+            //     pba.save_rencana_tempo();
+            // })
             // Simpan button
-            .off('click.tempoSaveBtn', '#btn_simpan_tempo')
-            .on('click.tempoSaveBtn', '#btn_simpan_tempo', function () {
-                pba.save_rencana_tempo();
-            });
+            // .off('click.tempoSaveBtn', '#btn_simpan_tempo')
+            // .on('click.tempoSaveBtn', '#btn_simpan_tempo', function () {
+            //     pba.save_rencana_tempo();
+            // });
 
         // Input biaya lain
         $(document)
@@ -307,6 +307,13 @@ var pba = {
     },
 
 
+    remove_row_tempo: function(elm){
+        $(elm).closest('.tempo-row').remove();
+        pba.renumber_tempo_rows();
+        pba.hitung_tempo();
+    },
+
+
     load_tempo : function() {
        
         let kode = $("#key_kode_pembiayaan").val() ?? kode_pembiayaan
@@ -327,7 +334,7 @@ var pba = {
             },
             error: function () {
                 hideLoading();
-                button.prop('disabled', false);
+                // button.prop('disabled', false);
                 bootbox.alert('Permintaan penyimpanan tempo gagal diproses.');
             }
         });
@@ -353,7 +360,6 @@ var pba = {
         };
         
         var url = urlMap[kodeJenis] || ('aset/PembiayaanAset/ProsesLeasing');
-
 
         $.ajax({
             url: url,
@@ -412,8 +418,8 @@ var pba = {
             var row = $('<div class="row tempo-row" style="margin-bottom:8px;">' +
                 '<div class="col-xs-1" style="padding-top:7px;"><strong>' + i + '</strong></div>' +
                 '<div class="col-xs-5"><div class="input-group date tempo-jatuh-tempo-picker"><input type="text" class="form-control tempo-jatuh-tempo" placeholder="Pilih Tanggal"><span class="input-group-addon"><i class="fa fa-calendar"></i></span></div></div>' +
-                '<div class="col-xs-5"><div class="input-group"><span class="input-group-addon">Rp</span><input type="text" class="form-control text-right tempo-nominal" inputmode="numeric" autocomplete="off" placeholder="0"></div></div>' +
-                '<div class="col-xs-1 text-right"><button type="button" class="btn btn-danger btn-sm tempo-remove-row"><i class="fa fa-times"></i></button></div>' +
+                '<div class="col-xs-5"><div class="input-group"><span class="input-group-addon">Rp</span><input type="text" class="form-control text-right tempo-nominal" inputmode="numeric" autocomplete="off" oninput="pba.hitung_tempo();" placeholder="0"></div></div>' +
+                '<div class="col-xs-1 text-right"><button type="button" class="btn btn-danger btn-sm tempo-remove-row" onclick="pba.remove_row_tempo(this)"><i class="fa fa-times"></i></button></div>' +
                 '</div>');
             $('#tempo-rows').append(row);
             if ($.fn.datetimepicker) {
@@ -451,18 +457,32 @@ var pba = {
             return;
         }
 
+        // 1. AMBIL HARGA BELI - Prioritas: data-attribute > teks di DOM > 0
         var hargaBeli = Number(panel.data('harga-beli') || 0);
+
+        // Fallback: jika data-attribute kosong, ambil dari teks "Harga beli aset: Rp. 240.000.000"
+        if (!hargaBeli) {
+            var hargaBeliText = $('#harga_beli_text').text();
+            var cleanHargaBeli = String(hargaBeliText).replace(/[^\d]/g, '');
+            hargaBeli = Number(cleanHargaBeli) || 0;
+        }
+
+        // 2. AMBIL TDP
         var tdp = Number(panel.data('tdp-total') || 0);
-        var biayaLain = Number(pba.to_backend_nominal($('#biaya_lain_tempo').val()));
+
+        // 3. AMBIL BIAYA LAIN & JUMLAH TERMIN
+        var biayaLain = Number(pba.to_backend_nominal($('#biaya_lain_tempo').val()) || 0);
         var jumlahTermin = Number($('#jumlah_termin').val() || 0);
 
+        // 4. HITUNG
         var totalPembelian = hargaBeli + biayaLain;
         var sisa = totalPembelian - tdp;
 
+        // 5. HITUNG TOTAL TERMIN
         var totalTermin = 0;
         var validRows = 0;
         $('#tempo-rows .tempo-row').each(function () {
-            var nominal = Number(pba.to_backend_nominal($(this).find('.tempo-nominal').val()));
+            var nominal = Number(pba.to_backend_nominal($(this).find('.tempo-nominal').val()) || 0);
             var tanggal = $(this).find('.tempo-jatuh-tempo').val();
             totalTermin += nominal;
             if (nominal > 0 && tanggal) {
@@ -470,6 +490,7 @@ var pba = {
             }
         });
 
+        // 6. UPDATE TAMPILAN
         $('#display_biaya_lain').text(pba.format_rupiah(biayaLain));
         $('#display_total_pembelian').text(pba.format_rupiah(totalPembelian));
         $('#display_tdp').text('(' + pba.format_rupiah(tdp) + ')');
@@ -480,21 +501,22 @@ var pba = {
         var isMatch = (validRows === jumlahTermin) && (selisih === 0) && (jumlahTermin > 0);
 
         if (jumlahTermin > 0 && selisih !== 0) {
-            $('#selisih_tempo').text('Selisih: ' + pba.format_rupiah(selisih)).removeClass('text-success').addClass('text-danger');
+            $('#selisih_tempo').text('Selisih: ' + pba.format_rupiah(selisih))
+                .removeClass('text-success').addClass('text-danger');
         } else if (jumlahTermin > 0 && selisih === 0) {
-            $('#selisih_tempo').text('✓ Pas').removeClass('text-danger').addClass('text-success');
+            $('#selisih_tempo').text('✓ Pas')
+                .removeClass('text-danger').addClass('text-success');
         } else {
             $('#selisih_tempo').text('');
         }
 
         $('#btn_simpan_tempo').prop('disabled', !isMatch);
+
+        console.log(isMatch)
     },
 
     save_rencana_tempo: function () {
         var panel = $('#detail-tempo');
-        if (panel.attr('data-can-mutate') !== '1') {
-            return;
-        }
 
         var jumlahTermin = Number($('#jumlah_termin').val() || 0);
         if (jumlahTermin < 1) {
@@ -536,14 +558,38 @@ var pba = {
         }
 
         var params = {
-            kode_pembiayaan: $('#kode_pembiayaan_tempo').val(),
+            kode_pembiayaan: $('#key_kode_pembiayaan').val(),
             harga_beli: String(panel.data('harga-beli')),
             biaya_lain: pba.to_backend_nominal($('#biaya_lain_tempo').val()),
             jumlah_termin: String(jumlahTermin),
             rows: rows
         };
 
-        pba.tdp_request('aset/PembiayaanAset/save_rencana_tempo', params, $('#btn_simpan_tempo'));
+        // pba.tdp_request('aset/PembiayaanAset/save_rencana_tempo', params, $('#btn_simpan_tempo'));
+
+        $.ajax({
+            url: 'aset/PembiayaanAset/save_rencana_tempo',
+            type: 'POST',
+            dataType: 'JSON',
+            data: { params: params },
+            beforeSend: function () { showLoading(); },
+            success: function (response) {
+                hideLoading();
+                if (response.status == 1) {
+                    bootbox.alert(response.message, function () {
+                        pba.load_tempo(params.kode_pembiayaan)
+                    });
+                } else {
+                    button.prop('disabled', false);
+                    bootbox.alert(response.message || 'Data gagal disimpan.');
+                }
+            },
+            error: function () {
+                hideLoading();
+                // button.prop('disabled', false);
+                bootbox.alert('Permintaan penyimpanan TDP gagal diproses.');
+            }
+        });
     },
 
     update_pelunasan_rows: function () {
@@ -1341,7 +1387,8 @@ var pba = {
                     bootbox.alert(response.message, function () {
                         pba.load_tdp(kode_pembiayaan);
                         pba.load_hitung_cicilan(params.kode_pembiayaan);
-                        pba.load_pelunasan(params.kode_pembiayaan)
+                        pba.load_pelunasan(params.kode_pembiayaan);
+                        pba.load_tempo(params.kode_pembiayaan);
                     });
                 } else {
                     // button.prop('disabled', false);
@@ -1527,7 +1574,7 @@ var pba = {
     },
 
     batal_edit_pelunasan: function () {
-        var kode_pembiayaan = $("#key_kode_pembiayaan").val();
+        // var kode_pembiayaan = $("#key_kode_pembiayaan").val();
         $("#detail-pelunasan").find("input").prop("disabled", true);
 
         $("#pelunasan-add-row").prop("disabled", true);
@@ -1541,6 +1588,50 @@ var pba = {
 
         $(".pelunasan-remove-row").prop("disabled", true);
         $("#pelunasan-delete").css("display", "none");
+
+        // pba.load_pelunasan(kode_pembiayaan)
+    },
+
+    
+    edit_tempo: function () {
+       $("#detail-tempo").find("input").prop("disabled", false);
+
+        $("#button-tempo").html(`
+            <button type="button" id="btn_simpan_tempo" onclick="pba.save_rencana_tempo();" class="btn btn-primary">
+                Simpan rencana tempo
+            </button>
+
+            <button type="button"
+                onclick="pba.batal_edit_tempo()"
+                class="btn btn-default">
+                Batal
+            </button>
+        `);
+
+
+        $(".tempo-jatuh-tempo-picker").css("background-color", "#fff");
+
+        // $("#pelunasan-delete").css("display", "block");
+
+       
+        // $("#pelunasan-add-row").prop("disabled", false);
+
+        $(".tempo-remove-row").prop("disabled", false);
+    },
+
+    batal_edit_tempo: function () {
+        // var kode_pembiayaan = $("#key_kode_pembiayaan").val();
+        $("#detail-tempo").find("input").prop("disabled", true);
+
+        $("#button-tempo").html(`
+            <button type="button"
+                onclick="pba.edit_tempo()"
+                class="btn btn-warning">
+                Edit Tempo
+            </button>
+        `);
+
+        $(".tempo-remove-row").prop("disabled", true);
 
         // pba.load_pelunasan(kode_pembiayaan)
     },
@@ -2060,30 +2151,6 @@ var pba = {
 
 
 
-    edit_tempo: function () {
-        var kodePembiayaan = $('#kode_pembiayaan_tempo').val();
-        if (!kodePembiayaan) return;
-
-        $.ajax({
-            url: 'aset/PembiayaanAset/get_detail_tempo',
-            type: 'POST',
-            dataType: 'html',
-            data: { params: { kode_pembiayaan: kodePembiayaan } },
-            success: function (html) {
-                
-                var dialog = bootbox.dialog({
-                    title: 'Edit Rencana Tempo',
-                    message: html,
-                    size: 'large',
-                    closeButton: true
-                });
-            },
-            error: function () {
-                // dialog.hide();
-                bootbox.alert('Gagal memuat data tempo.');
-            }
-        });
-    },
 
         // Hitung Total di dalam Bootbox Modal
     hitung_edit_tempo: function () {

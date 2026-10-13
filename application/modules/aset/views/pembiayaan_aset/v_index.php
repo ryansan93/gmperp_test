@@ -77,6 +77,7 @@
                                     <tr>
                                         <th class="text-center" style="width:50px;">No</th>
                                         <th>Kode Pembiayaan</th>
+                                        <th>Jenis Pembiayaan</th>
                                         <th>Aset</th>
                                         <th>Kategori</th>
                                         <th>Unit</th>
@@ -86,7 +87,16 @@
                                         <th class="text-center" style="width:180px;">Aksi</th>
                                     </tr>
                                 </thead>
-                                <tbody><tr><td colspan="9" class="text-center">Memuat data...</td></tr></tbody>
+                                <tbody>
+                                    <tr>
+                                        <td colspan="10" class="text-center">
+                                            <div class="col-xs-12 no-padding notifContain">
+                                                <div class="spinner-load"></div>
+                                            </div>
+                                            Memuat data...
+                                        </td>
+                                    </tr>
+                                </tbody>
                             </table>
                         </div>
                     </fieldset>

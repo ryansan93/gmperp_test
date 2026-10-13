@@ -507,6 +507,29 @@ class PembiayaanAset extends Public_Controller
                 \Model\Storage\PembiayaanPelunasanAset_model::where('kode_pembiayaan', $kodePembiayaan)->update($data_update);
             }
 
+            if ($data_aset[0]['kode_jenis_pembiayaan'] == 'PMB02') {
+
+                $total_pembelian = 0;
+                
+                if ($total_pembelian <= 0) {
+                    $existing_tempo = \Model\Storage\PembiayaanTempoRencanaAset_model::where('kode_pembiayaan', $kodePembiayaan)->first();
+                    $total_pembelian = $existing_tempo ? floatval($existing_tempo->total_pembelian ?? 0) : 0;
+                }
+
+                $is_pengurang           = !empty($params['is_pengurang_pokok']);
+                $dikurangi_tanda_jadi   = $is_pengurang ? floatval($totap_dp) : 0;
+
+                $sisa_dijadwalkan       = $total_pembelian - $dikurangi_tanda_jadi;
+
+                $data_update = [
+                    'dikurangi_tanda_jadi'  => $dikurangi_tanda_jadi,
+                    'sisa_dijadwalkan'      => $sisa_dijadwalkan,
+                ];
+
+            
+                \Model\Storage\PembiayaanTempoRencanaAset_model::where('kode_pembiayaan', $kodePembiayaan)->update($data_update);
+            }
+
             // $userNama = $this->userdata['detail_user']['nama_detuser'] ?? 'System';
             // $aksi = $isInsert ? 'ditambahkan' : 'diperbarui';
             // $deskripsi_log = "Data TDP {$kodePembiayaan} {$aksi} oleh {$userNama}";
@@ -920,7 +943,7 @@ class PembiayaanAset extends Public_Controller
         // END GET TDP
 
 
-        $sql_tempo    = "select ptra.kode_pembiayaan, ptra.harga_beli_aset, ptra.jumlah_termin, ptra.total_pembelian, ptra.sisa_dijadwalkan, 
+        $sql_tempo    = "select ptra.id, ptra.dikurangi_tanda_jadi, ptra.biaya_lain, ptra.kode_pembiayaan, ptra.harga_beli_aset, ptra.jumlah_termin, ptra.total_pembelian, ptra.sisa_dijadwalkan, 
                         ptda.jatuh_tempo , ptda.nominal, ptda.termin_ke, ptda.status 
                         from pembiayaan_tempo_rencana_aset ptra  
                         inner join pembiayaan_tempo_detail_aset ptda on ptra.kode_pembiayaan = ptda.kode_pembiayaan 
@@ -945,6 +968,8 @@ class PembiayaanAset extends Public_Controller
                     'jumlah_termin'         => $row['jumlah_termin'],
                     'total_pembelian'       => $row['total_pembelian'],
                     'sisa_dijadwalkan'      => $row['sisa_dijadwalkan'],
+                    'biaya_lain'            => $row['biaya_lain'],
+                    'dikurangi_tanda_jadi'  => $row['dikurangi_tanda_jadi'],
                 ];
             }
 
@@ -958,7 +983,8 @@ class PembiayaanAset extends Public_Controller
         }
         $data['pelunasan'] = $pelunasan ?? [];
         $data['aset']      = $data_aset[0];
-        $data['tempo']     = $data_tempo;
+        $data['tempo']     = $tempo;
+        $data['tdp']       = $data_tdp;
 
         // cetak_r($data, 1);
 
@@ -2250,138 +2276,127 @@ class PembiayaanAset extends Public_Controller
         $params = is_array($params) ? $params : [];
 
         try {
-
-            $kodePembiayaan = $params['kode_pembiayaan'];
-            $hargaBeli      = $params['harga_beli'];
-            $biayaLain      =$params['biaya_lain'];
+            $kodePembiayaan = $params['kode_pembiayaan'] ?? '';
+            $hargaBeli      = $params['harga_beli'] ?? '0';
+            $biayaLain      = $params['biaya_lain'] ?? '0';
             $jumlahTermin   = filter_var($params['jumlah_termin'] ?? null, FILTER_VALIDATE_INT);
-            $rows           = $params['rows'] ?? null;
-
-            
+            $rows           = $params['rows'] ?? [];
 
             if ($kodePembiayaan === '') {
-                $this->result['message'] = 'Kode pembiayaan tidak valid.';
-            } elseif ($jumlahTermin === false || $jumlahTermin < 1 || $jumlahTermin > 60) {
-                $this->result['message'] = 'Jumlah termin harus antara 1 dan 60.';
-            } elseif (!is_array($rows) || count($rows) !== $jumlahTermin) {
-                $this->result['message'] = 'Jumlah baris termin tidak sesuai dengan jumlah termin yang diminta.';
-            } elseif (!preg_match('/^\d{1,13}(\.\d{1,2})?$/', $hargaBeli)) {
-                $this->result['message'] = 'Harga beli tidak valid.';
-            } elseif (!preg_match('/^\d{1,13}(\.\d{1,2})?$/', $biayaLain)) {
-                $this->result['message'] = 'Biaya lain tidak valid.';
-            } else {
-                $pembiayaan = \Model\Storage\PembiayaanAset_model::where('kode_pembiayaan', $kodePembiayaan)->first();
-                $aset = $pembiayaan ? $this->getAset($pembiayaan->kode_aset) : null;
-
-                if (!$pembiayaan || !$aset) {
-                    $this->result['message'] = 'Data pembiayaan atau aset tidak ditemukan.';
-                } elseif ($this->isPembiayaanLocked($pembiayaan)) {
-                    $this->result['message'] = 'Rencana tempo tidak dapat disimpan karena pembiayaan sudah selesai atau aset sudah masuk tahap Penerimaan Aset.';
-                } else {
-                    $connection = $this->getConnection();
-                    $stored = $connection->transaction(function () use ($connection, $kodePembiayaan, $hargaBeli, $biayaLain, $jumlahTermin, $rows) {
-                        
-                        if ($connection->table('pembiayaan_tempo_rencana_aset')->where('kode_pembiayaan', $kodePembiayaan)->exists()) {
-                            throw new \RuntimeException('Rencana tempo untuk pembiayaan ini sudah pernah disimpan.');
-                        }
-
-                        $hargaCents = $this->moneyToCents($hargaBeli);
-                        $biayaCents = $this->moneyToCents($biayaLain);
-                        $totalPembelianCents = $hargaCents + $biayaCents;
-
-                        $tdpRows = $connection->table('pembiayaan_tdp_aset')
-                            ->where('kode_pembiayaan', $kodePembiayaan)
-                            ->where('is_pengurang_pokok', 1)
-                            ->get();
-                        $tdpCents = 0;
-                        foreach ($tdpRows as $tdpRow) {
-                            $tdpCents += $this->moneyToCents(((array) $tdpRow)['nominal'] ?? '0');
-                        }
-
-                        
-                        $sisaDijadwalkanCents = $totalPembelianCents - $tdpCents;
-                        if ($sisaDijadwalkanCents < 0) {
-                            throw new \RuntimeException('Total TDP melebihi total pembelian.');
-                        }
-
-                        $totalTerminCents = 0;
-                        $insertedDetails = [];
-                        $seenTerminKe = [];
-
-                        foreach ($rows as $index => $row) {
-                            if (!is_array($row)) {
-                                throw new \RuntimeException('Baris termin ke-' . ($index + 1) . ' tidak valid.');
-                            }
-
-                            $terminKe = $index + 1;
-                            $jatuhTempo = trim((string) ($row['jatuh_tempo'] ?? ''));
-                            $nominal = trim((string) ($row['nominal'] ?? ''));
-
-                            if (!$this->isValidSqlDate($jatuhTempo)) {
-                                throw new \RuntimeException('Tanggal jatuh tempo termin ke-' . $terminKe . ' tidak valid.');
-                            }
-                            if (!preg_match('/^\d{1,13}(\.\d{1,2})?$/', $nominal)) {
-                                throw new \RuntimeException('Nominal termin ke-' . $terminKe . ' tidak valid.');
-                            }
-
-                            $nominalCents = $this->moneyToCents($nominal);
-                            if ($nominalCents <= 0) {
-                                throw new \RuntimeException('Nominal termin ke-' . $terminKe . ' harus lebih dari 0.');
-                            }
-
-                            if (isset($seenTerminKe[$jatuhTempo])) {
-                                throw new \RuntimeException('Tanggal jatuh tempo termin ke-' . $terminKe . ' duplikat dengan termin ke-' . $seenTerminKe[$jatuhTempo] . '.');
-                            }
-                            $seenTerminKe[$jatuhTempo] = $terminKe;
-
-                            $totalTerminCents += $nominalCents;
-                            $insertedDetails[] = [
-                                'kode_pembiayaan' => $kodePembiayaan,
-                                'termin_ke' => $terminKe,
-                                'jatuh_tempo' => $jatuhTempo,
-                                'nominal' => (int) substr($nominalCents, 0, -2),
-                                'status' => 'Belum',
-                            ];
-                        }
-
-                        if ($totalTerminCents !== $sisaDijadwalkanCents) {
-                            throw new \RuntimeException(
-                                'Total nominal termin (' . $this->centsToMoney($totalTerminCents) . ') tidak sama dengan sisa dijadwalkan (' . $this->centsToMoney($sisaDijadwalkanCents) . ').'
-                            );
-                        }
-
-                        
-                        $connection->table('pembiayaan_tempo_rencana_aset')->insert([
-                            'kode_pembiayaan'       => $kodePembiayaan,
-                            'harga_beli_aset'       => (int) substr($hargaCents, 0, -2),
-                            'biaya_lain'            => (int) substr($biayaCents, 0, -2),
-                            'total_pembelian'       => (int) substr($totalPembelianCents, 0, -2),
-                            'dikurangi_tanda_jadi'  => (int) substr($tdpCents, 0, -2),
-                            'sisa_dijadwalkan'      => (int) substr($sisaDijadwalkanCents, 0, -2),
-                            'jumlah_termin'         => (int) substr($jumlahTermin, 0, -2),
-                        ]);
-                        // cetak_r(123,1);
-
-
-                        $connection->table('pembiayaan_tempo_detail_aset')->insert($insertedDetails);
-
-                        $connection->table('pembiayaan_aset')->where('kode_pembiayaan', $kodePembiayaan)->update(['status' => 'SELESAI']);
-
-                        return [
-                            'detail_count' => $jumlahTermin,
-                            'total_count' => $jumlahTermin + 1,
-                        ];
-                    });
-
-                    $this->result['status'] = 1;
-                    $this->result['total_data'] = $stored['total_count'];
-                    $this->result['total_header'] = 1;
-                    $this->result['total_detail'] = $stored['detail_count'];
-                    $this->result['message'] = 'Rencana tempo berhasil disimpan. ' . $stored['detail_count'] . ' termin dijadwalkan.';
-                }
+                throw new \Exception('Kode pembiayaan tidak valid.');
             }
-        } catch (\Illuminate\Database\QueryException $e) {
-            $this->result['message'] = 'Gagal menyimpan rencana tempo: ' . $e->getMessage();
+            if ($jumlahTermin === false || $jumlahTermin < 1 || $jumlahTermin > 60) {
+                throw new \Exception('Jumlah termin harus antara 1 dan 60.');
+            }
+            if (!is_array($rows) || count($rows) !== $jumlahTermin) {
+                throw new \Exception('Jumlah baris termin tidak sesuai.');
+            }
+            if (!preg_match('/^\d{1,13}(\.\d{1,2})?$/', str_replace(',', '.', $hargaBeli))) {
+                throw new \Exception('Harga beli tidak valid.');
+            }
+            if (!preg_match('/^\d{1,13}(\.\d{1,2})?$/', str_replace(',', '.', $biayaLain))) {
+                throw new \Exception('Biaya lain tidak valid.');
+            }
+
+            $pembiayaan = \Model\Storage\PembiayaanAset_model::where('kode_pembiayaan', $kodePembiayaan)->first();
+            $aset = $pembiayaan ? $this->getAset($pembiayaan->kode_aset) : null;
+
+            if (!$pembiayaan || !$aset) {
+                throw new \Exception('Data pembiayaan atau aset tidak ditemukan.');
+            }
+
+            $hargaCents = $this->moneyToCents($hargaBeli);
+            $biayaCents = $this->moneyToCents($biayaLain);
+            $totalPembelianCents = $hargaCents + $biayaCents;
+
+            $tdpRows = \Model\Storage\PembiayaanTdpAset_model::where('kode_pembiayaan', $kodePembiayaan)->where('is_pengurang_pokok', 1)->get();
+            $tdpCents = 0;
+            foreach ($tdpRows as $tdpRow) {
+                $tdpCents += $this->moneyToCents($tdpRow->nominal ?? 0);
+            }
+
+            $sisaDijadwalkanCents = $totalPembelianCents - $tdpCents;
+            if ($sisaDijadwalkanCents < 0) {
+                throw new \Exception('Total TDP melebihi total pembelian.');
+            }
+
+            $existingHeader = \Model\Storage\PembiayaanTempoRencanaAset_model::where('kode_pembiayaan', $kodePembiayaan)->first();
+            
+            if ($existingHeader) {
+                \Model\Storage\PembiayaanTempoDetailAset_model::where('kode_pembiayaan', $kodePembiayaan)->delete();
+                \Model\Storage\PembiayaanTempoRencanaAset_model::where('kode_pembiayaan', $kodePembiayaan)->delete();
+            }
+
+            $totalTerminCents = 0;
+            $insertedDetails = [];
+            $seenTerminKe = [];
+
+            foreach ($rows as $index => $row) {
+                if (!is_array($row)) {
+                    throw new \Exception('Baris termin ke-' . ($index + 1) . ' tidak valid.');
+                }
+
+                $terminKe = $index + 1;
+                $jatuhTempo = trim((string) ($row['jatuh_tempo'] ?? ''));
+                $nominal = trim((string) ($row['nominal'] ?? ''));
+
+                if (!$this->isValidSqlDate($jatuhTempo)) {
+                    throw new \Exception('Tanggal jatuh tempo termin ke-' . $terminKe . ' tidak valid.');
+                }
+                if (!preg_match('/^\d{1,13}(\.\d{1,2})?$/', str_replace(',', '.', $nominal))) {
+                    throw new \Exception('Nominal termin ke-' . $terminKe . ' tidak valid.');
+                }
+
+                $nominalCents = $this->moneyToCents($nominal);
+                if ($nominalCents <= 0) {
+                    throw new \Exception('Nominal termin ke-' . $terminKe . ' harus lebih dari 0.');
+                }
+
+                if (isset($seenTerminKe[$jatuhTempo])) {
+                    throw new \Exception('Tanggal jatuh tempo termin ke-' . $terminKe . ' duplikat.');
+                }
+                $seenTerminKe[$jatuhTempo] = $terminKe;
+
+                $totalTerminCents += $nominalCents;
+                $insertedDetails[] = [
+                    'kode_pembiayaan' => $kodePembiayaan,
+                    'termin_ke'       => $terminKe,
+                    'jatuh_tempo'     => $jatuhTempo,
+                    'nominal'         => (int) substr($nominalCents, 0, -2),
+                    'status'          => 0,
+                ];
+            }
+
+            if ($totalTerminCents !== $sisaDijadwalkanCents) {
+                throw new \Exception('Total nominal termin tidak sama dengan sisa dijadwalkan.');
+            }
+
+            $m_header = new \Model\Storage\PembiayaanTempoRencanaAset_model();
+            $m_header->kode_pembiayaan      = $kodePembiayaan;
+            $m_header->harga_beli_aset      = (int) substr($hargaCents, 0, -2);
+            $m_header->biaya_lain           = (int) substr($biayaCents, 0, -2);
+            $m_header->total_pembelian      = (int) substr($totalPembelianCents, 0, -2);
+            $m_header->dikurangi_tanda_jadi = (int) substr($tdpCents, 0, -2);
+            $m_header->sisa_dijadwalkan     = (int) substr($sisaDijadwalkanCents, 0, -2);
+            $m_header->jumlah_termin        = (int) $jumlahTermin; 
+            $m_header->save();
+
+            foreach ($insertedDetails as $detail) {
+                $m_detail = new \Model\Storage\PembiayaanTempoDetailAset_model();
+                $m_detail->kode_pembiayaan = $detail['kode_pembiayaan'];
+                $m_detail->termin_ke       = $detail['termin_ke'];
+                $m_detail->jatuh_tempo     = $detail['jatuh_tempo'];
+                $m_detail->nominal         = $detail['nominal'];
+                $m_detail->status          = $detail['status'];
+                $m_detail->save();
+            }
+
+            $this->result['status'] = 1;
+            $this->result['total_data'] = $jumlahTermin + 1;
+            $this->result['total_header'] = 1;
+            $this->result['total_detail'] = $jumlahTermin;
+            $this->result['message'] = $existingHeader ? 'Rencana tempo berhasil diperbarui.' : 'Rencana tempo berhasil disimpan.';
+
         } catch (\Exception $e) {
             $this->result['message'] = 'Gagal menyimpan rencana tempo: ' . $e->getMessage();
         }

@@ -3,6 +3,7 @@
         <tr>
             <th class="text-center" style="width:50px;">No</th>
             <th>Kode Pembiayaan</th>
+            <th>Jenis Pembiayaan</th>
             <th>Aset</th>
             <th>Kategori</th>
             <th>Unit</th>
@@ -18,6 +19,7 @@
                 <tr>
                     <td class="text-center"><?php echo $index + 1; ?></td>
                     <td><?php echo htmlspecialchars($row['kode_pembiayaan']); ?></td>
+                    <td><?php echo htmlspecialchars($row['nama_pembiayaan']); ?></td>
                     <td><?php echo htmlspecialchars(($row['kode_aset'] ?? '-') . ' - ' . ($row['deskripsi_aset'] ?? '')); ?></td>
                     <td><?php echo htmlspecialchars($row['kategori_name'] ?? '-'); ?></td>
                     <td><?php echo htmlspecialchars($row['unit_pengguna'] ?? '-'); ?></td>
