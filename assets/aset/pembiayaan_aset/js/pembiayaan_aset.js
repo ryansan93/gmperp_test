@@ -4,15 +4,12 @@ var pba = {
     start_up: function () {
         if ($('#form-pelunasan').length) {
             pba.init_datepickers();
-            pba.init_tdp();
             pba.init_pelunasan();
         } else if ($('#detail-tempo').length) {
             pba.init_datepickers();
-            pba.init_tdp();
             pba.init_tempo();
         } else if ($('#form-tdp').length) {
             pba.init_datepickers();
-            pba.init_tdp();
             pba.init_dp();
             pba.init_cicilan();
         } else {
@@ -23,6 +20,27 @@ var pba = {
             pba.init_datepickers();
             pba.refresh_asset_summary();
         }
+
+        $.when(
+            pba.load_tdp(),       
+            pba.load_dp(),       
+            pba.load_cicilan()    
+        ).done(function (resTdp, resDp, resCicilan) {
+            
+
+            console.log("Semua data berhasil dimuat, memulai perhitungan...");
+            pba.load_hitung_cicilan(); 
+            
+    
+            pba.load_pelunasan();
+            pba.load_tempo();
+
+        }).fail(function (xhr, status, error) {
+    
+            console.error("Gagal memuat data pembiayaan:", error);
+            
+        });
+        pba.init_datepickers();
     },
 
     bind_tab_events: function () {
@@ -99,7 +117,7 @@ var pba = {
         }
 
         moment.locale('id');
-        $('#tgl_tdp, #tgl_dp, #tgl_pelunasan, #tgl_modal_tdp').each(function () {
+        $('#tgl_tdp, #tgl_dp, #tgl_pelunasan, #tgl_jt, #tgl_tdp_clone').each(function () {
             var value = $(this).val();
             var date = moment(value, ['YYYY-MM-DD', 'DD MMMM YYYY'], true);
             if (value && date.isValid()) {
@@ -107,7 +125,7 @@ var pba = {
             }
         });
 
-        $('#tgl_tdp_picker, #tgl_dp_picker, #tgl_pelunasan_picker, #tgl_modal_tdp_picker').each(function () {
+        $('#tgl_tdp_picker, #tgl_dp_picker, #tgl_pelunasan_picker, #tgl_jt_picker, #tgl_tdp_clone_picker').each(function () {
             var picker = $(this);
             if (!picker.data('DateTimePicker')) {
                 picker.datetimepicker({
@@ -115,6 +133,14 @@ var pba = {
                     format: 'DD MMMM YYYY',
                     useCurrent: false
                 });
+            }
+        });
+
+
+        $('#tgl_jt_picker').on('dp.change change.datetimepicker', function (e) {
+
+            if (typeof pba !== 'undefined' && typeof pba.hitung_cicilan === 'function') {
+                pba.hitung_cicilan();
             }
         });
 
@@ -137,40 +163,6 @@ var pba = {
         });
     },
 
-    init_tdp: function () {
-        $(document)
-            .off('click.tdpAdd', '#tdp-add-row')
-            .on('click.tdpAdd', '#tdp-add-row', function () {
-                var row = $('<div class="row tdp-row" style="margin-bottom:8px;">' +
-                    '<div class="col-xs-7"><input type="text" class="form-control tdp-deskripsi" maxlength="255" placeholder="Deskripsi"></div>' +
-                    '<div class="col-xs-4"><div class="input-group"><span class="input-group-addon">Rp</span><input type="text" class="form-control text-right tdp-nominal" inputmode="numeric" autocomplete="off" placeholder="0"></div></div>' +
-                    '<div class="col-xs-1"><button type="button" class="btn btn-danger btn-sm tdp-remove-row" title="Hapus baris"><i class="fa fa-times"></i></button></div>' +
-                    '</div>');
-                $('#tdp-rows').append(row);
-                pba.update_tdp_rows();
-            })
-            .off('click.tdpRemove', '.tdp-remove-row')
-            .on('click.tdpRemove', '.tdp-remove-row', function () {
-                $(this).closest('.tdp-row').remove();
-                pba.update_tdp_rows();
-            })
-            .off('input.pbaNominal', '.tdp-nominal')
-            .on('input.pbaNominal', '.tdp-nominal', function () {
-                $(this).val(pba.format_rupiah($(this).val()));
-                pba.update_tdp_total();
-            })
-            .off('submit.tdpSave', '#form-tdp')
-            .on('submit.tdpSave', '#form-tdp', function (event) {
-                event.preventDefault();
-                pba.save_tdp();
-            });
-
-        $('.tdp-nominal, .dp-nominal').each(function () {
-            $(this).val(pba.format_rupiah($(this).val()));
-        });
-        pba.update_tdp_rows();
-        pba.update_tdp_total();
-    },
 
     init_pelunasan: function () {
         var panel = $('#detail-pelunasan');
@@ -181,36 +173,36 @@ var pba = {
         var canMutate = panel.attr('data-can-mutate') === '1';
 
         $(document)
-            .off('click.pelunasanAdd', '#pelunasan-add-row')
-            .on('click.pelunasanAdd', '#pelunasan-add-row', function () {
-                if (!canMutate) {
-                    return;
-                }
-                var row = $('<div class="row pelunasan-row" style="margin-bottom:8px;">' +
-                    '<div class="col-xs-7"><input type="text" class="form-control pelunasan-deskripsi" maxlength="255" placeholder="Deskripsi"></div>' +
-                    '<div class="col-xs-4"><div class="input-group"><span class="input-group-addon">Rp</span><input type="text" class="form-control text-right pelunasan-nominal" inputmode="numeric" autocomplete="off" placeholder="0"></div></div>' +
-                    '<div class="col-xs-1"><button type="button" class="btn btn-danger btn-sm pelunasan-remove-row" title="Hapus baris"><i class="fa fa-times"></i></button></div>' +
-                    '</div>');
-                $('#pelunasan-rows').append(row);
-                pba.update_pelunasan_total();
-            })
-            .off('submit.pelunasanSave', '#form-pelunasan')
-            .on('submit.pelunasanSave', '#form-pelunasan', function (event) {
-                event.preventDefault();
-                pba.save_pelunasan();
-            })
-            .off('click.pelunasanDelete', '#pelunasan-delete')
-            .on('click.pelunasanDelete', '#pelunasan-delete', function () {
-                pba.delete_pelunasan(this);
-            })
+            // .off('click.pelunasanAdd', '#pelunasan-add-row')
+            // .on('click.pelunasanAdd', '#pelunasan-add-row', function () {
+            //     if (!canMutate) {
+            //         return;
+            //     }
+            //     var row = $('<div class="row pelunasan-row" style="margin-bottom:8px;">' +
+            //         '<div class="col-xs-7"><input type="text" class="form-control pelunasan-deskripsi" maxlength="255" placeholder="Deskripsi"></div>' +
+            //         '<div class="col-xs-4"><div class="input-group"><span class="input-group-addon">Rp</span><input type="text" class="form-control text-right pelunasan-nominal" inputmode="numeric" autocomplete="off" placeholder="0"></div></div>' +
+            //         '<div class="col-xs-1"><button type="button" class="btn btn-danger btn-sm pelunasan-remove-row" title="Hapus baris"><i class="fa fa-times"></i></button></div>' +
+            //         '</div>');
+            //     $('#pelunasan-rows').append(row);
+            //     pba.update_pelunasan_total();
+            // })
+            // .off('submit.pelunasanSave', '#form-pelunasan')
+            // .on('submit.pelunasanSave', '#form-pelunasan', function (event) {
+            //     event.preventDefault();
+            //     pba.save_pelunasan();
+            // })
+            // .off('click.pelunasanDelete', '#pelunasan-delete')
+            // .on('click.pelunasanDelete', '#pelunasan-delete', function () {
+            //     pba.delete_pelunasan(this);
+            // })
             .off('click.pelunasanRemove', '.pelunasan-remove-row')
             .on('click.pelunasanRemove', '.pelunasan-remove-row', function () {
                 if (!canMutate) {
                     return;
                 }
-                $(this).closest('.pelunasan-row').remove();
-                pba.update_pelunasan_rows();
-                pba.update_pelunasan_total();
+                // $(this).closest('.pelunasan-row').remove();
+                // pba.update_pelunasan_rows();
+                // pba.update_pelunasan_total();
             })
             .off('input.pelunasanNominal', '.pelunasan-nominal')
             .on('input.pelunasanNominal', '.pelunasan-nominal', function () {
@@ -228,6 +220,24 @@ var pba = {
     },
 
 
+    addRowPelunasan: function(){
+        var row = $('<div class="row pelunasan-row" style="margin-bottom:8px;">' +
+            '<div class="col-xs-7"><input type="text" class="form-control pelunasan-deskripsi" maxlength="255" placeholder="Deskripsi"></div>' +
+            '<div class="col-xs-4"><div class="input-group"><span class="input-group-addon">Rp</span><input type="int"   oninput="pba.inputRupiah(this); pba.update_pelunasan_total();" class="form-control text-right pelunasan-nominal" inputmode="numeric" autocomplete="off" placeholder="0"></div></div>' +
+            '<div class="col-xs-1"><button type="button" onclick="pba.removeRowPelunasan(this)" class="btn btn-danger btn-sm pelunasan-remove-row" title="Hapus baris"><i class="fa fa-times"></i></button></div>' +
+            '</div>');
+        $('#pelunasan-rows').append(row);
+        pba.update_pelunasan_total();
+    },
+
+
+    removeRowPelunasan : function(elm){
+          $(elm).closest('.pelunasan-row').remove();
+                // pba.update_pelunasan_rows();
+                // pba.update_pelunasan_total();
+    },
+
+
     init_tempo: function () {
         var panel = $('#detail-tempo');
         if (!panel.length) {
@@ -236,7 +246,6 @@ var pba = {
 
         var canMutate = panel.attr('data-can-mutate') === '1';
 
-        // Auto-generate baris saat tombol "+ Tambah baris" diklik
         $(document)
             .off('click.tempoGenerate', '#btn_tambah_termin')
             .on('click.tempoGenerate', '#btn_tambah_termin', function () {
@@ -245,14 +254,14 @@ var pba = {
                 }
                 pba.generate_tempo_rows();
             })
-            // Auto-generate juga saat user selesai mengetik jumlah termin (blur/change)
-            .off('change.tempoTermin', '#jumlah_termin')
-            .on('change.tempoTermin', '#jumlah_termin', function () {
-                if (canMutate) {
-                    pba.generate_tempo_rows();
-                }
-            })
-            // Hapus baris
+    
+            // .off('change.tempoTermin', '#jumlah_termin')
+            // .on('change.tempoTermin', '#jumlah_termin', function () {
+            //     if (canMutate) {
+            //         pba.generate_tempo_rows();
+            //     }
+            // })
+            
             .off('click.tempoRemove', '.tempo-remove-row')
             .on('click.tempoRemove', '.tempo-remove-row', function () {
                 if (!canMutate) {
@@ -295,6 +304,79 @@ var pba = {
         });
 
         pba.hitung_tempo();
+    },
+
+
+    load_tempo : function() {
+       
+        let kode = $("#key_kode_pembiayaan").val() ?? kode_pembiayaan
+
+        $.ajax({
+            url: 'aset/PembiayaanAset/load_tempo',
+            type: 'POST',
+            dataType: 'html',
+            data: { kode: kode },
+            beforeSend: function () { 
+                showLoading(); 
+            },
+            success: function (resp) {
+                hideLoading();
+                $('.load_tempo').html(resp)
+                pba.init_datepickers()
+                
+            },
+            error: function () {
+                hideLoading();
+                button.prop('disabled', false);
+                bootbox.alert('Permintaan penyimpanan tempo gagal diproses.');
+            }
+        });
+
+    },
+
+    proses_pembiayaan: function(elm) {
+        var $tab = $('a[href="#action"]');
+        $tab.tab('show');
+        $('a[href="#history"]').closest('li').removeClass('active');
+        $('#action').addClass('active');
+        $('#action').closest(".nav-item").addClass('active');
+
+
+        var button      = $(elm);
+        var id          = encodeURIComponent(button.data('id'));
+        var kodeJenis   = String(button.data('kode-jenis-pembiayaan') || '').toUpperCase();
+        
+        var urlMap = {
+            'PMB01': 'aset/PembiayaanAset/ProsesCash',
+            'PMB02': 'aset/PembiayaanAset/ProsesTempo',
+            'PMB03': 'aset/PembiayaanAset/ProsesLeasing'
+        };
+        
+        var url = urlMap[kodeJenis] || ('aset/PembiayaanAset/ProsesLeasing');
+
+
+        $.ajax({
+            url: url,
+            type: 'POST',
+            dataType: 'html',
+            data: { id: id },
+            beforeSend: function () { showLoading(); },
+            success: function (response) {
+                hideLoading();
+                $("#tab-action-content").html(response)
+
+                pba.start_up();
+                
+            },
+            error: function () {
+                hideLoading();
+                button.prop('disabled', false);
+                bootbox.alert('Permintaan pelunasan gagal diproses.');
+            }
+        });
+
+
+        
     },
 
 
@@ -494,11 +576,11 @@ var pba = {
         }));
     },
 
-    save_pelunasan: function () {
-        var panel = $('#detail-pelunasan');
-        if (panel.attr('data-can-mutate') !== '1') {
-            return;
-        }
+    save_pelunasan: function (elm, e) {
+        // var panel = $('#detail-pelunasan');
+        // if (panel.attr('data-can-mutate') !== '1') {
+        //     return;
+        // }
 
         var date = moment($('#tgl_pelunasan').val(), 'DD MMMM YYYY', 'id', true);
         if (!date.isValid()) {
@@ -517,6 +599,7 @@ var pba = {
             var isReadonly = $nominalInput.attr('readonly') !== undefined;
             var rawNominal = $nominalInput.val() || '0';
             var amount = pba.to_backend_nominal(rawNominal);
+            // var diajukan = pba.to_backend_nominal($('#diajukan').html())
 
             if (!isReadonly) {
                 biayaLain += Number(amount);
@@ -539,17 +622,41 @@ var pba = {
         }
 
         var params = {
-            id: $('#id_pelunasan').val() || '',
-            harga_beli: $('#harga_beli').val() || '',
-            kode_pembiayaan: $('#kode_pembiayaan_pelunasan').val(),
+            harga_beli: $(".harga_beli").val() || '',
+            kode_pembiayaan: $('#key_kode_pembiayaan').val(),
             tanggal_pelunasan: date.format('YYYY-MM-DD'),
             // total_pembelian : $('#total-pembelian').html(),
             // tdp : $('#dikurangi-tanda-jadi').html(),
-            // diajukan : $('#diajukan').html(),
+            diajukan : pba.to_backend_nominal($('#diajukan').html()),
             rows: rows  
         };
 
-        pba.pelunasan_request('aset/PembiayaanAset/save_pelunasan', params, $('#pelunasan-save'));
+
+        // console.log(params);
+        $.ajax({
+            url: 'aset/PembiayaanAset/save_pelunasan',
+            type: 'POST',
+            dataType: 'JSON',
+            data: { params: params },
+            beforeSend: function () { showLoading(); },
+            success: function (response) {
+                hideLoading();
+                if (response.status == 1) {
+                    bootbox.alert(response.message, function () {
+                        pba.load_tdp(params.kode_pembiayaan);
+                        pba.load_pelunasan(params.kode_pembiayaan);
+                    });
+                } else {
+                    // button.prop('disabled', false);
+                    bootbox.alert(response.message || 'Data gagal disimpan.');
+                }
+            },
+            error: function () {
+                hideLoading();
+                // button.prop('disabled', false);
+                bootbox.alert('Permintaan penyimpanan DP gagal diproses.');
+            }
+        });
     },
 
     delete_pelunasan: function (element) {
@@ -590,89 +697,123 @@ var pba = {
         });
     },
 
-    init_dp: function () {
-        $(document)
-            .off('click.dpAdd', '#dp-add-row')
-            .on('click.dpAdd', '#dp-add-row', function () {
-                var row = $('<div class="row dp-row" style="margin-bottom:8px;">' +
+    // init_dp: function () {
+    //     $(document)
+    //         .off('click.dpAdd', '#dp-add-row')
+    //         .on('click.dpAdd', '#dp-add-row', function () {
+    //             var row = $('<div class="row dp-row" style="margin-bottom:8px;">' +
+    //                 '<input type="hidden" class="dp-id" value="">' +
+    //                 '<div class="col-xs-8"><input type="text" class="form-control dp-komponen" placeholder="Jenis komponen (contoh: UANG_MUKA)"></div>' +
+    //                 '<div class="col-xs-3"><div class="input-group"><span class="input-group-addon">Rp</span><input type="text" class="form-control text-right dp-nominal" inputmode="numeric" autocomplete="off" placeholder="0"></div></div>' +
+    //                 '<div class="col-xs-1 text-right"><button type="button" class="btn btn-danger btn-sm dp-remove-row" title="Hapus baris"><i class="fa fa-times"></i></button></div>');
+    //             $('#dp-rows').append(row);
+    //         })
+    //         .off('click.dpAddInstallment', '#dp-add-installment')
+    //         .on('click.dpAddInstallment', '#dp-add-installment', function () {
+    //             var installmentNumber = $('#dp-installment-rows .dp-installment-row').length + 1;
+    //             var row = $('<div class="row dp-installment-row" style="margin-bottom:8px;">' +
+    //                 '<input type="hidden" class="dp-id" value="">' +
+    //                 '<div class="col-xs-2"><label style="padding-top:7px;">Angsuran ke</label></div>' +
+    //                 '<div class="col-xs-2"><input type="number" class="form-control dp-angsuran-ke" min="1" value="' + installmentNumber + '" placeholder="Ke"></div>' +
+    //                 '<div class="col-xs-3"><div class="input-group date dp-jatuh-tempo-picker"><input type="text" class="form-control dp-jatuh-tempo" autocomplete="off" placeholder="Jatuh tempo"><span class="input-group-addon"><i class="fa fa-calendar"></i></span></div></div>' +
+    //                 '<div class="col-xs-3"><div class="input-group"><span class="input-group-addon">Rp</span><input type="text" class="form-control text-right dp-nominal" inputmode="numeric" autocomplete="off" placeholder="0"></div></div>' +
+    //                 '<div class="col-xs-2 text-right"><button type="button" class="btn btn-danger btn-sm dp-remove-row" title="Hapus angsuran"><i class="fa fa-times"></i></button></div></div>');
+    //             $('#dp-installment-rows').append(row);
+    //             if ($.fn.datetimepicker) {
+    //                 row.find('.dp-jatuh-tempo-picker').datetimepicker({
+    //                     locale: 'id',
+    //                     format: 'DD MMMM YYYY',
+    //                     useCurrent: false
+    //                 });
+    //             }
+    //         })
+    //         .off('click.dpRemove', '.dp-remove-row')
+    //         .on('click.dpRemove', '.dp-remove-row', function () {
+    //             $(this).closest('.dp-row, .dp-installment-row').remove();
+    //             pba.update_dp_total();
+    //         })
+    //         .off('input.dpNominal', '.dp-nominal')
+    //         .on('input.dpNominal', '.dp-nominal', function () {
+    //             $(this).val(pba.format_rupiah($(this).val()));
+    //             pba.update_dp_total();
+    //         })
+    //         .off('click.dpDueDate', '.dp-jatuh-tempo-picker .input-group-addon')
+    //         .on('click.dpDueDate', '.dp-jatuh-tempo-picker .input-group-addon', function () {
+    //             var picker = $(this).closest('.dp-jatuh-tempo-picker');
+    //             if (picker.data('DateTimePicker')) {
+    //                 picker.datetimepicker('show');
+    //             }
+    //         })
+    //         .off('input.dpComponent', '.dp-komponen')
+    //         .on('input.dpComponent', '.dp-komponen', function () {
+    //             pba.update_dp_total();
+    //         })
+    //         .off('click.dpDelete', '.dp-delete-row')
+    //         .on('click.dpDelete', '.dp-delete-row', function () {
+    //             pba.delete_dp(this);
+    //         })
+    //         .off('submit.dpSave', '#form-dp')
+    //         .on('submit.dpSave', '#form-dp', function (event) {
+    //             event.preventDefault();
+    //             pba.save_dp();
+    //         });
+
+    //     $('.dp-nominal').each(function () {
+    //         $(this).val(pba.format_rupiah($(this).val()));
+    //     });
+    //     $('.dp-jatuh-tempo').each(function () {
+    //         var value = $(this).val();
+    //         var date = moment(value, ['YYYY-MM-DD', 'DD MMMM YYYY'], true);
+    //         if (value && date.isValid()) {
+    //             $(this).val(date.format('DD MMMM YYYY'));
+    //         }
+    //     });
+    //     if ($.fn.datetimepicker) {
+    //         $('.dp-jatuh-tempo-picker').each(function () {
+    //             if (!$(this).data('DateTimePicker')) {
+    //                 $(this).datetimepicker({
+    //                     locale: 'id',
+    //                     format: 'DD MMMM YYYY',
+    //                     useCurrent: false
+    //                 });
+    //             }
+    //         });
+    //     }
+    //     $('.dp-komponen').trigger('change');
+    //     pba.update_dp_total();
+    // },
+
+
+    dpAddRow: function() {
+         var row = $('<div class="row dp-row" style="margin-bottom:8px;">' +
                     '<input type="hidden" class="dp-id" value="">' +
                     '<div class="col-xs-8"><input type="text" class="form-control dp-komponen" placeholder="Jenis komponen (contoh: UANG_MUKA)"></div>' +
-                    '<div class="col-xs-3"><div class="input-group"><span class="input-group-addon">Rp</span><input type="text" class="form-control text-right dp-nominal" inputmode="numeric" autocomplete="off" placeholder="0"></div></div>' +
-                    '<div class="col-xs-1 text-right"><button type="button" class="btn btn-danger btn-sm dp-remove-row" title="Hapus baris"><i class="fa fa-times"></i></button></div>');
-                $('#dp-rows').append(row);
-            })
-            .off('click.dpAddInstallment', '#dp-add-installment')
-            .on('click.dpAddInstallment', '#dp-add-installment', function () {
-                var installmentNumber = $('#dp-installment-rows .dp-installment-row').length + 1;
-                var row = $('<div class="row dp-installment-row" style="margin-bottom:8px;">' +
-                    '<input type="hidden" class="dp-id" value="">' +
-                    '<div class="col-xs-2"><label style="padding-top:7px;">Angsuran ke</label></div>' +
-                    '<div class="col-xs-2"><input type="number" class="form-control dp-angsuran-ke" min="1" value="' + installmentNumber + '" placeholder="Ke"></div>' +
-                    '<div class="col-xs-3"><div class="input-group date dp-jatuh-tempo-picker"><input type="text" class="form-control dp-jatuh-tempo" autocomplete="off" placeholder="Jatuh tempo"><span class="input-group-addon"><i class="fa fa-calendar"></i></span></div></div>' +
-                    '<div class="col-xs-3"><div class="input-group"><span class="input-group-addon">Rp</span><input type="text" class="form-control text-right dp-nominal" inputmode="numeric" autocomplete="off" placeholder="0"></div></div>' +
-                    '<div class="col-xs-2 text-right"><button type="button" class="btn btn-danger btn-sm dp-remove-row" title="Hapus angsuran"><i class="fa fa-times"></i></button></div></div>');
-                $('#dp-installment-rows').append(row);
-                if ($.fn.datetimepicker) {
-                    row.find('.dp-jatuh-tempo-picker').datetimepicker({
-                        locale: 'id',
-                        format: 'DD MMMM YYYY',
-                        useCurrent: false
-                    });
-                }
-            })
-            .off('click.dpRemove', '.dp-remove-row')
-            .on('click.dpRemove', '.dp-remove-row', function () {
-                $(this).closest('.dp-row, .dp-installment-row').remove();
-                pba.update_dp_total();
-            })
-            .off('input.dpNominal', '.dp-nominal')
-            .on('input.dpNominal', '.dp-nominal', function () {
-                $(this).val(pba.format_rupiah($(this).val()));
-                pba.update_dp_total();
-            })
-            .off('click.dpDueDate', '.dp-jatuh-tempo-picker .input-group-addon')
-            .on('click.dpDueDate', '.dp-jatuh-tempo-picker .input-group-addon', function () {
-                var picker = $(this).closest('.dp-jatuh-tempo-picker');
-                if (picker.data('DateTimePicker')) {
-                    picker.datetimepicker('show');
-                }
-            })
-            .off('input.dpComponent', '.dp-komponen')
-            .on('input.dpComponent', '.dp-komponen', function () {
-                pba.update_dp_total();
-            })
-            .off('click.dpDelete', '.dp-delete-row')
-            .on('click.dpDelete', '.dp-delete-row', function () {
-                pba.delete_dp(this);
-            })
-            .off('submit.dpSave', '#form-dp')
-            .on('submit.dpSave', '#form-dp', function (event) {
-                event.preventDefault();
-                pba.save_dp();
-            });
+                    '<div class="col-xs-3"><div class="input-group"><span class="input-group-addon">Rp</span><input type="text" oninput="pba.inputRupiah(this);" class="form-control text-right dp-nominal" inputmode="numeric" autocomplete="off" placeholder="0"></div></div>' +
+                    '<div class="col-xs-1 text-right"><button type="button" class="btn btn-danger btn-sm dp-remove-row" onclick="pba.dpRemoveRow(this)" title="Hapus baris"><i class="fa fa-times"></i></button></div>');
+        $('#dp-rows').append(row);
 
-        $('.dp-nominal').each(function () {
-            $(this).val(pba.format_rupiah($(this).val()));
-        });
-        $('.dp-jatuh-tempo').each(function () {
-            var value = $(this).val();
-            var date = moment(value, ['YYYY-MM-DD', 'DD MMMM YYYY'], true);
-            if (value && date.isValid()) {
-                $(this).val(date.format('DD MMMM YYYY'));
-            }
-        });
-        if ($.fn.datetimepicker) {
-            $('.dp-jatuh-tempo-picker').each(function () {
-                if (!$(this).data('DateTimePicker')) {
-                    $(this).datetimepicker({
-                        locale: 'id',
-                        format: 'DD MMMM YYYY',
-                        useCurrent: false
-                    });
-                }
-            });
-        }
-        $('.dp-komponen').trigger('change');
+        pba.update_dp_total();
+    },
+
+    dpRemoveRow: function(element) {
+        $(element).closest('.dp-row, .dp-installment-row').remove();
+        pba.update_dp_total();
+    },
+
+    dpAddAngsuranRow: function() {
+        var installmentNumber = $('#dp-installment-rows .dp-installment-row').length + 1;
+        var row = $('<div class="row dp-installment-row" style="margin-bottom:8px;">' +
+            '<input type="hidden" class="dp-id" value="">' +
+            '<div class="col-xs-5"><label style="padding-top:7px;">Angsuran ke</label></div>' +
+            '<div class="col-xs-3"><input type="number" class="form-control dp-angsuran-ke" min="1" value="' + installmentNumber + '" placeholder="Ke"></div>' +
+            '<div class="col-xs-3"><div class="input-group"><span class="input-group-addon">Rp</span><input type="text" oninput="pba.inputRupiah(this);" class="form-control text-right dp-nominal" inputmode="numeric" autocomplete="off" placeholder="0"></div></div>' +
+            '<div class="col-xs-1 text-right"><button type="button" onclick="pba.dpRemoveAngsuranRow(this)" class="btn btn-danger btn-sm dp-remove-row" title="Hapus angsuran"><i class="fa fa-times"></i></button></div></div>');
+        $('#dp-installment-rows').append(row);
+    },
+
+    dpRemoveAngsuranRow : function (elment)
+    {
+        $(elment).closest('.dp-row, .dp-installment-row').remove();
         pba.update_dp_total();
     },
 
@@ -708,7 +849,7 @@ var pba = {
     },
 
     init_cicilan: function () {
-        $('#tenor, #bunga_flat')
+        $('#tenor, #bunga_flat, #tgl_jt')
             .off('input.cicilan change.cicilan')
             .on('input.cicilan change.cicilan', function () {
                 pba.hitung_cicilan();
@@ -723,92 +864,212 @@ var pba = {
         // pba.hitung_cicilan();
     },
 
+    // hitung_cicilan: function () {
+    //     var panel = $('#detail-cicilan');
+    //     if (!panel.length) return;
+
+    //     var cents = function (value) {
+    //         var amount = Number(value);
+    //         return Number.isFinite(amount) ? Math.round(amount * 100) : 0;
+    //     };
+        
+    //     var formatMoney = function (valueInCents) {
+    //         return Math.round(valueInCents / 100).toLocaleString('id-ID');
+    //     };
+
+    //     var priceCents = cents($("#cicilan-harga-beli").html());
+
+    //     console.log(priceCents);
+    //     var tdpCents = cents(panel.attr('data-tdp-pengurang'));
+    //     var downPaymentCents = cents(panel.attr('data-dp-uang-muka'));
+    //     var principalCents = priceCents - downPaymentCents - tdpCents;
+    //     var tbody = $('#jadwal-cicilan');
+
+    //     $('#cicilan-harga-beli').text(formatMoney(priceCents));
+    //     $('#cicilan-tdp-pengurang').text('(' + formatMoney(tdpCents) + ')');
+    //     $('#cicilan-dp-uang-muka').text('(' + formatMoney(downPaymentCents) + ')');
+    //     $('#cicilan-pokok-hutang').text(formatMoney(Math.max(principalCents, 0)));
+
+    //     var showMessage = function (msg) {
+    //         tbody.empty().append($('<tr>').append($('<td>').attr('colspan', 8).addClass('text-center text-muted').text(msg)));
+    //     };
+
+    //     if (principalCents < 0) {
+    //         showMessage('Total TDP dan uang muka melebihi harga beli aset.');
+    //         return;
+    //     }
+
+    //     var tenor = Number($('#tenor').val());
+    //     var annualRate = Number($('#bunga_flat').val());
+        
+    //     if (!tenor || tenor < 1) {
+    //         showMessage('Jadwal cicilan akan tampil setelah tenor diisi.');
+    //         return;
+    //     }
+        
+    //     if (!annualRate || isNaN(annualRate) || annualRate <= 0) {
+    //         showMessage('Jadwal cicilan akan tampil setelah bunga flat diisi.');
+    //         return;
+    //     }
+
+    //     var monthlyRate          = (annualRate / 100) / 12;
+    //     var totalMonths          = tenor;
+        
+    //     var baseInstallmentCents = Math.round(
+    //         principalCents * (monthlyRate / (1 - Math.pow(1 + monthlyRate, -totalMonths)))
+    //     );
+
+    //     var totalPaymentCents   = baseInstallmentCents * tenor;
+    //     var totalInterestCents  = totalPaymentCents - principalCents;
+
+    //     $('#cicilan-nominal-bulanan').text(formatMoney(baseInstallmentCents));
+    //     $('.dp-installment-row').find('.dp-nominal').val(formatMoney(baseInstallmentCents));
+
+    //     $('#cicilan-tenor-label').text(tenor);
+    //     $('#cicilan-total-bunga').text(formatMoney(totalInterestCents));
+    //     $('#cicilan-total-ar').text(formatMoney(totalPaymentCents));
+    //     $('#cicilan-selisih-pembulatan').text('');
+    //     $('#simpan-detail-cicilan').prop('disabled', $('#simpan-detail-cicilan').attr('data-can-save') !== '1');
+
+    //     tbody.empty();
+        
+    //     var currentBalance = principalCents; 
+        
+    //     var startDate = moment(panel.attr('data-tanggal-dasar') || panel.attr('data-tanggal-pembiayaan'), 'YYYY-MM-DD', true);
+    //     if (!startDate.isValid()) startDate = moment();
+
+    //     var hasDpAngsuran1 = panel.attr('data-has-dp-angsuran-1') === '1' || panel.attr('data-dp-angsuran-1') === '1';
+    //     // console.log(hasDpAngsuran1)
+    //     // return false
+
+    //     for (var i = 1; i <= tenor; i++) {
+    //         var dueDate = startDate.clone().add(i, 'months');
+            
+    //         var bunga = currentBalance * monthlyRate;
+    //         var pokok = baseInstallmentCents - bunga;
+    //         var nominal = baseInstallmentCents;
+            
+    //         if (i === tenor) {
+    //             pokok = currentBalance;
+    //             bunga = baseInstallmentCents - pokok;
+                
+    //             if (bunga < 0) {
+    //                 bunga = 0;
+    //                 nominal = pokok; 
+    //             }
+    //         }
+            
+    //         currentBalance -= pokok;
+    //         if (currentBalance < 0) currentBalance = 0;
+            
+    //         var displayPokok = Math.round(pokok);
+    //         var displayBunga = Math.round(bunga);
+    //         var displayBalance = Math.round(currentBalance);
+    //         var displayNominal = Math.round(nominal);
+
+    //         var isDpAngsuran1 = (i === 1 && hasDpAngsuran1);
+    //         var jenisLabel  = isDpAngsuran1 ? '<span class="label label-success">DP</span>' : '<span class="label label-default">CICILAN</span>';
+    //         var statusLabel = isDpAngsuran1 ? '<span class="label label-success">Lunas</span>' : '<span class="label label-warning">Pending</span>';
+
+    //         var row = $('<tr>');
+    //         row.append($('<td class="text-center">').text(i));                                          
+    //         row.append($('<td class="text-left">').text(dueDate.format('DD MMMM YYYY')));               
+    //         row.append($('<td class="text-center">').html(jenisLabel)); 
+    //         row.append($('<td class="text-right">').text(formatMoney(displayPokok)));                      
+    //         row.append($('<td class="text-right">').text(formatMoney(displayBunga)));                      
+    //         row.append($('<td class="text-right">').text(formatMoney(displayNominal)));            
+    //         row.append($('<td class="text-right">').text(formatMoney(displayBalance)));             
+    //         row.append($('<td class="text-center">').html(statusLabel)); 
+    //         tbody.append(row);
+    //     }
+    // },
+
     hitung_cicilan: function () {
+        
         var panel = $('#detail-cicilan');
         if (!panel.length) return;
 
-        var cents = function (value) {
-            var amount = Number(value);
-            return Number.isFinite(amount) ? Math.round(amount * 100) : 0;
-        };
-        
-        var formatMoney = function (valueInCents) {
-            return Math.round(valueInCents / 100).toLocaleString('id-ID');
-        };
-
-        var priceCents = cents(panel.attr('data-harga-beli'));
-        var tdpCents = cents(panel.attr('data-tdp-pengurang'));
-        var downPaymentCents = cents(panel.attr('data-dp-uang-muka'));
-        var principalCents = priceCents - downPaymentCents - tdpCents;
         var tbody = $('#jadwal-cicilan');
+        
+        function getCleanInteger(value) {
+            value = String(value || '').trim();
+            let clean = value.replace(/[^\d-]/g, '');
+            return parseInt(clean, 10) || 0;
+        }
 
-        $('#cicilan-harga-beli').text(formatMoney(priceCents));
-        $('#cicilan-tdp-pengurang').text('(' + formatMoney(tdpCents) + ')');
-        $('#cicilan-dp-uang-muka').text('(' + formatMoney(downPaymentCents) + ')');
-        $('#cicilan-pokok-hutang').text(formatMoney(Math.max(principalCents, 0)));
-
-        var showMessage = function (msg) {
-            tbody.empty().append($('<tr>').append($('<td>').attr('colspan', 8).addClass('text-center text-muted').text(msg)));
+        var formatMoney = function (value) {
+            return Math.round(value).toLocaleString('id-ID');
         };
 
-        if (principalCents < 0) {
-            showMessage('Total TDP dan uang muka melebihi harga beli aset.');
+        var dateValue = $('#tgl_jt').val();
+        var date = moment(dateValue, 'DD MMMM YYYY', 'id', true);
+        if (!date.isValid()) {
             return;
         }
 
-        var tenor = Number($('#tenor').val());
-        var annualRate = Number($('#bunga_flat').val());
-        
-        if (!tenor || tenor < 1) {
-            showMessage('Jadwal cicilan akan tampil setelah tenor diisi.');
-            return;
-        }
-        
-        if (!annualRate || isNaN(annualRate) || annualRate <= 0) {
-            showMessage('Jadwal cicilan akan tampil setelah bunga flat diisi.');
+        let params = {
+            harga_beli: getCleanInteger($("#cicilan-harga-beli").text()),
+            tdp_pengurang: getCleanInteger($("#cicilan-tdp-pengurang").text()),
+            dp_uang_muka: getCleanInteger($("#cicilan-dp-uang-muka").text()),
+            sisa: getCleanInteger($("#cicilan-sisa").text()),
+            pokok_hutang: getCleanInteger($("#cicilan-pokok-hutang").text()),
+            biaya_prepaid: getCleanInteger($("#cicilan-biaya-prepaid").text()),
+            total_perolehan: getCleanInteger($("#cicilan-total-perolehan").text()),
+            total_bunga: getCleanInteger($("#cicilan-total-bunga").text()),
+            tanggal_jatuh_tempo: date,
+        };
+
+        // 1. Hitung Pokok Hutang
+        var principal = params.harga_beli - params.dp_uang_muka - params.tdp_pengurang;
+
+        if (principal < 0) {
+            bootbox.alert('Total TDP dan uang muka melebihi harga beli aset.');
             return;
         }
 
-        var monthlyRate          = (annualRate / 100) / 12;
-        var totalMonths          = tenor;
+        var tenor       = Number($('#tenor').val());
+        var annualRate  = Number($('#bunga_flat').val());
         
-        var baseInstallmentCents = Math.round(
-            principalCents * (monthlyRate / (1 - Math.pow(1 + monthlyRate, -totalMonths)))
+        if (!tenor || tenor < 1) return;
+        if (!annualRate || isNaN(annualRate) || annualRate <= 0) return;
+
+        // 2. RUMUS ANUITAS (sesuai gambar Excel Anda)
+        // Cicilan = P × r ÷ (1 − (1 + r)^−n)
+        var monthlyRate = (annualRate / 100) / 12;
+        var baseInstallment = Math.round(
+            principal * monthlyRate / (1 - Math.pow(1 + monthlyRate, -tenor))
         );
 
-        var totalPaymentCents   = baseInstallmentCents * tenor;
-        var totalInterestCents  = totalPaymentCents - principalCents;
+        var totalPayment = baseInstallment * tenor;
+        var totalInterest = totalPayment - principal;
 
-        $('#cicilan-nominal-bulanan').text(formatMoney(baseInstallmentCents));
-        $('.dp-installment-row').find('.dp-nominal').val(formatMoney(baseInstallmentCents));
-
+        // 3. UPDATE NILAI DI UI
+        $('#cicilan-nominal-bulanan').text(formatMoney(baseInstallment));
         $('#cicilan-tenor-label').text(tenor);
-        $('#cicilan-total-bunga').text(formatMoney(totalInterestCents));
-        $('#cicilan-total-ar').text(formatMoney(totalPaymentCents));
-        $('#cicilan-selisih-pembulatan').text('');
-        $('#simpan-detail-cicilan').prop('disabled', $('#simpan-detail-cicilan').attr('data-can-save') !== '1');
+        $('#cicilan-total-bunga').text(formatMoney(totalInterest));
+        $('#cicilan-total-ar').text(formatMoney(totalPayment));
 
+        // 4. GENERATE TABEL JADWAL CICILAN (Anuitas: Pokok & Bunga berubah tiap bulan)
         tbody.empty();
         
-        var currentBalance = principalCents; 
-        
-        var startDate = moment(panel.attr('data-tanggal-dasar') || panel.attr('data-tanggal-pembiayaan'), 'YYYY-MM-DD', true);
-        if (!startDate.isValid()) startDate = moment();
-
+        var currentBalance = principal; 
+        var baseDueDate = date.clone();
         var hasDpAngsuran1 = panel.attr('data-has-dp-angsuran-1') === '1' || panel.attr('data-dp-angsuran-1') === '1';
-        // console.log(hasDpAngsuran1)
-        // return false
 
         for (var i = 1; i <= tenor; i++) {
-            var dueDate = startDate.clone().add(i, 'months');
+            var dueDate = baseDueDate.clone().add(i - 1, 'months');
             
+            // Bunga bulan ini = Sisa Pokok × Rate Bulanan
             var bunga = currentBalance * monthlyRate;
-            var pokok = baseInstallmentCents - bunga;
-            var nominal = baseInstallmentCents;
             
+            // Pokok bulan ini = Cicilan Tetap - Bunga
+            var pokok = baseInstallment - bunga;
+            var nominal = baseInstallment;
+            
+            // Penyesuaian bulan terakhir agar sisa hutang tepat 0
             if (i === tenor) {
                 pokok = currentBalance;
-                bunga = baseInstallmentCents - pokok;
+                bunga = nominal - pokok;
                 
                 if (bunga < 0) {
                     bunga = 0;
@@ -840,18 +1101,31 @@ var pba = {
             tbody.append(row);
         }
     },
-
+        
     simpan_detail_cicilan: function (buttonElement) {
         var button = $(buttonElement);
         var panel = $('#detail-cicilan');
         var tenor = $('#tenor').val();
         var bunga = $('#bunga_flat').val();
+
+
+        var dateValue = $('#tgl_jt').val();
+        if (!dateValue) {
+            bootbox.alert('Jadwal cicilan akan tampil setelah tanggal jatuh tempo diisi.');
+            return; 
+        }
+
+        var date = moment(dateValue, 'DD MMMM YYYY', 'id', true);
+        
+        var tgl_jt = date && date.isValid() ? date.format('YYYY-MM-DD') : '';
         
         if (button.attr('data-can-save') !== '1' || button.prop('disabled')) {
             return;
         }
-        if (!tenor || !bunga || !$('#jadwal-cicilan tr').length || $('#jadwal-cicilan td[colspan]').length) {
-            bootbox.alert('Lengkapi tenor dan bunga, lalu pastikan jadwal cicilan sudah terbentuk.');
+        
+        // 2. Tambahkan validasi tgl_jt agar tidak kosong saat disimpan
+        if (!tenor || !bunga || !tgl_jt || !$('#jadwal-cicilan tr').length || $('#jadwal-cicilan td[colspan]').length) {
+            bootbox.alert('Lengkapi tenor, bunga, dan tanggal jatuh tempo, lalu pastikan jadwal cicilan sudah terbentuk.');
             return;
         }
 
@@ -863,12 +1137,13 @@ var pba = {
             return String(Math.round(value));
         };
 
-        let dp = parseInt($('#cicilan-dp-uang-muka').attr('dp'));
+        let dp = parseInt($('#cicilan-dp-uang-muka').attr('dp')) || 0;
 
         var params = {
             kode_pembiayaan: $('#kode_pembiayaan_dp').val() || $('#kode_pembiayaan_tdp').val(),
             tenor: tenor,
             bunga: bunga,
+            tanggal_jatuh_tempo: tgl_jt, // 3. Masukkan ke dalam params
             harga_beli: getCleanInteger('#cicilan-harga-beli'),
             tdp_pengurang: getCleanInteger('#cicilan-tdp-pengurang'),
             dp: dp,
@@ -879,9 +1154,8 @@ var pba = {
             total_bunga: getCleanInteger('#cicilan-total-bunga')
         };
 
-        // console.log(dp, params);
-        // return false;
-
+        // console.log(params);
+        
         pba.tdp_request('aset/PembiayaanAset/simpan_detail_cicilan', params, button);
     },
 
@@ -903,53 +1177,81 @@ var pba = {
             var componentInput  = row.find('.dp-komponen');
             var component       = componentInput.length ? $.trim(componentInput.val() || '').toUpperCase(): 'UANG_MUKA';
             var nominal         = pba.to_backend_nominal(row.find('.dp-nominal').val());
-            // var checked         = row.find('.dp_is_pengurang_pokok').is(':checked') ? 1 : 0;
+            
             var data = {
-                id: row.find('.dp-id').val() || '',
+                // id: row.find('.dp-id').val() || '',
                 jenis_komponen: component,
-                // dp_is_pengurang_pokok : checked,
-                deskripsi: '',
+                // deskripsi: '',
                 nominal: nominal,
                 angsuran_ke: '',
-                jatuh_tempo: ''
+                // jatuh_tempo: ''
             };
             if (Number(nominal) <= 0) {
                 valid = false;
             }
             rows.push(data);
         });
+       
         $('#dp-installment-rows .dp-installment-row').each(function () {
             var row = $(this);
             if (row.find('.dp-angsuran-ke').prop('disabled')) {
                 return;
             }
-            var dueDate = moment(row.find('.dp-jatuh-tempo').val(), 'DD MMMM YYYY', 'id', true);
+            // var dueDate = moment(row.find('.dp-jatuh-tempo').val(), 'DD MMMM YYYY', 'id', true);
             var nominal = pba.to_backend_nominal(row.find('.dp-nominal').val());
-            if (Number(nominal) <= 0 || !row.find('.dp-angsuran-ke').val() || !dueDate.isValid()) {
+            if (Number(nominal) <= 0 || !row.find('.dp-angsuran-ke').val()) {
                 valid = false;
             }
             rows.push({
-                id: row.find('.dp-id').val() || '',
+                // id: row.find('.dp-id').val() || '',
                 // dp_is_pengurang_pokok: '',
                 jenis_komponen: 'ANGSURAN',
-                deskripsi: '',
+                // deskripsi: '',
                 nominal: nominal,
                 angsuran_ke: row.find('.dp-angsuran-ke').val() || '',
-                jatuh_tempo: dueDate.isValid() ? dueDate.format('YYYY-MM-DD') : ''
+                // jatuh_tempo: dueDate.isValid() ? dueDate.format('YYYY-MM-DD') : ''
             });
         });
+
+        // console.log(rows.length)
+        // return
         if (!rows.length || !valid) {
             bootbox.alert('Lengkapi nominal setiap baris DP dan nomor serta jatuh tempo untuk komponen angsuran.');
             return;
         }
 
         var params = {
-            kode_pembiayaan: $('#kode_pembiayaan_dp').val(),
+            kode_pembiayaan: $('#key_kode_pembiayaan').val(),
             tanggal_dp: date && date.isValid() ? date.format('YYYY-MM-DD') : '',
             rows: rows
         };
-        $('#dp-save').prop('disabled', true);
-        pba.tdp_request('aset/PembiayaanAset/save_dp', params, $('#dp-save'));
+
+
+        $.ajax({
+            url: 'aset/PembiayaanAset/save_dp',
+            type: 'POST',
+            dataType: 'JSON',
+            data: { params: params },
+            beforeSend: function () { showLoading(); },
+            success: function (response) {
+                hideLoading();
+                if (response.status == 1) {
+                    bootbox.alert(response.message, function () {
+                        pba.load_dp(params.kode_pembiayaan);
+                        pba.load_hitung_cicilan(params.kode_pembiayaan);
+                        pba.hitung_cicilan();
+                    });
+                } else {
+                    // button.prop('disabled', false);
+                    bootbox.alert(response.message || 'Data gagal disimpan.');
+                }
+            },
+            error: function () {
+                hideLoading();
+                // button.prop('disabled', false);
+                bootbox.alert('Permintaan penyimpanan DP gagal diproses.');
+            }
+        });
     },
 
     delete_dp: function (element) {
@@ -986,107 +1288,203 @@ var pba = {
     },
 
     save_tdp: function () {
-        var dateValue = $('#tgl_tdp').val();
-        var date = moment(dateValue, 'DD MMMM YYYY', 'id', true);
+        var kode_pembiayaan = $("#key_kode_pembiayaan").val();
+        // console.log(kode_pembiayaan)
+        var dateValue   = $('#tgl_tdp').val();
+        var date        = moment(dateValue, 'DD MMMM YYYY', 'id', true);
         if (!date.isValid()) {
             bootbox.alert('Tanggal TDP wajib dipilih.');
             return;
         }
 
-        var rows = [];
-        var valid = true;
+        var rows  = [];
+
         $('#tdp-rows .tdp-row').each(function () {
             var description = $.trim($(this).find('.tdp-deskripsi').val() || '');
             var nominal = pba.to_backend_nominal($(this).find('.tdp-nominal').val());
+
             if (Number(nominal) <= 0) {
-                valid = false;
+                return; 
             }
-            rows.push({ deskripsi: description, nominal: nominal });
+
+            rows.push({
+                deskripsi: description,
+                nominal: nominal
+            });
         });
-        if (!valid) {
+
+        //   console.log(rows.length)
+        //   return
+
+        if (rows.length < 1) {
             bootbox.alert('Nominal setiap baris TDP harus lebih dari 0.');
             return;
         }
+        
 
         var params = {
-            kode_pembiayaan: $('#kode_pembiayaan_tdp').val(),
+            kode_pembiayaan: kode_pembiayaan,
             tanggal: date.format('YYYY-MM-DD'),
             is_pengurang_pokok: $('#tdp_pengurang_pokok').is(':checked') ? 1 : 0,
             rows: rows
         };
-        $('#tdp-save').prop('disabled', true);
-        pba.tdp_request('aset/PembiayaanAset/save_tdp', params, $('#tdp-save'));
+
+        $.ajax({
+            url: 'aset/PembiayaanAset/save_tdp',
+            type: 'POST',
+            dataType: 'JSON',
+            data: { params: params },
+            beforeSend: function () { showLoading(); },
+            success: function (response) {
+                hideLoading();
+                if (response.status == 1) {
+                    bootbox.alert(response.message, function () {
+                        pba.load_tdp(kode_pembiayaan);
+                        pba.load_hitung_cicilan(params.kode_pembiayaan);
+                        pba.load_pelunasan(params.kode_pembiayaan)
+                    });
+                } else {
+                    // button.prop('disabled', false);
+                    bootbox.alert(response.message || 'Data gagal disimpan.');
+                }
+            },
+            error: function () {
+                hideLoading();
+                // button.prop('disabled', false);
+                bootbox.alert('Permintaan penyimpanan TDP gagal diproses.');
+            }
+        });
     },
 
-    edit_tdp: function (element) {
-        var button = $(element);
-        var date = moment(button.data('tanggal'), 'YYYY-MM-DD', true);
-        // console.log(date);
+    edit_tdp: function () {
+        $("#form-tdp").find("input").prop("disabled", false);
 
-        // if (!date.isValid()) {
-        //     bootbox.alert('Tanggal TDP tidak valid.');
-        //     return;
-        // }
+        $("#button-tdp").html(`
+            <button type="button" id="tdp-save"
+                onclick="pba.save_tdp()"
+                class="btn btn-primary">
+                Simpan TDP
+            </button>
+            <button type="button"
+                onclick="pba.batal_edit_tdp()"
+                class="btn btn-default">
+                Batal
+            </button>
+        `);
 
-        
-        var description = $('<div>').text(button.attr('data-deskripsi') || '').html();
-        var nominal = pba.format_rupiah(button.attr('data-nominal'));
-        var dialog = bootbox.dialog({
-            title: 'Ubah TDP',
-            message: '<form id="form-edit-tdp">' +
-                '<div class="form-group"><label for="edit-tgl-tdp">Tanggal TDP</label>' +
-                '<div class="input-group date" id="edit-tgl-tdp-picker"><input type="text" id="edit-tgl-tdp" class="form-control" autocomplete="off" readonly value="' + date.format('DD MMMM YYYY') + '">' +
-                '<span class="input-group-addon"><i class="fa fa-calendar"></i></span></div></div>' +
-                '<div class="form-group"><label for="edit-deskripsi-tdp">Deskripsi</label><input type="text" id="edit-deskripsi-tdp" class="form-control" maxlength="255" value="' + description + '"></div>' +
-                '<div class="form-group"><label for="edit-nominal-tdp">Nominal</label><div class="input-group"><span class="input-group-addon">Rp</span>' +
-                '<input type="text" id="edit-nominal-tdp" class="form-control text-right" inputmode="numeric" autocomplete="off" value="' + nominal + '"></div></div>' +
-                '<div class="checkbox"><label><input type="checkbox" id="edit-pengurang-pokok-tdp" ' + (String(button.data('pengurang-pokok')) === '1' ? 'checked' : '') + '> Sebagai pengurang pokok hutang</label></div>' +
-                '</form>',
-            buttons: {
-                cancel: {
-                    label: 'Batal',
-                    className: 'btn-default'
-                },
-                save: {
-                    label: 'Simpan Perubahan',
-                    className: 'btn-primary',
-                    callback: function () {
-                        var editDate = moment($('#edit-tgl-tdp').val(), 'DD MMMM YYYY', 'id', true);
-                        var editNominal = pba.to_backend_nominal($('#edit-nominal-tdp').val());
-                        if (!editDate.isValid()) {
-                            bootbox.alert('Tanggal TDP wajib dipilih.');
-                            return false;
-                        }
-                        if (Number(editNominal) <= 0) {
-                            bootbox.alert('Nominal TDP harus lebih dari 0.');
-                            return false;
-                        }
+        $("#form-tdp .tdp-nominal")
+            .off("input.inputRupiah")
+            .on("input.inputRupiah", function () {
+                pba.inputRupiah(this);
+            });
 
-                        pba.tdp_request('aset/PembiayaanAset/edit_tdp', {
-                            id: button.data('id'),
-                            tanggal: editDate.format('YYYY-MM-DD'),
-                            deskripsi: $('#edit-deskripsi-tdp').val() || '',
-                            nominal: editNominal,
-                            is_pengurang_pokok: $('#edit-pengurang-pokok-tdp').is(':checked') ? 1 : 0
-                        }, button);
-                        return true;
-                    }
-                }
-            }
-        });
+            $("#tgl_tdp").css("background-color", "#fff");
+            $("#tdp-add-row").prop("disabled", false);
 
-        dialog.on('shown.bs.modal', function () {
-            if ($.fn.datetimepicker) {
-                $('#edit-tgl-tdp-picker').datetimepicker({
-                    locale: 'id',
-                    format: 'DD MMMM YYYY',
-                    useCurrent: false
-                });
-            }
-        });
-        dialog.off('input.pbaEditTdp').on('input.pbaEditTdp', '#edit-nominal-tdp', function () {
-            $(this).val(pba.format_rupiah($(this).val()));
-        });
+            $(".tdp-remove-row").prop("disabled", false);
+    },
+
+    batal_edit_tdp: function () {
+        var kode_pembiayaan = $("#key_kode_pembiayaan").val();
+        $("#form-tdp").find("input").prop("disabled", true);
+
+        $("#tdp-add-row").prop("disabled", true);
+        $("#button-tdp").html(`
+            <button type="button"
+                onclick="pba.edit_tdp()"
+                class="btn btn-warning">
+                Edit TDP
+            </button>
+        `);
+
+        $(".tdp-remove-row").prop("disabled", true);
+
+        pba.load_tdp(kode_pembiayaan)
+    },
+
+    edit_dp: function () {
+        $("#form-dp").find("input").prop("disabled", false);
+
+        $("#button-dp").html(`
+            <button type="button" id="dp-save"
+                onclick="pba.save_dp()"
+                class="btn btn-primary">
+                Simpan DP
+            </button>
+            <button type="button"
+                onclick="pba.batal_edit_dp()"
+                class="btn btn-default">
+                Batal
+            </button>
+        `);
+
+        $("#form-dp .tdp-nominal")
+            .off("input.inputRupiah")
+            .on("input.inputRupiah", function () {
+                pba.inputRupiah(this);
+            });
+
+            $("#tgl_dp").css("background-color", "#fff");
+            $("#dp-add-row").prop("disabled", false);
+            $("#dp-add-installment").prop("disabled", false);
+
+            $(".dp-delete-row").prop("disabled", false);
+    },
+
+    batal_edit_dp: function () {
+        $("#form-dp").find("input").prop("disabled", true);
+
+        $("#tdp-add-row").prop("disabled", true);
+        $("#button-dp").html(`
+            <button type="button"
+                onclick="pba.edit_dp()"
+                class="btn btn-warning">
+                Edit TDP
+            </button>
+        `);
+
+        $(".tdp-remove-row").prop("disabled", true);
+    },
+
+
+    edit_leasing: function () {
+        $("#detail-cicilan").find("input").prop("disabled", false);
+
+        $("#button-cicilan").html(`
+            <button type="button" id="dp-save"
+                id="simpan-detail-cicilan" data-can-save="1"
+                onclick="pba.simpan_detail_cicilan(this)"
+                class="btn btn-primary">
+                Simpan Detail Cicilan
+            </button>
+            <button type="button"
+                onclick="pba.batal_edit_leasing()"
+                class="btn btn-default">
+                Batal
+            </button>
+        `);
+
+        $("#detail-cicilan .tdp-nominal")
+            .off("input.inputRupiah")
+            .on("input.inputRupiah", function () {
+                pba.inputRupiah(this);
+            });
+
+            $("#tgl_jt").css("background-color", "#fff");
+
+    },
+
+    batal_edit_leasing: function () {
+        $("#detail-cicilan").find("input").prop("disabled", true);
+        $("#button-cicilan").html(`
+            <button type="button"
+                onclick="pba.edit_leasing()"
+                class="btn btn-warning">
+                Edit Detail Cicilan
+            </button>
+        `);
+
+        $("#tgl_jt").css("background-color", "#dcdbdb");
     },
 
     delete_tdp: function (element) {
@@ -1098,6 +1496,53 @@ var pba = {
                 }, button);
             }
         });
+    },
+
+
+    edit_pelunasan: function () {
+        $("#detail-pelunasan").find("input").prop("disabled", false);
+
+        $("#button-pelunasan").html(`
+            <button type="button" id="tdp-save"
+                onclick="pba.save_pelunasan()"
+                class="btn btn-primary">
+                Simpan TDP
+            </button>
+            <button type="button"
+                onclick="pba.batal_edit_pelunasan()"
+                class="btn btn-default">
+                Batal
+            </button>
+        `);
+
+
+        $("#tgl_pelunasan").css("background-color", "#fff");
+
+        $("#pelunasan-delete").css("display", "block");
+
+       
+        $("#pelunasan-add-row").prop("disabled", false);
+
+        $(".pelunasan-remove-row").prop("disabled", false);
+    },
+
+    batal_edit_pelunasan: function () {
+        var kode_pembiayaan = $("#key_kode_pembiayaan").val();
+        $("#detail-pelunasan").find("input").prop("disabled", true);
+
+        $("#pelunasan-add-row").prop("disabled", true);
+        $("#button-pelunasan").html(`
+            <button type="button"
+                onclick="pba.edit_tdp()"
+                class="btn btn-warning">
+                Edit TDP
+            </button>
+        `);
+
+        $(".pelunasan-remove-row").prop("disabled", true);
+        $("#pelunasan-delete").css("display", "none");
+
+        // pba.load_pelunasan(kode_pembiayaan)
     },
 
     tdp_request: function (url, params, button) {
@@ -1126,6 +1571,147 @@ var pba = {
             }
         });
     },
+
+
+    load_tdp: function(kode_pembiayaan = null){
+        let kode = $("#key_kode_pembiayaan").val() ?? kode_pembiayaan
+        $.ajax({
+            url: 'aset/PembiayaanAset/load_tdp',
+            type: 'POST',
+            dataType: 'html',
+            data: { kode: kode },
+            beforeSend: function () { 
+                showLoading(); 
+            },
+            success: function (resp) {
+                hideLoading();
+                $('.load_tdp').html(resp)
+                pba.init_datepickers()
+                
+            },
+            error: function () {
+                hideLoading();
+                button.prop('disabled', false);
+                bootbox.alert('Permintaan penyimpanan TDP gagal diproses.');
+            }
+        });
+    },
+
+    load_dp: function(kode_pembiayaan = null){
+        let supplier_name = $(".supplier_name").html();
+        let kode = $("#key_kode_pembiayaan").val() ?? kode_pembiayaan
+        $.ajax({
+            url: 'aset/PembiayaanAset/load_dp',
+            type: 'POST',
+            dataType: 'html',
+            data: { kode: kode },
+            beforeSend: function () { 
+                showLoading(); 
+            },
+            success: function (resp) {
+                hideLoading();
+                $('.load_dp').html(resp)
+                pba.init_datepickers()
+
+                $("#supplier-dp").val(supplier_name);
+                
+            },
+            error: function () {
+                hideLoading();
+                // button.prop('disabled', false);
+                bootbox.alert('Permintaan penyimpanan TDP gagal diproses.');
+            }
+        });
+    },
+
+    load_cicilan: function(kode_pembiayaan = null){
+        let kode = $("#key_kode_pembiayaan").val() ?? kode_pembiayaan
+        $.ajax({
+            url: 'aset/PembiayaanAset/load_cicilan',
+            type: 'POST',
+            dataType: 'html',
+            data: { kode: kode },
+            beforeSend: function () { 
+                showLoading(); 
+            },
+            success: function (resp) {
+                hideLoading();
+                $('.load_cicilan').html(resp)
+                pba.init_datepickers()
+                pba.init_cicilan();
+                
+            },
+            error: function () {
+                hideLoading();
+                // button.prop('disabled', false);
+                bootbox.alert('Permintaan penyimpanan TDP gagal diproses.');
+            }
+        });
+    },
+
+    load_hitung_cicilan: function(kode_pembiayaan = null){
+        let kode = $("#key_kode_pembiayaan").val() ?? kode_pembiayaan
+        $.ajax({
+            url: 'aset/PembiayaanAset/load_hitung_cicilan',
+            type: 'POST',
+            dataType: 'html',
+            data: { kode: kode },
+            beforeSend: function () { 
+                showLoading(); 
+            },
+            success: function (resp) {
+                hideLoading();
+                $('.cicilan-area').html(resp)
+                pba.init_datepickers()
+                
+            },
+            error: function () {
+                hideLoading();
+                // button.prop('disabled', false);
+                bootbox.alert('Permintaan penyimpanan TDP gagal diproses.');
+            }
+        });
+    },
+
+
+    load_pelunasan: function(kode_pembiayaan = null){
+        // let supplier_name = $(".supplier_name").html();
+        let kode = $("#key_kode_pembiayaan").val() ?? kode_pembiayaan
+        
+        $.ajax({
+            url: 'aset/PembiayaanAset/load_pelunasan',
+            type: 'POST',
+            dataType: 'html',
+            data: { kode: kode },
+            beforeSend: function () { 
+                showLoading(); 
+            },
+            success: function (resp) {
+                hideLoading();
+                $('.load_pelunasan').html(resp)
+                pba.init_datepickers()
+
+                // $("#supplier-dp").val(supplier_name);
+                
+            },
+            error: function () {
+                hideLoading();
+                // button.prop('disabled', false);
+                bootbox.alert('Permintaan penyimpanan TDP gagal diproses.');
+            }
+        });
+    },
+
+
+
+
+
+
+
+
+
+
+
 
     refresh_asset_summary: function () {
         var option = $('#kode_aset option:selected');
@@ -1177,25 +1763,25 @@ var pba = {
         });
     },
 
-    process_form: function (element) {
-        var button = $(element);
-        var id = encodeURIComponent(button.data('id'));
-        var kodeJenis = String(button.data('kode-jenis-pembiayaan') || '').toUpperCase();
+    // process_form: function (element) {
+    //     var button = $(element);
+    //     var id = encodeURIComponent(button.data('id'));
+    //     var kodeJenis = String(button.data('kode-jenis-pembiayaan') || '').toUpperCase();
         
-        var urlMap = {
-            'PMB01': 'aset/PembiayaanAset/ProsesCash',
-            'PMB02': 'aset/PembiayaanAset/ProsesTempo',
-            'PMB03': 'aset/PembiayaanAset/ProsesLeasing'
-        };
+    //     var urlMap = {
+    //         'PMB01': 'aset/PembiayaanAset/ProsesCash',
+    //         'PMB02': 'aset/PembiayaanAset/ProsesTempo',
+    //         'PMB03': 'aset/PembiayaanAset/ProsesLeasing'
+    //     };
         
-        var url = urlMap[kodeJenis] || ('aset/PembiayaanAset/ProsesLeasing?id=' + id);
+    //     var url = urlMap[kodeJenis] || ('aset/PembiayaanAset/ProsesLeasing?id=' + id);
         
-        if (url.indexOf('?') === -1) {
-            url += '?id=' + id;
-        }
+    //     if (url.indexOf('?') === -1) {
+    //         url += '?id=' + id;
+    //     }
         
-        window.open(url, '_blank');
-    },
+    //     window.open(url, '_blank');
+    // },
 
     load_data: function () {
         $.ajax({
@@ -1315,36 +1901,6 @@ var pba = {
     },
 
 
-
-    edit_leasing: function (element) {
-        var kodePembiayaan = $('#kode_pembiayaan_tdp').val() || $('#kode_pembiayaan_dp').val();
-
-        $.ajax({
-            url: 'aset/PembiayaanAset/get_detail_cicilan',
-            type: 'POST',
-            dataType: 'html',
-            data: { 
-                params: { 
-                    kode_pembiayaan: kodePembiayaan 
-                } 
-            },
-            beforeSend: function () { 
-                showLoading(); 
-            },
-            success: function (response) {  
-                bootbox.dialog({
-                    title: 'Edit Detail Cicilan',
-                    message: response,
-                    size: 'large',
-                    closeButton: true
-                });
-            },
-            complete: function() {
-                hideLoading();
-            }
-        });
-    },
-
     hitung_ulang_cicilan: function () {
         var tenor = parseInt($('#edit_tenor').val()) || 0;
         var bunga = parseFloat($('#edit_bunga').val()) || 0;
@@ -1376,9 +1932,9 @@ var pba = {
             });
         };
 
-        var priceCents = cents(panel.attr('data-harga-beli'));
-        var tdpCents = cents(panel.attr('data-tdp-pengurang'));
-        var downPaymentCents = cents(panel.attr('data-dp-uang-muka'));
+        var priceCents          = cents(panel.attr('data-harga-beli'));
+        var tdpCents            = cents(panel.attr('data-tdp-pengurang'));
+        var downPaymentCents    = cents(panel.attr('data-dp-uang-muka'));
         // var principalCents = priceCents - tdpCents - downPaymentCents;
         var principalCents = (priceCents - downPaymentCents) + biayaPenambahCents - tdpCents;
 
@@ -1743,234 +2299,149 @@ var pba = {
     },
 
     formatInputRupiah: function (element) {
-        var val = $(element).val().replace(/\D/g, '');
-        $(element).val(val.replace(/\B(?=(\d{3})+(?!\d))/g, '.'));
+        let val = $(element).val() || '';
+        val = val.replace(/\D/g, '');
+
+        $(element).val(
+            val.replace(/\B(?=(\d{3})+(?!\d))/g, '.')
+        );
+    },
+
+
+    tdpRemoveRow: function (element) {
+        $(element).closest('.tdp-row').remove();
+        pba.hitung_tdp_total();
+    },
+
+    inputRupiah: function (element) {
+        var val = $(element).val() || '';
+        val = val.replace(/\D/g, '');
+
+        $(element).val(
+            val.replace(/\B(?=(\d{3})+(?!\d))/g, '.')
+        );
+
+        pba.hitung_tdp_total();
+        pba.update_dp_total();
+    },
+
+    tdpAddRow: function () {
+        var newRow = `
+            <div class="row tdp-row" style="margin-bottom:8px;">
+                <div class="col-xs-7">
+                    <input type="text"
+                        class="form-control tdp-deskripsi"
+                        value=""
+                        maxlength="255"
+                        placeholder="Deskripsi">
+                </div>
+
+                <div class="col-xs-4">
+                    <div class="input-group">
+                        <span class="input-group-addon">Rp</span>
+                        <input type="text"
+                            class="form-control text-right tdp-nominal"
+                            oninput="pba.inputRupiah(this)"
+                            placeholder="0"
+                            inputmode="numeric">
+                    </div>
+                </div>
+
+                <div class="col-xs-1">
+                    <button type="button"
+                        class="btn btn-danger btn-sm tdp-remove" onclick="pba.tdpRemoveRow(this)">
+                        <i class="fa fa-times"></i>
+                    </button>
+                </div>
+            </div>
+        `;
+
+        $('#tdp-rows').append(newRow);
+        pba.hitung_tdp_total();
+    },
+
+    hitung_tdp_total: function() {
+        var total = 0;
+        
+        $('.tdp-row').each(function() {
+            var val = $(this).find('.tdp-nominal').val().replace(/\D/g, '');
+            total += parseFloat(val) || 0;
+        });
+
+        $('#tdp-total').text(total.toLocaleString('id-ID'));
     },
 
 
     add_tdp: function (element, event) {
-        if (event) event.preventDefault();
+        if (event) {
+            event.preventDefault();
+        }
 
-        var kodePembiayaan = $('#kode_pembiayaan_tdp').val();
-        if (!kodePembiayaan) {
-            bootbox.alert('Kode pembiayaan tidak ditemukan.');
+        var $panel = $(element).closest('.installment-panel');
+        var $bodyLama = $panel.children('.panel-body').first();
+        var $template = $('#body_tdp');
+
+        // Hindari menambahkan form TDP lebih dari satu kali
+        if ($panel.find('.tdp-clone').length) {
             return;
         }
 
-        var dialog;
+        // Clone template
+        var $clone = $template.clone(false, false);
 
-        $.ajax({
-            url: 'aset/PembiayaanAset/get_modal_add_tdp',
-            type: 'POST',
-            dataType: 'html',
-            success: function (html) {
+        $clone
+            .removeAttr('id')
+            .removeAttr('style')
+            .addClass('tdp-clone');
 
-                dialog = bootbox.dialog({
-                    title: 'Tambah Tanda Jadi (TDP)',
-                    message: html,
-                    size: 'large',
-                    buttons: {
-                        cancel: { 
-                            label: 'Batal', 
-                            className: 'btn-default' 
-                        },
-                        success: {
-                            label: 'Simpan TDP',
-                            className: 'btn-primary',
-                            callback: function () {
-                                pba.save_tdp_modal(kodePembiayaan);
-                                return false; 
-                            }
-                        }
-                    },
-        
-                    onHide: function () {
-                        if ($('.modal-tgl-picker').data('DateTimePicker')) {
-                            $('.modal-tgl-picker').data('DateTimePicker').destroy();
-                        }
-                        $(document).off('keyup.tdpRupiah');
-                        $(document).off('change.tdpCheckbox');
-                        $(document).off('click.tdpAddRow');
-                        $(document).off('click.tdpRemoveRow');
-                    }
-                });
-                
-                setTimeout(function() {
-                    pba.init_datepickers();
-                }, 100);
+        // Sesuaikan ID tanggal pada form hasil clone
+        var $datePicker = $clone.find('#tgl_tdp_clone_picker');
+        var $dateInput = $clone.find('#tgl_tdp_clone');
 
-                $(document).off('keyup.tdpRupiah').on('keyup.tdpRupiah', '.modal-tdp-nominal', function() {
-                    var val = $(this).val().replace(/\D/g, '');
-                    $(this).val(val.replace(/\B(?=(\d{3})+(?!\d))/g, '.'));
-                    pba.hitung_modal_tdp_total();
-                });
+        $datePicker.attr('id', 'tgl_tdp_picker');
+        $dateInput.attr('id', 'tgl_tdp');
 
-                $(document).off('change.tdpCheckbox').on('change.tdpCheckbox', '#modal_tdp_pengurang_pokok', function() {
-                    pba.hitung_modal_tdp_total();
-                });
+        // Simpan body lama untuk dimunculkan kembali jika batal
+        $bodyLama.hide();
 
-                $(document).off('click.tdpAddRow').on('click.tdpAddRow', '#modal-add-tdp-row', function() {
-                    var newRow = `
-                        <div class="row modal-tdp-row" style="margin-bottom:8px;">
-                            <div class="col-xs-7">
-                                <input type="text" class="form-control modal-tdp-deskripsi" value="Tanda jadi" maxlength="255" placeholder="Deskripsi">
-                            </div>
-                            <div class="col-xs-4">
-                                <div class="input-group">
-                                    <span class="input-group-addon">Rp</span>
-                                    <input type="text" class="form-control text-right modal-tdp-nominal" placeholder="0" inputmode="numeric">
-                                </div>
-                            </div>
-                            <div class="col-xs-1">
-                                <button type="button" class="btn btn-danger btn-sm modal-tdp-remove"><i class="fa fa-times"></i></button>
-                            </div>
-                        </div>
-                    `;
-                    $('#modal-tdp-rows').append(newRow);
-                });
+        // Masukkan form baru ke panel yang sama
+        $panel.append($clone);
 
-                $(document).off('click.tdpRemoveRow').on('click.tdpRemoveRow', '.modal-tdp-remove', function() {
-                    $(this).closest('.modal-tdp-row').remove();
-                    pba.hitung_modal_tdp_total();
-                });
+        // Inisialisasi datetimepicker pada form hasil clone
+        if ($.fn.datetimepicker) {
+            moment.locale('id');
 
-            },
-            error: function () {
-                
-                bootbox.alert('Gagal memuat form TDP. Silakan coba lagi.');
-            }
-        });
-    },
+            var value = $dateInput.val();
+            var date = moment(value, ['YYYY-MM-DD', 'DD MMMM YYYY'], true);
 
-
-        // 1. Fungsi untuk menghitung total TDP
-    hitung_modal_tdp_total: function() {
-        var total = 0;
-        
-        // Loop semua baris yang ada di modal
-        $('.modal-tdp-row').each(function() {
-            // Ambil nilai dari input nominal, hapus semua karakter kecuali angka
-            var val = $(this).find('.modal-tdp-nominal').val().replace(/\D/g, '');
-            // Tambahkan ke total (jika kosong atau bukan angka, anggap 0)
-            total += parseFloat(val) || 0;
-        });
-
-        // Tampilkan total dengan format Rupiah (contoh: 1.000.000)
-        $('#modal-tdp-total').text(total.toLocaleString('id-ID'));
-    },
-
-    // 2. Fungsi untuk mengatur tombol hapus (disable jika hanya 1 baris)
-    updateModalTdpButtons: function() {
-        var count = $('.modal-tdp-row').length;
-        
-        // Jika baris hanya 1, matikan semua tombol hapus
-        if (count <= 1) {
-            $('.modal-tdp-remove').prop('disabled', true);
-        } 
-        // Jika lebih dari 1, aktifkan semua tombol hapus
-        else {
-            $('.modal-tdp-remove').prop('disabled', false);
-        }
-    },
-
-        // Pastikan ada tanda koma (,) di akhir fungsi sebelumnya!
-    updateModalTdpButtons: function() {
-        var count = $('.modal-tdp-row').length;
-        if (count <= 1) {
-            $('.modal-tdp-remove').prop('disabled', true);
-        } else {
-            $('.modal-tdp-remove').prop('disabled', false);
-        }
-    },
-
-    save_tdp_modal: function (kodePembiayaan) {
-        // var tanggalStr          = $('#tgl_modal_tdp').val(); 
-
-        var date = moment($('#tgl_modal_tdp').val(), 'DD MMMM YYYY', 'id', true);
-        if (!date.isValid()) {
-            bootbox.alert('Tanggal pelunasan wajib dipilih.');
-            return;
-        } 
-        
-        var tanggalStr = date.format('YYYY-MM-DD')
-
-        // console.log(tanggalStr);
-        // return false;
-        
-        var isPengurangPokok    = $('#modal_tdp_pengurang_pokok').is(':checked') ? 1 : 0;
-        
-        var rows = [];
-        var valid = true;
-
-        // Validasi Tanggal
-        // if (!tanggalStr) {
-        //     bootbox.alert('Tanggal TDP wajib diisi.');
-        //     return;
-        // }
-
-        // 2. Loop semua baris untuk ambil data
-        $('.modal-tdp-row').each(function(index) {
-            var deskripsi = $(this).find('.modal-tdp-deskripsi').val().trim();
-            var nominalStr = $(this).find('.modal-tdp-nominal').val().replace(/\./g, ''); 
-            
-            if (deskripsi === '') {
-                bootbox.alert('Deskripsi pada baris ke-' + (index + 1) + ' wajib diisi.');
-                valid = false;
-                return false; // break loop
-            }
-            if (!nominalStr || parseFloat(nominalStr) <= 0) {
-                bootbox.alert('Nominal pada baris ke-' + (index + 1) + ' harus lebih dari 0.');
-                valid = false;
-                return false; // break loop
+            if (value && date.isValid()) {
+                $dateInput.val(date.format('DD MMMM YYYY'));
             }
 
-            rows.push({
-                tanggal: tanggalStr, // Kirim YYYY-MM-DD
-                deskripsi: deskripsi,
-                nominal: nominalStr,
-                is_pengurang_pokok: isPengurangPokok
+            $datePicker.datetimepicker({
+                locale: 'id',
+                format: 'DD MMMM YYYY',
+                useCurrent: false
             });
-        });
+        }
+    },
 
-        if (!valid) return; // Stop jika ada yang error
 
-        // 3. Kirim ke Server
-        $.ajax({
-            url: 'aset/PembiayaanAset/save_tdp_modal', // Sesuaikan dengan URL controller Anda
-            type: 'POST',
-            dataType: 'JSON',
-            data: { 
-                params: { 
-                    kode_pembiayaan: kodePembiayaan,
-                    rows: rows
-                } 
-            },
-            beforeSend: function() { 
-                if(typeof showLoading === 'function') showLoading(); 
-            },
-            success: function(response) {
-                if(typeof hideLoading === 'function') hideLoading();
-                
-                if (response.status == 1) {
-                    $('.bootbox').modal('hide'); // Tutup modal
-                    bootbox.alert({
-                        title: 'Berhasil',
-                        message: response.message || 'TDP berhasil disimpan.',
-                        callback: function() { 
-                            window.location.reload(); // Reload halaman
-                        }
-                    });
-                } else {
-                    bootbox.alert(response.message || 'Gagal menyimpan TDP.');
-                }
-            },
-            error: function() {
-                if(typeof hideLoading === 'function') hideLoading();
-                bootbox.alert('Gagal menghubungi server.');
-            }
-        });
-    }
-    // --- AKHIR FUNGSI ---
+    batal_tdp: function () {
+        // Cari panel TDP yang sedang aktif
+        var $panel = $('.installment-panel').has('.tdp-clone');
+
+        if (!$panel.length) {
+            return;
+        }
+
+        // Hapus form TDP hasil clone
+        $panel.find('.tdp-clone').remove();
+
+        // Tampilkan kembali body panel lama
+        $panel.children('.panel-body').first().show();
+    },
+
 
 
     

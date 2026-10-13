@@ -25,7 +25,7 @@
                     <td><?php echo htmlspecialchars(($row['supplier_nomor'] ?? $row['id_supplier']) . ' - ' . ($row['supplier_nama'] ?? '')); ?></td>
                     <td><?php echo !empty($row['id_leasing']) ? htmlspecialchars(($row['leasing_nomor'] ?? $row['id_leasing']) . ' - ' . ($row['leasing_nama'] ?? '')) : '-'; ?></td>
                     <td class="text-center">
-                        <button type="button" class="btn btn-sm btn-info" data-id="<?php echo (int) $row['id']; ?>" data-kode-jenis-pembiayaan="<?php echo htmlspecialchars($row['kode_jenis_pembiayaan'] ?? ''); ?>" onclick="pba.process_form(this)"title="Proses Pembiayaan">
+                        <button type="button" class="btn btn-sm btn-info" data-id="<?php echo (int) $row['id']; ?>" data-kode-jenis-pembiayaan="<?php echo htmlspecialchars($row['kode_jenis_pembiayaan'] ?? ''); ?>" onclick="pba.proses_pembiayaan(this)"title="Proses Pembiayaan">
                             <i class="fa fa-cogs"></i>
                             Proses Pembiayaan
                         </button>
