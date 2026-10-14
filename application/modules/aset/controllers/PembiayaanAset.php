@@ -1465,10 +1465,6 @@ class PembiayaanAset extends Public_Controller
                 $this->result['message'] = 'Aset wajib dipilih dan harus terdaftar.';
             } elseif (\Model\Storage\PembiayaanAset_model::where('kode_aset', $kodeAset)->exists()) {
                 $this->result['message'] = 'Aset tersebut sudah memiliki data pembiayaan.';
-            // } elseif (!$this->isSupplierValid($idSupplier)) {
-            //     $this->result['message'] = 'Supplier wajib dipilih dari daftar supplier aktif.';
-            // } elseif (!$this->isSupplierValid($idLeasing)) {
-            //     $this->result['message'] = 'Leasing wajib dipilih dari daftar supplier aktif.';
             } else {
                 $model = new \Model\Storage\PembiayaanAset_model();
                 $model->kode_pembiayaan = $this->generateKodePembiayaan();
@@ -1486,8 +1482,19 @@ class PembiayaanAset extends Public_Controller
                     $model->id,
                     $model
                 );
+
+                $data_aset = \Model\Storage\MsAset_model::where(
+                                'kode_aset',
+                                $kodeAset
+                            )->get()->toArray();
+                // cetak_r($data_aset, 1);
+                
                 $this->result['status'] = 1;
                 $this->result['message'] = 'Data pembiayaan aset berhasil disimpan.';
+                $this->result['data'] = [
+                    'id' => $model->id,
+                    'kode_jenis_pembiayaan' => $data_aset[0]['kode_pembiayaan']
+                ];
             }
         } catch (\Illuminate\Database\QueryException $e) {
             $this->result['message'] = 'Gagal menyimpan pembiayaan aset: ' . $e->getMessage();
@@ -1750,13 +1757,13 @@ class PembiayaanAset extends Public_Controller
     private function getSupplierOptions()
     {
         return \Model\Storage\Supplier_model::select('id', 'nomor', 'nama')
-            ->where('tipe', 'supplier')
+            ->whereIn('kategori_supplier', ['ASET', 'SEWA'])
             ->where('jenis', '<>', 'ekspedisi')
             ->where('mstatus', 1)
             ->whereIn('id', function ($query) {
                 $query->selectRaw('MAX(id)')
                     ->from('pelanggan')
-                    ->where('tipe', 'supplier')
+                    ->whereIn('kategori_supplier', ['ASET', 'SEWA'])
                     ->where('jenis', '<>', 'ekspedisi')
                     ->groupBy('nomor');
             })

@@ -27,18 +27,22 @@ var pba = {
             pba.load_cicilan()    
         ).done(function (resTdp, resDp, resCicilan) {
             
+            console.log("✅ Semua data awal berhasil di-load. Memulai hitung cicilan...");
 
-            console.log("Semua data berhasil dimuat, memulai perhitungan...");
-            pba.load_hitung_cicilan(); 
-            
-    
+            try {
+                // Panggil fungsinya
+                pba.load_hitung_cicilan(); 
+                console.log("✅ load_hitung_cicilan SELESAI dijalankan.");
+            } catch (error) {
+                console.error("❌ ERROR DI DALAM load_hitung_cicilan:", error);
+            }
+
+            // Lanjutkan ke fungsi berikutnya
             pba.load_pelunasan();
             pba.load_tempo();
 
         }).fail(function (xhr, status, error) {
-    
-            console.error("Gagal memuat data pembiayaan:", error);
-            
+            console.error("Gagal memuat data pembiayaan awal:", error);
         });
         pba.init_datepickers();
     },
@@ -341,7 +345,7 @@ var pba = {
 
     },
 
-    proses_pembiayaan: function(elm) {
+    proses_pembiayaan: function(elm, id_data = null, kode_jenis_pembiayaan = null) {
         var $tab = $('a[href="#action"]');
         $tab.tab('show');
         $('a[href="#history"]').closest('li').removeClass('active');
@@ -349,9 +353,9 @@ var pba = {
         $('#action').closest(".nav-item").addClass('active');
 
 
-        var button      = $(elm);
-        var id          = encodeURIComponent(button.data('id'));
-        var kodeJenis   = String(button.data('kode-jenis-pembiayaan') || '').toUpperCase();
+        var button      = elm ? $(elm) : $();
+        var id          = id_data ?? encodeURIComponent(button.data('id'));
+        var kodeJenis   = kode_jenis_pembiayaan ?? String(button.data('kode-jenis-pembiayaan') || '').toUpperCase();
         
         var urlMap = {
             'PMB01': 'aset/PembiayaanAset/ProsesCash',
@@ -359,10 +363,10 @@ var pba = {
             'PMB03': 'aset/PembiayaanAset/ProsesLeasing'
         };
         
-        var url = urlMap[kodeJenis] || ('aset/PembiayaanAset/ProsesLeasing');
+        // var url = urlMap[kodeJenis] || ('aset/PembiayaanAset/ProsesLeasing');
 
         $.ajax({
-            url: url,
+            url: urlMap[kodeJenis],
             type: 'POST',
             dataType: 'html',
             data: { id: id },
@@ -1937,7 +1941,15 @@ var pba = {
                     hideLoading();
                     if (response.status == 1) {
                         bootbox.alert(response.message, function () {
-                            window.location.reload(true);
+                            console.log(response.data);
+
+                            if (response.data && Object.keys(response.data).length > 0) {
+
+                                pba.proses_pembiayaan(null, response.data.id, response.data.kode_jenis_pembiayaan)
+                            } else {
+                                window.location.reload();
+                            }
+
                         });
                     } else {
                         bootbox.alert(response.message);
