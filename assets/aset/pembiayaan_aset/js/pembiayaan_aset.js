@@ -27,17 +27,15 @@ var pba = {
             pba.load_cicilan()    
         ).done(function (resTdp, resDp, resCicilan) {
             
-            console.log("✅ Semua data awal berhasil di-load. Memulai hitung cicilan...");
+            // console.log("✅ Semua data awal berhasil di-load. Memulai hitung cicilan...");
 
             try {
-                // Panggil fungsinya
                 pba.load_hitung_cicilan(); 
-                console.log("✅ load_hitung_cicilan SELESAI dijalankan.");
+                // console.log("✅ load_hitung_cicilan SELESAI dijalankan.");
             } catch (error) {
-                console.error("❌ ERROR DI DALAM load_hitung_cicilan:", error);
+                // console.error("❌ ERROR DI DALAM load_hitung_cicilan:", error);
             }
 
-            // Lanjutkan ke fungsi berikutnya
             pba.load_pelunasan();
             pba.load_tempo();
 
@@ -318,7 +316,7 @@ var pba = {
     },
 
 
-    load_tempo : function() {
+    load_tempo : function(kode_pembiayaan = null) {
        
         let kode = $("#key_kode_pembiayaan").val() ?? kode_pembiayaan
 
