@@ -29,14 +29,14 @@
                         <label>Biaya lain (ongkir, instalasi)</label>
                         <div class="input-group">
                             <span class="input-group-addon">Rp</span>
-                            <input disabled type="text" id="biaya_lain_tempo" oninput="pba.formatInputRupiah(this); pba.hitung_tempo();" class="form-control text-right" value="<?php echo number_format($tempo['header']['biaya_lain'], 0 , ',' , '.') ?? '' ?>" >
+                            <input <?php echo !empty($tempo['header']) ? 'disbled' : '' ?> type="text" id="biaya_lain_tempo" oninput="pba.formatInputRupiah(this); pba.hitung_tempo();" class="form-control text-right" value="<?php echo number_format($tempo['header']['biaya_lain'], 0 , ',' , '.') ?? '' ?>" >
                         </div>
                     </div>
                 </div>
                 <div class="col-sm-4">
                     <div class="form-group">
                         <label>Jumlah termin <span class="text-danger">*</span></label>
-                        <input disabled type="number" onchange="pba.generate_tempo_rows(this)" id="jumlah_termin" class="form-control" min="1" max="60" value="<?php echo $tempo['header']['jumlah_termin'] ?? '' ?>" placeholder="Contoh: 2" >
+                        <input <?php echo !empty($tempo['header']) ? 'disbled' : '' ?>  type="number" onchange="pba.generate_tempo_rows(this)" id="jumlah_termin" class="form-control" min="1" max="60" value="<?php echo $tempo['header']['jumlah_termin'] ?? '' ?>" placeholder="Contoh: 2" >
                     </div>
                 </div>
             </div>
