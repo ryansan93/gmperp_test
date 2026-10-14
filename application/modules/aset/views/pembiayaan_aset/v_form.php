@@ -9,7 +9,7 @@
                     <label for="kode_aset" style="display:block; font-weight:600; margin-bottom:6px;">
                         Pilih Aset <span class="text-danger">*</span>
                     </label>
-                    <select id="kode_aset" class="form-control" required>
+                    <select id="kode_aset"     <?php echo !empty($data['id']) ? 'disabled' : ''  ?> class="form-control" required>
                         <option value="">-- Pilih Aset --</option>
                         <?php foreach ($aset as $row) : ?>
                             <?php

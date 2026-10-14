@@ -1,5 +1,6 @@
 var pba = {
     searchTimer: null,
+    // is_loading_specific_process: false,
 
     start_up: function () {
         if ($('#form-pelunasan').length) {
@@ -26,14 +27,10 @@ var pba = {
             pba.load_dp(),       
             pba.load_cicilan()    
         ).done(function (resTdp, resDp, resCicilan) {
-            
-            // console.log("✅ Semua data awal berhasil di-load. Memulai hitung cicilan...");
-
+        
             try {
                 pba.load_hitung_cicilan(); 
-                // console.log("✅ load_hitung_cicilan SELESAI dijalankan.");
             } catch (error) {
-                // console.error("❌ ERROR DI DALAM load_hitung_cicilan:", error);
             }
 
             pba.load_pelunasan();
@@ -45,25 +42,39 @@ var pba = {
         pba.init_datepickers();
     },
 
-    bind_tab_events: function () {
-        $('a[data-toggle="tab"]').off('click.pbaTab').on('click.pbaTab', function (event) {
-            event.preventDefault();
-            var target = $(this).attr('href');
-            $('.nav-tabs .nav-item').removeClass('active');
-            $('.nav-tabs .nav-link').removeClass('active');
-            $('.tab-pane').removeClass('active in');
-            $(this).parent('.nav-item').addClass('active');
-            $(this).addClass('active');
-            $(target).addClass('active in');
+    // bind_tab_events: function () {
+    //     $('a[data-toggle="tab"]').off('click.pbaTab').on('click.pbaTab', function (event) {
+    //         event.preventDefault();
+    //         var target = $(this).attr('href');
+    //         $('.nav-tabs .nav-item').removeClass('active');
+    //         $('.nav-tabs .nav-link').removeClass('active');
+    //         $('.tab-pane').removeClass('active in');
+    //         $(this).parent('.nav-item').addClass('active');
+    //         $(this).addClass('active');
+    //         $(target).addClass('active in');
 
-            if (typeof $().tab === 'function') {
-                $(this).tab('show');
+    //         if (typeof $().tab === 'function') {
+    //             $(this).tab('show');
+    //         }
+    //         if (target === '#history') {
+    //             // $('#tab-action-content').empty();
+    //         } 
+    //         else if (target === '#action' && $('#tab-action-content').is(':empty')) {
+    //             pba.add_form();
+    //         }
+            
+    //     });
+    // },
+
+    bind_tab_events: function () {
+        $('a[data-toggle="tab"]').off('shown.bs.tab').on('shown.bs.tab', function (e) {
+            var target = $(e.target).attr('href'); 
+            var isAdd = $(e.target).hasClass('is_add');
+             
+            if( isAdd && target == '#action'){
+                 pba.add_form();
             }
-            if (target === '#history') {
-                $('#tab-action-content').empty();
-            } else if (target === '#action' && $('#tab-action-content').is(':empty')) {
-                pba.add_form();
-            }
+            
         });
     },
 
@@ -344,12 +355,15 @@ var pba = {
     },
 
     proses_pembiayaan: function(elm, id_data = null, kode_jenis_pembiayaan = null) {
+
         var $tab = $('a[href="#action"]');
+        $tab.removeClass("is_add")
+
+
         $tab.tab('show');
         $('a[href="#history"]').closest('li').removeClass('active');
         $('#action').addClass('active');
         $('#action').closest(".nav-item").addClass('active');
-
 
         var button      = elm ? $(elm) : $();
         var id          = id_data ?? encodeURIComponent(button.data('id'));
@@ -360,8 +374,6 @@ var pba = {
             'PMB02': 'aset/PembiayaanAset/ProsesTempo',
             'PMB03': 'aset/PembiayaanAset/ProsesLeasing'
         };
-        
-        // var url = urlMap[kodeJenis] || ('aset/PembiayaanAset/ProsesLeasing');
 
         $.ajax({
             url: urlMap[kodeJenis],
@@ -382,8 +394,6 @@ var pba = {
                 bootbox.alert('Permintaan pelunasan gagal diproses.');
             }
         });
-
-
         
     },
 
@@ -397,13 +407,10 @@ var pba = {
         }
 
         var currentRows = $('#tempo-rows .tempo-row').length;
-
-        // Jika jumlah baris sudah pas, tidak perlu generate ulang (hindari reset data)
         if (currentRows === jumlahTermin) {
             return;
         }
 
-        // Jika baris lebih banyak dari jumlah termin, hapus kelebihannya
         if (currentRows > jumlahTermin) {
             $('#tempo-rows .tempo-row').each(function (index) {
                 if (index >= jumlahTermin) {
@@ -415,7 +422,6 @@ var pba = {
             return;
         }
 
-        // Jika baris kurang, tambahkan sampai pas
         for (var i = currentRows + 1; i <= jumlahTermin; i++) {
             var row = $('<div class="row tempo-row" style="margin-bottom:8px;">' +
                 '<div class="col-xs-1" style="padding-top:7px;"><strong>' + i + '</strong></div>' +
@@ -459,28 +465,24 @@ var pba = {
             return;
         }
 
-        // 1. AMBIL HARGA BELI - Prioritas: data-attribute > teks di DOM > 0
         var hargaBeli = Number(panel.data('harga-beli') || 0);
 
-        // Fallback: jika data-attribute kosong, ambil dari teks "Harga beli aset: Rp. 240.000.000"
         if (!hargaBeli) {
             var hargaBeliText = $('#harga_beli_text').text();
             var cleanHargaBeli = String(hargaBeliText).replace(/[^\d]/g, '');
             hargaBeli = Number(cleanHargaBeli) || 0;
         }
 
-        // 2. AMBIL TDP
         var tdp = Number(panel.data('tdp-total') || 0);
 
-        // 3. AMBIL BIAYA LAIN & JUMLAH TERMIN
         var biayaLain = Number(pba.to_backend_nominal($('#biaya_lain_tempo').val()) || 0);
         var jumlahTermin = Number($('#jumlah_termin').val() || 0);
 
-        // 4. HITUNG
+        
         var totalPembelian = hargaBeli + biayaLain;
         var sisa = totalPembelian - tdp;
 
-        // 5. HITUNG TOTAL TERMIN
+        
         var totalTermin = 0;
         var validRows = 0;
         $('#tempo-rows .tempo-row').each(function () {
@@ -492,7 +494,7 @@ var pba = {
             }
         });
 
-        // 6. UPDATE TAMPILAN
+
         $('#display_biaya_lain').text(pba.format_rupiah(biayaLain));
         $('#display_total_pembelian').text(pba.format_rupiah(totalPembelian));
         $('#display_tdp').text('(' + pba.format_rupiah(tdp) + ')');
@@ -514,7 +516,7 @@ var pba = {
 
         $('#btn_simpan_tempo').prop('disabled', !isMatch);
 
-        console.log(isMatch)
+        // console.log(isMatch)
     },
 
     save_rencana_tempo: function () {
@@ -720,6 +722,9 @@ var pba = {
 
     pelunasan_request: function (url, params, button) {
         button.prop('disabled', true);
+
+        let kode_pembiayaan = $('#key_kode_pembiayaan').val();
+
         $.ajax({
             url: url,
             type: 'POST',
@@ -730,7 +735,9 @@ var pba = {
                 hideLoading();
                 if (response.status == 1) {
                     bootbox.alert(response.message, function () {
-                        window.location.reload(true);
+                        // window.location.reload(true);
+
+                        pba.load_pelunasan(kode_pembiayaan)
                     });
                 } else {
                     button.prop('disabled', false);
@@ -835,9 +842,9 @@ var pba = {
     dpAddRow: function() {
          var row = $('<div class="row dp-row" style="margin-bottom:8px;">' +
                     '<input type="hidden" class="dp-id" value="">' +
-                    '<div class="col-xs-8"><input type="text" class="form-control dp-komponen" placeholder="Jenis komponen (contoh: UANG_MUKA)"></div>' +
-                    '<div class="col-xs-3"><div class="input-group"><span class="input-group-addon">Rp</span><input type="text" oninput="pba.inputRupiah(this);" class="form-control text-right dp-nominal" inputmode="numeric" autocomplete="off" placeholder="0"></div></div>' +
-                    '<div class="col-xs-1 text-right"><button type="button" class="btn btn-danger btn-sm dp-remove-row" onclick="pba.dpRemoveRow(this)" title="Hapus baris"><i class="fa fa-times"></i></button></div>');
+                    '<div class="col-xs-5 col-sm-6"><input type="text" style="text-transform: uppercase;" class="form-control dp-komponen" placeholder="Jenis komponen (contoh: UANG_MUKA)"></div>' +
+                    '<div class="col-xs-5 col-sm-5"><div class="input-group"><span class="input-group-addon">Rp</span><input type="text" oninput="pba.inputRupiah(this);" class="form-control text-right dp-nominal" inputmode="numeric" autocomplete="off" placeholder="0"></div></div>' +
+                    '<div class="col-xs-2 col-sm-1 text-right"><button type="button" class="btn btn-danger btn-sm dp-remove-row" onclick="pba.dpRemoveRow(this)" title="Hapus baris"><i class="fa fa-times"></i></button></div>');
         $('#dp-rows').append(row);
 
         pba.update_dp_total();
@@ -1171,8 +1178,10 @@ var pba = {
             return;
         }
         
-        // 2. Tambahkan validasi tgl_jt agar tidak kosong saat disimpan
-        if (!tenor || !bunga || !tgl_jt || !$('#jadwal-cicilan tr').length || $('#jadwal-cicilan td[colspan]').length) {
+        // console.log('tenor: ' + tenor, 'bunga: ' +bunga, 'tgl jt: '+tgl_jt, 'cicilan_tr :'+ $('#jadwal-cicilan tr').length, 'apa ini :'+ $('#jadwal-cicilan td[colspan]').length);
+        // return 
+
+        if (!tenor || !bunga || !tgl_jt || $('#jadwal-cicilan tr').length <= 2) {
             bootbox.alert('Lengkapi tenor, bunga, dan tanggal jatuh tempo, lalu pastikan jadwal cicilan sudah terbentuk.');
             return;
         }
@@ -1191,7 +1200,7 @@ var pba = {
             kode_pembiayaan: $('#kode_pembiayaan_dp').val() || $('#kode_pembiayaan_tdp').val(),
             tenor: tenor,
             bunga: bunga,
-            tanggal_jatuh_tempo: tgl_jt, // 3. Masukkan ke dalam params
+            tanggal_jatuh_tempo: tgl_jt, 
             harga_beli: getCleanInteger('#cicilan-harga-beli'),
             tdp_pengurang: getCleanInteger('#cicilan-tdp-pengurang'),
             dp: dp,
@@ -1202,9 +1211,37 @@ var pba = {
             total_bunga: getCleanInteger('#cicilan-total-bunga')
         };
 
-        // console.log(params);
         
-        pba.tdp_request('aset/PembiayaanAset/simpan_detail_cicilan', params, button);
+        
+        // pba.tdp_request('aset/PembiayaanAset/simpan_detail_cicilan', params, button);
+        $.ajax({
+            url: 'aset/PembiayaanAset/simpan_detail_cicilan',
+            type: 'POST',
+            dataType: 'JSON',
+            data: { 
+                params: params 
+            },
+            beforeSend: function () { 
+                showLoading(); 
+            },
+            success: function (response) {
+                hideLoading();
+                if (response.status == 1) {
+                    bootbox.alert(response.message, function () {
+                        pba.load_tdp(params.kode_pembiayaan);
+                        pba.load_cicilan(params.kode_pembiayaan);
+                        
+                        // pba.hitung_cicilan();
+                    });
+                } else {
+                    bootbox.alert(response.message || 'Data gagal disimpan.');
+                }
+            },
+            error: function () {
+                hideLoading();
+                bootbox.alert('Permintaan penyimpanan DP gagal diproses.');
+            }
+        });
     },
 
     save_dp: function () {
@@ -1451,6 +1488,256 @@ var pba = {
         pba.load_tdp(kode_pembiayaan)
     },
 
+    hapus_tdp: function() {
+        var kode_pembiayaan = $("#key_kode_pembiayaan").val();
+        
+        if (!kode_pembiayaan) {
+            bootbox.alert('Kode pembiayaan tidak ditemukan.');
+            return;
+        }
+
+        bootbox.confirm({
+            title: '<i class="fa fa-warning text-warning"></i> Konfirmasi Hapus',
+            message: 'Apakah Anda yakin ingin menghapus data TDP ini?',
+            buttons: {
+                cancel: {
+                    label: '<i class="fa fa-times"></i> Batal',
+                    className: 'btn-default'
+                },
+                confirm: {
+                    label: '<i class="fa fa-trash"></i> Ya, Hapus',
+                    className: 'btn-danger'
+                }
+            },
+            callback: function (result) {
+    
+                if (result) {
+                    $.ajax({
+                        url: 'aset/PembiayaanAset/hapus_tdp',
+                        type: 'POST',
+                        dataType: 'JSON',
+                        data: { kode_pembiayaan: kode_pembiayaan },
+                        beforeSend: function () { 
+                            showLoading(); 
+                        },
+                        success: function (response) {
+                            hideLoading();
+                            if (response.status == 1) {
+                                bootbox.alert({
+                                    message: '<i class="fa fa-check-circle text-success"></i> ' + response.message,
+                                    callback: function () {
+                                        
+
+                                        pba.load_tdp();
+
+                                        if(response.jenis_pembiayaan == 'PMB03'){
+                                            pba.load_cicilan();
+                                            pba.load_hitung_cicilan();
+                                        }
+
+                                        if(response.jenis_pembiayaan == 'PMB02'){
+                                            pba.load_tempo();
+                                        }
+
+                                        if(response.jenis_pembiayaan == 'PMB01'){
+                                            pba.load_pelunasan();
+                                        }
+
+                                        // console.log(response)
+                                    }
+                                });
+                            } else {
+                                bootbox.alert('<i class="fa fa-exclamation-circle text-danger"></i> ' + (response.message || 'Data gagal dihapus.'));
+                            }
+                        },
+                        error: function () {
+                            hideLoading();
+                            bootbox.alert('<i class="fa fa-exclamation-circle text-danger"></i> Permintaan penghapusan TDP gagal diproses oleh server.');
+                        }
+                    });
+                }
+            }
+        });
+    },
+
+    hapus_tempo: function() {
+        var kode_pembiayaan = $("#key_kode_pembiayaan").val();
+        
+        if (!kode_pembiayaan) {
+            bootbox.alert('Kode pembiayaan tidak ditemukan.');
+            return;
+        }
+
+        bootbox.confirm({
+            title: '<i class="fa fa-warning text-warning"></i> Konfirmasi Hapus',
+            message: 'Apakah Anda yakin ingin menghapus data ini?',
+            buttons: {
+                cancel: {
+                    label: '<i class="fa fa-times"></i> Batal',
+                    className: 'btn-default'
+                },
+                confirm: {
+                    label: '<i class="fa fa-trash"></i> Ya, Hapus',
+                    className: 'btn-danger'
+                }
+            },
+            callback: function (result) {
+    
+                if (result) {
+                    $.ajax({
+                        url: 'aset/PembiayaanAset/hapus_tempo',
+                        type: 'POST',
+                        dataType: 'JSON',
+                        data: { kode_pembiayaan: kode_pembiayaan },
+                        beforeSend: function () { 
+                            showLoading(); 
+                        },
+                        success: function (response) {
+                            hideLoading();
+                            if (response.status == 1) {
+                                bootbox.alert({
+                                    message: '<i class="fa fa-check-circle text-success"></i> ' + response.message,
+                                    callback: function () {
+                                        
+                                        pba.load_tempo(kode_pembiayaan)
+
+                                        // console.log(response)
+                                    }
+                                });
+                            } else {
+                                bootbox.alert('<i class="fa fa-exclamation-circle text-danger"></i> ' + (response.message || 'Data gagal dihapus.'));
+                            }
+                        },
+                        error: function () {
+                            hideLoading();
+                            bootbox.alert('<i class="fa fa-exclamation-circle text-danger"></i> Permintaan penghapusan TDP gagal diproses oleh server.');
+                        }
+                    });
+                }
+            }
+        });
+    },
+
+    hapus_dp: function() {
+        var kode_pembiayaan = $("#key_kode_pembiayaan").val();
+        
+        if (!kode_pembiayaan) {
+            bootbox.alert('Kode pembiayaan tidak ditemukan.');
+            return;
+        }
+
+        bootbox.confirm({
+            title: '<i class="fa fa-warning text-warning"></i> Konfirmasi Hapus',
+            message: 'Apakah Anda yakin ingin menghapus data DP ini?',
+            buttons: {
+                cancel: {
+                    label: '<i class="fa fa-times"></i> Batal',
+                    className: 'btn-default'
+                },
+                confirm: {
+                    label: '<i class="fa fa-trash"></i> Ya, Hapus',
+                    className: 'btn-danger'
+                }
+            },
+            callback: function (result) {
+    
+                if (result) {
+                    $.ajax({
+                        url: 'aset/PembiayaanAset/hapus_dp',
+                        type: 'POST',
+                        dataType: 'JSON',
+                        data: { kode_pembiayaan: kode_pembiayaan },
+                        beforeSend: function () { 
+                            showLoading(); 
+                        },
+                        success: function (response) {
+                            hideLoading();
+                            if (response.status == 1) {
+                                bootbox.alert({
+                                    message: '<i class="fa fa-check-circle text-success"></i> ' + response.message,
+                                    callback: function () {
+                                        
+                                        pba.load_dp();
+                                        pba.load_cicilan();
+                                        pba.load_hitung_cicilan();
+
+                                    }
+                                });
+                            } else {
+                                bootbox.alert('<i class="fa fa-exclamation-circle text-danger"></i> ' + (response.message || 'Data gagal dihapus.'));
+                            }
+                        },
+                        error: function () {
+                            hideLoading();
+                            bootbox.alert('<i class="fa fa-exclamation-circle text-danger"></i> Permintaan penghapusan TDP gagal diproses oleh server.');
+                        }
+                    });
+                }
+            }
+        });
+    },
+
+
+    hapus_leasing: function() {
+
+        var kode_pembiayaan = $("#key_kode_pembiayaan").val();
+        
+        if (!kode_pembiayaan) {
+            bootbox.alert('Kode pembiayaan tidak ditemukan.');
+            return;
+        }
+
+        bootbox.confirm({
+            title: '<i class="fa fa-warning text-warning"></i> Konfirmasi Hapus',
+            message: 'Apakah Anda yakin ingin menghapus data ini?',
+            buttons: {
+                cancel: {
+                    label: '<i class="fa fa-times"></i> Batal',
+                    className: 'btn-default'
+                },
+                confirm: {
+                    label: '<i class="fa fa-trash"></i> Ya, Hapus',
+                    className: 'btn-danger'
+                }
+            },
+            callback: function (result) {
+    
+                if (result) {
+                    $.ajax({
+                        url: 'aset/PembiayaanAset/hapus_leasing',
+                        type: 'POST',
+                        dataType: 'JSON',
+                        data: { kode_pembiayaan: kode_pembiayaan },
+                        beforeSend: function () { 
+                            showLoading(); 
+                        },
+                        success: function (response) {
+                            hideLoading();
+                            if (response.status == 1) {
+                                bootbox.alert({
+                                    message: '<i class="fa fa-check-circle text-success"></i> ' + response.message,
+                                    callback: function () {
+                                        
+                                        pba.load_dp();
+                                        pba.load_cicilan();
+                                        pba.load_hitung_cicilan();
+
+                                    }
+                                });
+                            } else {
+                                bootbox.alert('<i class="fa fa-exclamation-circle text-danger"></i> ' + (response.message || 'Data gagal dihapus.'));
+                            }
+                        },
+                        error: function () {
+                            hideLoading();
+                            bootbox.alert('<i class="fa fa-exclamation-circle text-danger"></i> Permintaan penghapusan cicilan gagal diproses oleh server.');
+                        }
+                    });
+                }
+            }
+        });
+    },
+
     edit_dp: function () {
         $("#form-dp").find("input").prop("disabled", false);
 
@@ -1555,7 +1842,7 @@ var pba = {
             <button type="button" id="tdp-save"
                 onclick="pba.save_pelunasan()"
                 class="btn btn-primary">
-                Simpan TDP
+                Simpan Pelunasan
             </button>
             <button type="button"
                 onclick="pba.batal_edit_pelunasan()"
@@ -1567,7 +1854,7 @@ var pba = {
 
         $("#tgl_pelunasan").css("background-color", "#fff");
 
-        $("#pelunasan-delete").css("display", "block");
+        // $("#pelunasan-delete").css("display", "block");
 
        
         $("#pelunasan-add-row").prop("disabled", false);
@@ -1584,12 +1871,12 @@ var pba = {
             <button type="button"
                 onclick="pba.edit_tdp()"
                 class="btn btn-warning">
-                Edit TDP
+                Edit Pelunasan
             </button>
         `);
 
         $(".pelunasan-remove-row").prop("disabled", true);
-        $("#pelunasan-delete").css("display", "none");
+        // $("#pelunasan-delete").css("display", "none");
 
         // pba.load_pelunasan(kode_pembiayaan)
     },
@@ -1732,6 +2019,7 @@ var pba = {
                 $('.load_cicilan').html(resp)
                 pba.init_datepickers()
                 pba.init_cicilan();
+                pba.load_hitung_cicilan(kode);
                 
             },
             error: function () {
@@ -1796,16 +2084,6 @@ var pba = {
     },
 
 
-
-
-
-
-
-
-
-
-
-
     refresh_asset_summary: function () {
         var option = $('#kode_aset option:selected');
         var hasAsset = !!option.val();
@@ -1841,6 +2119,9 @@ var pba = {
     },
 
     add_form: function () {
+        $('a[href="#history"]').closest('.nav-item').removeClass('active');
+        $('a[href="#history"]').removeClass('active');
+
         $.get('aset/PembiayaanAset/add_form', function (html) {
             pba.open_action_tab(html);
         }, 'html').fail(function () {
@@ -1849,6 +2130,12 @@ var pba = {
     },
 
     edit_form: function (element) {
+        var $tab = $('a[href="#action"]');
+        $tab.removeClass("is_add")
+        
+        $('a[href="#history"]').closest('.nav-item').removeClass('active');
+        $('a[href="#history"]').removeClass('active');
+
         $.get('aset/PembiayaanAset/edit_form', { id: $(element).data('id') }, function (html) {
             pba.open_action_tab(html);
         }, 'html').fail(function () {
@@ -1942,10 +2229,9 @@ var pba = {
                             console.log(response.data);
 
                             if (response.data && Object.keys(response.data).length > 0) {
-
                                 pba.proses_pembiayaan(null, response.data.id, response.data.kode_jenis_pembiayaan)
                             } else {
-                                window.location.reload();
+                                window.location.reload(true);
                             }
 
                         });
@@ -2160,9 +2446,6 @@ var pba = {
     },
 
 
-
-
-        // Hitung Total di dalam Bootbox Modal
     hitung_edit_tempo: function () {
         var hargaBeli = parseFloat($('#detail-tempo').data('harga-beli')) || 0;
         var tdpTotal = parseFloat($('#detail-tempo').data('tdp-total')) || 0;
@@ -2179,7 +2462,6 @@ var pba = {
             totalTermin += parseFloat(val) || 0;
         });
 
-        // Format dengan titik pemisah ribuan
         var formatRupiah = function(num) {
             return num.toLocaleString('id-ID');
         };
@@ -2196,7 +2478,6 @@ var pba = {
             $('#edit_selisih_tempo').text('✓ Pas').removeClass('text-danger').addClass('text-success');
         }
 
-        // Disable tombol simpan jika belum pas
         var isMatch = (selisih === 0) && (totalTermin > 0);
         $('.bootbox').find('button.btn-primary').prop('disabled', !isMatch);
     },
@@ -2256,14 +2537,12 @@ var pba = {
 
             container.append(row);
 
-            // Init datepicker TANPA minDate (bebas pilih)
             row.find('.tempo-edit-picker').datetimepicker({
                 locale: 'id',
                 format: 'DD MMMM YYYY',
                 useCurrent: false
             });
 
-            // Format nominal saat ketik
             row.find('.edit-tempo-nominal').on('keyup', function() {
                 var val = $(this).val().replace(/\D/g, '');
                 $(this).val(formatNominal(val));
@@ -2271,7 +2550,7 @@ var pba = {
             });
         }
 
-        // Validasi urutan tanggal SETELAH user pilih
+        
         $(document).off('dp.change.tempo').on('dp.change.tempo', '.tempo-edit-picker', function(e) {
             if (!e.date) return;
 
@@ -2528,4 +2807,5 @@ window.pba = pba;
 
 $(document).ready(function () {
     pba.start_up();
+
 });

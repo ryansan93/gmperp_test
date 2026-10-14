@@ -1,5 +1,15 @@
 <input type="hidden" class="harga_beli" value="<?php echo $aset['harga_beli']?>">
 
+
+<?php 
+    $nominal_tdp = 0;
+    foreach($tdp as $t){
+        if($t['is_pengurang_pokok'] == 1){
+            $nominal_tdp += $t['nominal'];
+        }
+    }
+?>
+
 <div class="panel panel-default installment-panel" id="detail-pelunasan">
     <div class="panel-heading">
         <div class="installment-heading">
@@ -80,7 +90,7 @@
                             <div class="input-group">
                                 <span class="input-group-addon">Rp</span>
                                 <input type="int" oninput="pba.inputRupiah(this); pba.update_pelunasan_total();" class="form-control text-right pelunasan-nominal" 
-                                    value="<?php echo number_format($aset['harga_beli'], 0, ',', '.') ?? ''; ?>" style="background-color: #fff;">
+                                    value="<?php echo number_format($aset['harga_beli'] - $nominal_tdp, 0, ',', '.') ?? ''; ?>" style="background-color: #fff;">
                             </div>
                         </div>
                         <div class="col-xs-1"></div>
@@ -110,34 +120,33 @@
                 
                 <div class="row">
                     <div class="col-xs-6"><strong>Total pembelian</strong></div>
-                    <div class="col-xs-6 text-right"><strong id="total-pembelian"><?php echo number_format($aset['harga_beli'], 0, ',', '.') ?? ''; ?><S/strong></div>
+                    <div class="col-xs-6 text-right"><strong id="total-pembelian"><?php echo number_format($aset['harga_beli'] - $nominal_tdp, 0, ',', '.') ?? ''; ?><S/strong></div>
                 </div>
                 <div class="row">
                     <div class="col-xs-6">Dikurangi tanda jadi (pengurang pokok)</div>
-                    <div class="col-xs-6 text-right" id="dikurangi-tanda-jadi">(0)</div>
+                    
+                    <div class="col-xs-6 text-right" id="dikurangi-tanda-jadi"><?php echo number_format($nominal_tdp ?? 0, 0, ','. '.') ?></div>
                 </div>
                 <div class="row" style="margin-top:10px;">
                     <div class="col-xs-6"><strong>Diajukan</strong></div>
-                    <div class="col-xs-6 text-right"><strong id="diajukan"><?php echo number_format($aset['harga_beli'], 0, ',', '.') ?? ''; ?></strong></div>
+                    <div class="col-xs-6 text-right"><strong id="diajukan"><?php echo number_format($aset['harga_beli'] - $nominal_tdp, 0, ',', '.') ?? ''; ?></strong></div>
                 </div>
             <?php } ?>
 
 
             <hr>
 
-            <div style="display:flex; flex-direction:row; gap:10px;">
-                <button type="button" id="pelunasan-add-row" onclick="pba.addRowPelunasan();" class="btn btn-default" <?php echo !empty($pelunasan['header']) ? 'disabled' : ''; ?>>+ Tambah baris</button>
-             
-                <button type="button" id="pelunasan-delete" style="display:none;" onclick="pba.delete_pelunasan(this)" class="btn btn-danger" data-id="<?php echo (int) $pelunasan['header']['id']; ?>">
-                    Hapus Pelunasan
-                </button>
-            </div>
+            <button type="button" id="pelunasan-add-row" onclick="pba.addRowPelunasan();" class="btn btn-default" <?php echo !empty($pelunasan['header']) ? 'disabled' : ''; ?>>+ Tambah baris</button>
 
             <div id="button-pelunasan" style="margin-top:10px;">
                 <?php if( !empty($pelunasan['header'])){ ?>
 
                     <button onclick="pba.edit_pelunasan(this, event)" id="pelunasan-save"  class="btn btn-warning">
                         Edit Pelunasan
+                    </button>
+
+                    <button type="button" id="pelunasan-delete"  onclick="pba.delete_pelunasan(this)" class="btn btn-danger" data-id="<?php echo (int) $pelunasan['header']['id']; ?>">
+                        Hapus Pelunasan
                     </button>
                 
                 <?php } else { ?>

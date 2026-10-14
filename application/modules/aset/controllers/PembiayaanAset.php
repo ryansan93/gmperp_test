@@ -1026,17 +1026,180 @@ class PembiayaanAset extends Public_Controller
         display_json($this->result);
     }
 
+    // public function save_dp()
+    // {
+    //     if (empty($this->hakAkses['a_submit'])) {
+    //         $this->result['message'] = 'Anda tidak memiliki akses untuk menyimpan TDP.';
+    //         display_json($this->result);
+    //         return;
+    //     }
+        
+    //     $params = $this->input->post('params');
+    //     $params = is_array($params) ? $params : [];
+    //     // cetak_r($params, 1);
+    //     try {
+    //         $kodePembiayaan = $params['kode_pembiayaan'] ?? null;
+
+    //         if (empty($kodePembiayaan)) {
+    //             throw new \Exception('Kode pembiayaan wajib diisi.');
+    //         }
+
+    //         $m_dp_header = \Model\Storage\PembiayaanDpAset_model::where('kode_pembiayaan',$kodePembiayaan)->first();
+
+    //         $isInsert = empty($m_dp_header);
+
+    //         if ($isInsert) {
+    //             $m_dp_header = new \Model\Storage\PembiayaanDpAset_model();
+    //         }
+
+    //         $m_dp_header->kode_pembiayaan    = $kodePembiayaan;
+    //         $m_dp_header->tanggal_dp         = $params['tanggal_dp'] ?? null;
+         
+    //         $m_dp_header->save();
+
+    //         if (!$isInsert) {
+    //             \Model\Storage\PembiayaanDpAsetDetail_model::where( 'id_pembiayaan_dp_aset', $m_dp_header->id)->delete();
+    //         }
+
+    //         $rows = $params['rows'] ?? [];
+
+    //         foreach ($rows as $r) {
+    //             $m_dp_detail = new \Model\Storage\PembiayaanDpAsetDetail_model();
+    //             $m_dp_detail->id_pembiayaan_dp_aset = $m_dp_header->id;
+    //             $m_dp_detail->jenis_komponen    = $r['jenis_komponen'] ?? '';
+    //             $m_dp_detail->nominal           = $r['nominal'] ?? 0;
+    //             $m_dp_detail->angsuran_ke       = $r['angsuran_ke'] ?? 0;
+    //             $m_dp_detail->save();
+    //         }
+
+
+    //         $this->sync_jadwal_cicilan_otomatis($kodePembiayaan);
+
+            
+    //         // $userNama = $this->userdata['detail_user']['nama_detuser'] ?? 'System';
+    //         // $aksi = $isInsert ? 'ditambahkan' : 'diperbarui';
+    //         // $deskripsi_log = "Data DP {$kodePembiayaan} {$aksi} oleh {$userNama}";
+    //         // Modules::run( 'base/event/save', $m_dp_header, $deskripsi_log, null, $m_dp_header->id, null );
+
+    //         $this->result['status'] = 1;
+    //         $this->result['message'] = $isInsert
+    //             ? 'Data DP berhasil disimpan.'
+    //             : 'Data DP berhasil diperbarui.';
+
+    //     } catch (\Exception $e) {
+    //         error_log("Error penyimpanan DP Aset: " . $e->getMessage());
+
+    //         $this->result['status'] = 0;
+    //         $this->result['message'] = 'Gagal menyimpan data DP: ' . $e->getMessage();
+    //     }
+
+    //     display_json($this->result);
+    // }
+
+    // public function save_dp()
+    // {
+
+    //     if (empty($this->hakAkses['a_submit'])) {
+    //         $this->result['message'] = 'Anda tidak memiliki akses untuk menyimpan DP.';
+    //         display_json($this->result);
+    //         return;
+    //     }
+        
+    //     $params = $this->input->post('params');
+    //     $params = is_array($params) ? $params : [];
+        
+    //     try {
+    //         $kodePembiayaan = $params['kode_pembiayaan'] ?? null;
+
+    //         if (empty($kodePembiayaan)) {
+    //             throw new \Exception('Kode pembiayaan wajib diisi.');
+    //         }
+
+    //         $m_conf = new \Model\Storage\Conf();
+
+    //         $sql_aset = "SELECT ma.nilai_perolehan AS harga_aset 
+    //                     FROM pembiayaan_aset pa 
+    //                     INNER JOIN ms_aset ma ON pa.kode_aset = ma.kode_aset 
+    //                     WHERE pa.kode_pembiayaan = '" . $kodePembiayaan . "'";
+            
+    //         $data_aset = $m_conf->hydrateRaw($sql_aset)->toArray();
+
+    //         if (empty($data_aset) || !isset($data_aset[0]['harga_aset'])) {
+    //             throw new \Exception('Data harga aset tidak ditemukan.');
+    //         }
+
+    //         $harga_aset_asli = floatval($data_aset[0]['harga_aset']);
+
+    //         $m_dp_header = \Model\Storage\PembiayaanDpAset_model::where('kode_pembiayaan', $kodePembiayaan)->first();
+    //         $isInsert = empty($m_dp_header);
+
+    //         if ($isInsert) {
+    //             $m_dp_header = new \Model\Storage\PembiayaanDpAset_model();
+    //         }
+
+    //         $m_dp_header->kode_pembiayaan = $kodePembiayaan;
+    //         $m_dp_header->tanggal_dp      = $params['tanggal_dp'] ?? null;
+    //         $m_dp_header->save();
+
+    //         if (!$isInsert) {
+    //             \Model\Storage\PembiayaanDpAsetDetail_model::where('id_pembiayaan_dp_aset', $m_dp_header->id)->delete();
+    //         }
+
+    //         $rows = $params['rows'] ?? [];
+    //         $total_dp = 0;
+
+    //         foreach ($rows as $r) {
+    //             $m_dp_detail = new \Model\Storage\PembiayaanDpAsetDetail_model();
+    //             $m_dp_detail->id_pembiayaan_dp_aset = $m_dp_header->id;
+    //             $m_dp_detail->jenis_komponen        = $r['jenis_komponen'] ?? '';
+    //             $m_dp_detail->nominal               = $r['nominal'] ?? 0;
+    //             $m_dp_detail->angsuran_ke           = $r['angsuran_ke'] ?? 0;
+    //             $m_dp_detail->save();
+                
+    //             $total_dp += floatval($r['nominal'] ?? 0);
+    //         }
+
+
+    //         $pokok_hutang_baru = $harga_aset_asli - $total_dp;
+            
+            
+    //         if ($pokok_hutang_baru < 0) {
+    //             $pokok_hutang_baru = 0;
+    //         }
+
+    //         \Model\Storage\PembiayaanCicilanAset_model::where('kode_pembiayaan', $kodePembiayaan)->update([
+    //             'pokok_hutang' => $pokok_hutang_baru
+    //         ]);
+
+
+    //         $this->sync_jadwal_cicilan_otomatis($kodePembiayaan);
+
+    //         $this->result['status'] = 1;
+    //         $this->result['message'] = $isInsert
+    //             ? 'Data DP berhasil disimpan dan pokok hutang telah diperbarui.'
+    //             : 'Data DP berhasil diperbarui dan pokok hutang telah diperbarui.';
+
+    //     } catch (\Exception $e) {
+    //         error_log("Error penyimpanan DP Aset: " . $e->getMessage());
+
+    //         $this->result['status'] = 0;
+    //         $this->result['message'] = 'Gagal menyimpan data DP: ' . $e->getMessage();
+    //     }
+
+    //     display_json($this->result);
+    // }
+
     public function save_dp()
     {
         if (empty($this->hakAkses['a_submit'])) {
-            $this->result['message'] = 'Anda tidak memiliki akses untuk menyimpan TDP.';
+            $this->result['message'] = 'Anda tidak memiliki akses untuk menyimpan DP.';
             display_json($this->result);
             return;
         }
         
         $params = $this->input->post('params');
         $params = is_array($params) ? $params : [];
-        // cetak_r($params, 1);
+        
         try {
             $kodePembiayaan = $params['kode_pembiayaan'] ?? null;
 
@@ -1044,42 +1207,71 @@ class PembiayaanAset extends Public_Controller
                 throw new \Exception('Kode pembiayaan wajib diisi.');
             }
 
-            $m_dp_header = \Model\Storage\PembiayaanDpAset_model::where('kode_pembiayaan',$kodePembiayaan)->first();
+            // 1. AMBIL HARGA ASET ASLI
+            $m_conf = new \Model\Storage\Conf();
+            $sql_aset = "SELECT ma.nilai_perolehan AS harga_aset 
+                        FROM pembiayaan_aset pa 
+                        INNER JOIN ms_aset ma ON pa.kode_aset = ma.kode_aset 
+                        WHERE pa.kode_pembiayaan = '" . $kodePembiayaan . "'";
+            
+            $data_aset = $m_conf->hydrateRaw($sql_aset)->toArray();
 
+            if (empty($data_aset) || !isset($data_aset[0]['harga_aset'])) {
+                throw new \Exception('Data harga aset tidak ditemukan.');
+            }
+
+            $harga_aset_asli = floatval($data_aset[0]['harga_aset']);
+
+            // 2. SIMPAN DATA DP (HEADER & DETAIL)
+            $m_dp_header = \Model\Storage\PembiayaanDpAset_model::where('kode_pembiayaan', $kodePembiayaan)->first();
             $isInsert = empty($m_dp_header);
 
             if ($isInsert) {
                 $m_dp_header = new \Model\Storage\PembiayaanDpAset_model();
             }
 
-            $m_dp_header->kode_pembiayaan    = $kodePembiayaan;
-            $m_dp_header->tanggal_dp         = $params['tanggal_dp'] ?? null;
-         
+            $m_dp_header->kode_pembiayaan = $kodePembiayaan;
+            $m_dp_header->tanggal_dp      = $params['tanggal_dp'] ?? null;
             $m_dp_header->save();
 
             if (!$isInsert) {
-                \Model\Storage\PembiayaanDpAsetDetail_model::where( 'id_pembiayaan_dp_aset', $m_dp_header->id)->delete();
+                \Model\Storage\PembiayaanDpAsetDetail_model::where('id_pembiayaan_dp_aset', $m_dp_header->id)->delete();
             }
 
             $rows = $params['rows'] ?? [];
+            $total_uang_muka = 0; // PENTING: Kita pisahkan totalnya
 
             foreach ($rows as $r) {
                 $m_dp_detail = new \Model\Storage\PembiayaanDpAsetDetail_model();
                 $m_dp_detail->id_pembiayaan_dp_aset = $m_dp_header->id;
-                $m_dp_detail->jenis_komponen    = $r['jenis_komponen'] ?? '';
-                $m_dp_detail->nominal           = $r['nominal'] ?? 0;
-                $m_dp_detail->angsuran_ke       = $r['angsuran_ke'] ?? 0;
+                $m_dp_detail->jenis_komponen        = $r['jenis_komponen'] ?? '';
+                $m_dp_detail->nominal               = $r['nominal'] ?? 0;
+                $m_dp_detail->angsuran_ke           = $r['angsuran_ke'] ?? 0;
                 $m_dp_detail->save();
+                
+                // PERBAIKAN LOGIKA DI SINI:
+                // Hanya 'UANG MUKA' yang mengurangi pokok hutang.
+                // 'ANGSURAN', 'ADMINISTRASI', dll TIDAK mengurangi pokok hutang.
+                $jenisKomponen = strtoupper(trim($r['jenis_komponen'] ?? ''));
+                if ($jenisKomponen === 'UANG MUKA') {
+                    $total_uang_muka += floatval($r['nominal'] ?? 0);
+                }
             }
 
-
-            $this->sync_jadwal_cicilan_otomatis($kodePembiayaan);
-
+            // 3. UPDATE POKOK HUTANG
+            // Rumus: Harga Aset - HANYA Uang Muka
+            $pokok_hutang_baru = $harga_aset_asli - $total_uang_muka;
             
-            // $userNama = $this->userdata['detail_user']['nama_detuser'] ?? 'System';
-            // $aksi = $isInsert ? 'ditambahkan' : 'diperbarui';
-            // $deskripsi_log = "Data DP {$kodePembiayaan} {$aksi} oleh {$userNama}";
-            // Modules::run( 'base/event/save', $m_dp_header, $deskripsi_log, null, $m_dp_header->id, null );
+            if ($pokok_hutang_baru < 0) {
+                $pokok_hutang_baru = 0;
+            }
+
+            \Model\Storage\PembiayaanCicilanAset_model::where('kode_pembiayaan', $kodePembiayaan)->update([
+                'pokok_hutang' => $pokok_hutang_baru
+            ]);
+
+            // 4. SYNC JADWAL CICILAN
+            $this->sync_jadwal_cicilan_otomatis($kodePembiayaan);
 
             $this->result['status'] = 1;
             $this->result['message'] = $isInsert
@@ -1088,7 +1280,6 @@ class PembiayaanAset extends Public_Controller
 
         } catch (\Exception $e) {
             error_log("Error penyimpanan DP Aset: " . $e->getMessage());
-
             $this->result['status'] = 0;
             $this->result['message'] = 'Gagal menyimpan data DP: ' . $e->getMessage();
         }
@@ -1238,6 +1429,8 @@ class PembiayaanAset extends Public_Controller
         }
 
         $postData = $this->input->post('params') ?: $this->input->post();
+
+        // cetak_r($postData, 1);
         
         $kodePembiayaan = trim((string) ($postData['kode_pembiayaan'] ?? ''));
         $tenor          = (int) ($postData['tenor'] ?? 0);
@@ -1264,7 +1457,7 @@ class PembiayaanAset extends Public_Controller
                 } else {
                     $connection = $this->getConnection();
                     
-                    $stored = $connection->transaction(function () use ($connection, $kodePembiayaan, $pembiayaan, $tenor, $bunga, $pokokHutang, $totalAr, $tanggal_jt) {
+                    $stored = $connection->transaction(function () use ($connection, $kodePembiayaan, $pembiayaan, $tenor, $bunga, $pokokHutang, $totalAr, $tanggal_jt, $totalPerolehan) {
                         
                 
                         $connection->table('pembiayaan_cicilan_detail_aset')
@@ -1306,6 +1499,8 @@ class PembiayaanAset extends Public_Controller
                         $cicilanTetap = (int) round(
                             $pokokHutang * ($monthlyRate / (1 - pow(1 + $monthlyRate, -$tenor)))
                         );
+
+                        // cetak_r($monthlyRate, 1);
                         
                         $totalPayment       = $cicilanTetap * $tenor;
                         $totalBunga         = $totalPayment - $pokokHutang;
@@ -1348,14 +1543,12 @@ class PembiayaanAset extends Public_Controller
                                 $sisaPokok = 0;
                             }
 
-                            // === LOGIKA PENENTUAN STATUS (SESUAI PERMINTAAN) ===
                             $jenisCicilan = 'Cicilan';
-                            $statusCicilan = 0; // Default: Pending (Belum Lunas)
+                            $statusCicilan = 0; 
 
-                            // CEK: Jika nomor angsuran ($i) ada di daftar yang sudah dibayar, maka set jadi Lunas
                             if (in_array($i, $paidAngsuranList, true)) {
                                 $jenisCicilan = 'DP'; 
-                                $statusCicilan = 1;   // Lunas
+                                $statusCicilan = 1;  
                             }
 
                             $detailCicilan[] = [
@@ -1369,7 +1562,7 @@ class PembiayaanAset extends Public_Controller
                                 'nominal'                 => (int) round($totalCicilan),
                                 'sisa_pokok_hutang'       => (int) round($sisaPokok),
                                 'jenis_cicilan'           => $jenisCicilan,
-                                'status'                  => $statusCicilan, // 1 = Lunas, 0 = Pending
+                                'status'                  => $statusCicilan,
                             ];
                         }
 
@@ -2926,6 +3119,244 @@ class PembiayaanAset extends Public_Controller
 
             // return ['detail_count' => $tenor];
         
+    }
+
+    public function hapus_tdp()
+    {
+        if (empty($this->hakAkses['a_delete'])) {
+            $this->result['message'] = 'Anda tidak memiliki akses untuk menghapus data TDP.';
+            display_json($this->result);
+            return;
+        }
+
+        $kodePembiayaan = trim($this->input->post('kode_pembiayaan'));
+
+      
+        if (empty($kodePembiayaan)) {
+            $this->result['message'] = 'Kode pembiayaan tidak valid atau kosong.';
+            display_json($this->result);
+            return;
+        }
+
+        try {
+
+            $m_conf = new \Model\Storage\Conf();
+            $sql_aset = "SELECT ma.kode_pembiayaan AS kode_jenis_pembiayaan 
+                        FROM pembiayaan_aset pa 
+                        INNER JOIN ms_aset ma ON pa.kode_aset = ma.kode_aset 
+                        WHERE pa.kode_pembiayaan = '" . $kodePembiayaan . "'";
+
+            
+            $data_aset = $m_conf->hydrateRaw($sql_aset)->toArray();
+
+            if (empty($data_aset)) {
+                throw new \Exception('Data pembiayaan aset tidak ditemukan.');
+            }
+
+            $kodeJenisPembiayaan = $data_aset[0]['kode_jenis_pembiayaan'];
+
+            $m_tdp_header = \Model\Storage\PembiayaanTdpAset_model::where('kode_pembiayaan', $kodePembiayaan)->first();
+
+            if (!$m_tdp_header) {
+                throw new \Exception('Data TDP tidak ditemukan untuk kode pembiayaan ini.');
+            }
+
+            $tdp_id = $m_tdp_header->id;
+            \Model\Storage\PembiayaanTdpAsetDetail_model::where('id_pembiayaan_tdp_aset', $tdp_id)->delete();
+
+            $m_tdp_header->delete();
+
+            if ($kodeJenisPembiayaan == 'PMB03') {
+       
+                \Model\Storage\PembiayaanCicilanAset_model::where('kode_pembiayaan', $kodePembiayaan)->update([
+                    'dikurangi_tanda_jadi' => 0
+                ]);
+                
+                $this->sync_jadwal_cicilan_otomatis($kodePembiayaan);
+
+            } elseif ($kodeJenisPembiayaan == 'PMB01') {
+    
+                $existing_pelunasan = \Model\Storage\PembiayaanPelunasanAset_model::where('kode_pembiayaan', $kodePembiayaan)->first();
+                $total_pembelian = $existing_pelunasan ? floatval($existing_pelunasan->total_pembelian ?? 0) : 0;
+
+                \Model\Storage\PembiayaanPelunasanAset_model::where('kode_pembiayaan', $kodePembiayaan)->update([
+                    'dikurangi_tanda_jadi' => 0,
+                    'diajukan'             => $total_pembelian 
+                ]);
+
+            } elseif ($kodeJenisPembiayaan == 'PMB02') {
+                
+                $existing_tempo = \Model\Storage\PembiayaanTempoRencanaAset_model::where('kode_pembiayaan', $kodePembiayaan)->first();
+                $total_pembelian = $existing_tempo ? floatval($existing_tempo->total_pembelian ?? 0) : 0;
+
+                \Model\Storage\PembiayaanTempoRencanaAset_model::where('kode_pembiayaan', $kodePembiayaan)->update([
+                    'dikurangi_tanda_jadi' => 0,
+                    'sisa_dijadwalkan'     => $total_pembelian 
+                ]);
+            }
+
+
+            // $userNama = $this->userdata['detail_user']['nama_detuser'] ?? 'System';
+            // Modules::run('base/event/delete', null, "Data TDP {$kodePembiayaan} dihapus oleh {$userNama}");
+
+            $this->result['status'] = 1;
+            $this->result['message'] = 'Data TDP berhasil dihapus dan perhitungan pembiayaan telah diperbarui.';
+            $this->result['jenis_pembiayaan'] = $kodeJenisPembiayaan;
+
+        } catch (\Illuminate\Database\QueryException $e) {
+            error_log("Query Error hapus TDP Aset: " . $e->getMessage());
+            $this->result['message'] = 'Gagal menghapus data TDP (Database Error).';
+        } catch (\Exception $e) {
+            error_log("Error hapus TDP Aset: " . $e->getMessage());
+            $this->result['message'] = 'Gagal menghapus data TDP: ' . $e->getMessage();
+        }
+
+        display_json($this->result);
+    }
+
+
+    public function hapus_dp()
+    {
+        if (empty($this->hakAkses['a_delete'])) {
+            $this->result['message'] = 'Anda tidak memiliki akses untuk menghapus data DP.';
+            display_json($this->result);
+            return;
+        }
+
+        $kodePembiayaan = trim($this->input->post('kode_pembiayaan'));
+
+        if (empty($kodePembiayaan)) {
+            $this->result['message'] = 'Kode pembiayaan tidak valid atau kosong.';
+            display_json($this->result);
+            return;
+        }
+
+        try {
+            $m_conf = new \Model\Storage\Conf();
+        
+            $sql_aset = "SELECT ma.kode_pembiayaan AS kode_jenis_pembiayaan, 
+                                ma.nilai_perolehan AS harga_aset 
+                        FROM pembiayaan_aset pa 
+                        INNER JOIN ms_aset ma ON pa.kode_aset = ma.kode_aset 
+                        WHERE pa.kode_pembiayaan = '" . $kodePembiayaan . "'";
+            
+            
+            $data_aset = $m_conf->hydrateRaw($sql_aset)->toArray();
+
+            if (empty($data_aset)) {
+                throw new \Exception('Data pembiayaan aset tidak ditemukan.');
+            }
+
+            $m_dp_header = \Model\Storage\PembiayaanDpAset_model::where('kode_pembiayaan', $kodePembiayaan)->first();
+
+            if (!$m_dp_header) {
+                throw new \Exception('Data DP tidak ditemukan untuk kode pembiayaan ini.');
+            }
+
+            $dp_id = $m_dp_header->id;
+
+          
+            $harga_aset_asli = floatval($data_aset[0]['harga_aset'] ?? 0);
+
+            \Model\Storage\PembiayaanCicilanAset_model::where('kode_pembiayaan', $kodePembiayaan)->update([
+                'pokok_hutang' => $harga_aset_asli
+            ]);
+
+            \Model\Storage\PembiayaanDpAsetDetail_model::where('id_pembiayaan_dp_aset', $dp_id)->delete();
+            $m_dp_header->delete();
+
+
+            $this->sync_jadwal_cicilan_otomatis($kodePembiayaan);
+
+            $this->result['status'] = 1;
+            $this->result['message'] = 'Data DP berhasil dihapus. Pokok hutang telah dikembalikan ke harga aset awal, dan jadwal cicilan telah diperbarui.';
+            $this->result['jenis_pembiayaan'] = $data_aset[0]['kode_jenis_pembiayaan'];
+
+        } catch (\Illuminate\Database\QueryException $e) {
+            error_log("Query Error hapus DP Aset: " . $e->getMessage());
+            $this->result['message'] = 'Gagal menghapus data DP (Database Error).';
+        } catch (\Exception $e) {
+            error_log("Error hapus DP Aset: " . $e->getMessage());
+            $this->result['message'] = 'Gagal menghapus data DP: ' . $e->getMessage();
+        }
+
+        display_json($this->result);
+    }
+
+
+
+    public function hapus_tempo()
+    {
+        if (empty($this->hakAkses['a_delete'])) {
+            $this->result['message'] = 'Anda tidak memiliki akses untuk menghapus rencana tempo.';
+            display_json($this->result);
+            return;
+        }
+
+        $kodePembiayaan = trim($this->input->post('kode_pembiayaan'));
+
+        if (empty($kodePembiayaan)) {
+            $this->result['message'] = 'Kode pembiayaan tidak valid atau kosong.';
+            display_json($this->result);
+            return;
+        }
+
+        try {
+            $existingHeader = \Model\Storage\PembiayaanTempoRencanaAset_model::where('kode_pembiayaan', $kodePembiayaan)->first();
+            
+            if (!$existingHeader) {
+                throw new \Exception('Data rencana tempo tidak ditemukan untuk kode pembiayaan ini.');
+            }
+
+            \Model\Storage\PembiayaanTempoDetailAset_model::where('kode_pembiayaan', $kodePembiayaan)->delete();
+            
+            \Model\Storage\PembiayaanTempoRencanaAset_model::where('kode_pembiayaan', $kodePembiayaan)->delete();
+
+            $this->result['status'] = 1;
+            $this->result['message'] = 'Rencana tempo berhasil dihapus.';
+
+        } catch (\Exception $e) {
+            $this->result['message'] = 'Gagal menghapus rencana tempo: ' . $e->getMessage();
+        }
+
+        display_json($this->result);
+    }
+
+    public function hapus_leasing()
+    {
+        if (empty($this->hakAkses['a_delete'])) {
+            $this->result['message'] = 'Anda tidak memiliki akses untuk menghapus rencana tempo.';
+            display_json($this->result);
+            return;
+        }
+
+        $kodePembiayaan = trim($this->input->post('kode_pembiayaan'));
+
+        if (empty($kodePembiayaan)) {
+            $this->result['message'] = 'Kode pembiayaan tidak valid atau kosong.';
+            display_json($this->result);
+            return;
+        }
+
+        try {
+            $existingHeader = \Model\Storage\PembiayaanCicilanAset_model::where('kode_pembiayaan', $kodePembiayaan)->first();
+            
+            if (!$existingHeader) {
+                throw new \Exception('Data cicilan tidak ditemukan untuk kode pembiayaan ini.');
+            }
+
+            \Model\Storage\PembiayaanCicilanDetailAset_model::where('kode_pembiayaan', $kodePembiayaan)->delete();
+            
+            \Model\Storage\PembiayaanCicilanAset_model::where('kode_pembiayaan', $kodePembiayaan)->delete();
+
+            $this->result['status'] = 1;
+            $this->result['message'] = 'Detail cicilan berhasil dihapus.';
+
+        } catch (\Exception $e) {
+            $this->result['message'] = 'Gagal menghapus detail cicilan: ' . $e->getMessage();
+        }
+
+        display_json($this->result);
     }
 
 }

@@ -45,9 +45,9 @@
             </div>
             <br>
             <div class="row">
-                <div class="col-xs-8"><label>Jenis Komponen</label></div>
-                <div class="col-xs-3 text-right"><label>Nominal</label></div>
-                <div class="col-xs-1"></div>
+                <div class="col-xs-5 col-sm-6"><label>Jenis Komponen</label></div>
+                <div class="col-xs-5 col-sm-5 text-right"><label>Nominal</label></div>
+                <div class="col-xs-2 col-sm-1"></div>
             </div>
             <div id="dp-rows">
                 <!--  < ?php echo $dp['header']['kode_pembiayaan'] ?? null; ?> -->
@@ -57,11 +57,37 @@
                     <?php $total_dp_dna += $dna['nominal']?>
 
                     <div class="row dp-row" style="margin-bottom:8px;">
-                        <div class="col-xs-8">
-                            <input disabled type="text" class="form-control dp-komponen" value="<?php echo $dna['jenis_komponen']?>" placeholder="Jenis komponen (contoh: UANG_MUKA)">
+                        <!-- Jenis komponen -->
+                        <div class="col-xs-5 col-sm-6">
+                            <input disabled type="text"
+                                class="form-control dp-komponen"
+                                value="<?php echo $dna['jenis_komponen']?>"
+                                placeholder="Jenis komponen">
                         </div>
-                        <div class="col-xs-3"><div class="input-group"><span class="input-group-addon">Rp</span><input type="text" class="form-control text-right dp-nominal" disabled oninput="pba.inputRupiah(this);" autocomplete="off" value="<?php echo number_format((float) ($dna['nominal'] ?? 0), 0, ',', '.'); ?>" placeholder="0"></div></div>
-                        <div class="col-xs-1 text-right"><button type="button" disabled onclick="pba.dpRemoveRow(this)" class="btn btn-danger btn-sm dp-delete-row" data-id="" title="Hapus"><i class="fa fa-trash"></i></button></div>
+
+                        <!-- Nominal -->
+                        <div class="col-xs-5 col-sm-5">
+                            <div class="input-group">
+                                <span class="input-group-addon">Rp</span>
+                                <input type="text"
+                                    class="form-control text-right dp-nominal"
+                                    disabled
+                                    oninput="pba.inputRupiah(this);"
+                                    autocomplete="off"
+                                    value="<?php echo number_format((float) ($dna['nominal'] ?? 0), 0, ',', '.'); ?>"
+                                    placeholder="0">
+                            </div>
+                        </div>
+
+                        <!-- Hapus -->
+                        <div class="col-xs-2 col-sm-1 text-right">
+                            <button type="button" disabled
+                                onclick="pba.dpRemoveRow(this)"
+                                class="btn btn-danger btn-sm dp-delete-row"
+                                title="Hapus">
+                                <i class="fa fa-trash"></i>
+                            </button>
+                        </div>
                     </div>
 
                     <?php } ?>
@@ -69,47 +95,47 @@
                 <?php } else {?>
               
                     <div class="row dp-row" style="margin-bottom:8px;">
-                        <div class="col-xs-8">
+                        <div class="col-xs-5 col-sm-6">
                             <input type="text" class="form-control dp-komponen" readonly value="UANG MUKA" placeholder="Jenis komponen (contoh: UANG_MUKA)">
                         </div>
-                        <div class="col-xs-3"><div class="input-group"><span class="input-group-addon">Rp</span><input type="text" class="form-control text-right dp-nominal" oninput="pba.inputRupiah(this);" autocomplete="off" value="" placeholder="0"></div></div>
-                        <div class="col-xs-1 text-right"><button type="button" onclick="pba.dpRemoveRow(this)" class="btn btn-danger btn-sm dp-delete-row" data-id="" title="Hapus"><i class="fa fa-trash"></i></button></div>
+                        <div class="col-xs-5 col-sm-5"><div class="input-group"><span class="input-group-addon">Rp</span><input type="text" class="form-control text-right dp-nominal" oninput="pba.inputRupiah(this);" autocomplete="off" value="" placeholder="0"></div></div>
+                        <div class="col-xs-2 col-sm-1 text-right"><button type="button" onclick="pba.dpRemoveRow(this)" class="btn btn-danger btn-sm dp-delete-row" data-id="" title="Hapus"><i class="fa fa-trash"></i></button></div>
                     </div>
 
                     <div class="row dp-row" style="margin-bottom:8px;">
                         <input type="hidden" class="dp-id" value="">
-                        <div class="col-xs-8">
-                            <input type="text" class="form-control dp-komponen" value="ADMINISTRASI" placeholder="Jenis komponen (contoh: UANG_MUKA)">
+                        <div class="col-xs-5 col-sm-6">
+                            <input type="text" class="form-control dp-komponen" style="text-transform: uppercase;" value="ADMINISTRASI" placeholder="Jenis komponen (contoh: UANG_MUKA)">
                         </div>
-                        <div class="col-xs-3"><div class="input-group"><span class="input-group-addon">Rp</span><input type="text" class="form-control text-right dp-nominal" oninput="pba.inputRupiah(this);" autocomplete="off" value="" placeholder="0"></div></div>
-                        <div class="col-xs-1 text-right"><button type="button" onclick="pba.dpRemoveRow(this)" class="btn btn-danger btn-sm dp-delete-row" data-id="" title="Hapus"><i class="fa fa-trash"></i></button></div>
+                        <div class="col-xs-5 col-sm-5"><div class="input-group"><span class="input-group-addon">Rp</span><input type="text" class="form-control text-right dp-nominal" oninput="pba.inputRupiah(this);" autocomplete="off" value="" placeholder="0"></div></div>
+                        <div class="col-xs-2 col-sm-1 text-right"><button type="button" onclick="pba.dpRemoveRow(this)" class="btn btn-danger btn-sm dp-delete-row" data-id="" title="Hapus"><i class="fa fa-trash"></i></button></div>
                     </div>
                     
                     <div class="row dp-row" style="margin-bottom:8px;">
                         <input type="hidden" class="dp-id" value="">
-                        <div class="col-xs-8">
-                            <input type="text" class="form-control dp-komponen" value="ASURANSI" placeholder="Jenis komponen (contoh: UANG_MUKA)">
+                        <div class="col-xs-5 col-sm-6">
+                            <input type="text" class="form-control dp-komponen" style="text-transform: uppercase;" value="ASURANSI" placeholder="Jenis komponen (contoh: UANG_MUKA)">
                         </div>
-                        <div class="col-xs-3"><div class="input-group"><span class="input-group-addon">Rp</span><input type="text" class="form-control text-right dp-nominal" oninput="pba.inputRupiah(this);" autocomplete="off" value="" placeholder="0"></div></div>
-                        <div class="col-xs-1 text-right"><button type="button" onclick="pba.dpRemoveRow(this)" class="btn btn-danger btn-sm dp-delete-row" data-id="" title="Hapus"><i class="fa fa-trash"></i></button></div>
+                        <div class="col-xs-5 col-sm-5"><div class="input-group"><span class="input-group-addon">Rp</span><input type="text" class="form-control text-right dp-nominal" oninput="pba.inputRupiah(this);" autocomplete="off" value="" placeholder="0"></div></div>
+                        <div class="col-xs-2 col-sm-1 text-right"><button type="button" onclick="pba.dpRemoveRow(this)" class="btn btn-danger btn-sm dp-delete-row" data-id="" title="Hapus"><i class="fa fa-trash"></i></button></div>
                     </div>
 
                     <div class="row dp-row" style="margin-bottom:8px;">
                         <input type="hidden" class="dp-id" value="">
-                        <div class="col-xs-8">
-                            <input type="text" class="form-control dp-komponen" value="BIAYA POLIS" placeholder="Jenis komponen (contoh: UANG_MUKA)">
+                        <div class="col-xs-5 col-sm-6">
+                            <input type="text" class="form-control dp-komponen" style="text-transform: uppercase;" value="BIAYA POLIS" placeholder="Jenis komponen (contoh: UANG_MUKA)">
                         </div>
-                        <div class="col-xs-3"><div class="input-group"><span class="input-group-addon">Rp</span><input type="text" class="form-control text-right dp-nominal" oninput="pba.inputRupiah(this);" autocomplete="off" value="" placeholder="0"></div></div>
-                        <div class="col-xs-1 text-right"><button type="button" onclick="pba.dpRemoveRow(this)" class="btn btn-danger btn-sm dp-delete-row" data-id="" title="Hapus"><i class="fa fa-trash"></i></button></div>
+                        <div class="col-xs-5 col-sm-5"><div class="input-group"><span class="input-group-addon">Rp</span><input type="text" class="form-control text-right dp-nominal" oninput="pba.inputRupiah(this);" autocomplete="off" value="" placeholder="0"></div></div>
+                        <div class="col-xs-2 col-sm-1 text-right"><button type="button" onclick="pba.dpRemoveRow(this)" class="btn btn-danger btn-sm dp-delete-row" data-id="" title="Hapus"><i class="fa fa-trash"></i></button></div>
                     </div>
 
                     <div class="row dp-row" style="margin-bottom:8px;">
                         <input type="hidden" class="dp-id" value="">
-                        <div class="col-xs-8">
-                            <input type="text" class="form-control dp-komponen" value="FIDUSIA" placeholder="Jenis komponen (contoh: UANG_MUKA)">
+                        <div class="col-xs-5 col-sm-6">
+                            <input type="text" class="form-control dp-komponen" style="text-transform: uppercase;" value="FIDUSIA" placeholder="Jenis komponen (contoh: UANG_MUKA)">
                         </div>
-                        <div class="col-xs-3"><div class="input-group"><span class="input-group-addon">Rp</span><input type="text" class="form-control text-right dp-nominal" oninput="pba.inputRupiah(this);" autocomplete="off" value="" placeholder="0"></div></div>
-                        <div class="col-xs-1 text-right"><button type="button" onclick="pba.dpRemoveRow(this)" class="btn btn-danger btn-sm dp-delete-row" data-id="" title="Hapus"><i class="fa fa-trash"></i></button></div>
+                        <div class="col-xs-5 col-sm-5"><div class="input-group"><span class="input-group-addon">Rp</span><input type="text" class="form-control text-right dp-nominal" oninput="pba.inputRupiah(this);" autocomplete="off" value="" placeholder="0"></div></div>
+                        <div class="col-xs-2 col-sm-1 text-right"><button type="button" onclick="pba.dpRemoveRow(this)" class="btn btn-danger btn-sm dp-delete-row" data-id="" title="Hapus"><i class="fa fa-trash"></i></button></div>
                     </div>
 
                 <?php } ?>
@@ -153,6 +179,7 @@
                 <?php if (!empty($dp['header'])){?>
                     <div style="margin-top:10px;">
                         <button id="dp-edit" onclick="pba.edit_dp(this, event)" class="btn btn-warning">Update DP</button>
+                         <button type="button" onclick="pba.hapus_dp()" class="btn btn-danger"> Hapus </button>
                     </div>
                 <?php } else { ?>
                     <div style="margin-top:10px;">

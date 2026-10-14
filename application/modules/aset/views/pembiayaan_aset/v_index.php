@@ -21,7 +21,7 @@
                 </li>
                 <?php if (!empty($akses['a_submit'])) : ?>
                     <li class="nav-item">
-                        <a class="nav-link" data-toggle="tab" href="#action">Tambah Data</a>
+                        <a class="nav-link is_add" data-toggle="tab" href="#action" >Tambah Data</a>
                     </li>
                 <?php endif; ?>
             </ul>
@@ -56,6 +56,10 @@
                                 <button type="button" class="btn btn-primary" style="width:100px;" onclick="pba.filter_data(event)">Filter</button>
                                 <button type="button" class="btn btn-default" style="width:100px;" onclick="pba.reset_filter(event)">Reset</button>
                             </div>
+                        </div>
+
+                        <div class="pull-right">
+                            <button class='btn btn-default' onclick="pba.add_form(this)">Tambah Data</button>
                         </div>
                     </fieldset>
 

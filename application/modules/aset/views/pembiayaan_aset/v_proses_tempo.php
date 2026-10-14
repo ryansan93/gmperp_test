@@ -26,15 +26,30 @@
                 Supplier <span class="supplier_name"><?php echo $supplierNama; ?></span> | Leasing <?php echo $leasingNama; ?>
             </p>
 
+
             <div class="load_tdp">
-                <div class="col-xs-12 no-padding notifContain">
-                    <div class="spinner-load"></div>
+                <div class="panel panel-default">
+                    <div class="panel-heading" style="background-color:#fff;">
+                        <label style="margin:0;"> TDP</label>
+                    </div>
+                    <div class="panel-body">
+                        <div class="col-xs-12 no-padding notifContain">
+                            <div class="spinner-load"></div>
+                        </div>
+                    </div>
                 </div>
             </div>
 
             <div class="load_tempo">
-                <div class="col-xs-12 no-padding notifContain">
-                    <div class="spinner-load"></div>
+                <div class="panel panel-default">
+                    <div class="panel-heading" style="background-color:#fff;">
+                        <label style="margin:0;"> Rencana Tempo</label>
+                    </div>
+                    <div class="panel-body">
+                        <div class="col-xs-12 no-padding notifContain">
+                            <div class="spinner-load"></div>
+                        </div>
+                    </div>
                 </div>
             </div>
 

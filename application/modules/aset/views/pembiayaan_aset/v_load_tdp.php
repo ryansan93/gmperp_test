@@ -74,7 +74,7 @@
                         <div class="col-xs-4">
                             <div class="input-group">
                                 <span class="input-group-addon">Rp</span>
-                                <input type="text"  oninput="pba.formatInputRupiah(this)" class="form-control text-right tdp-nominal" value="" inputmode="numeric" autocomplete="off" placeholder="0">
+                                <input type="text"  oninput="pba.formatInputRupiah(this); pba.hitung_tdp_total();" class="form-control text-right tdp-nominal" value="" inputmode="numeric" autocomplete="off" placeholder="0">
                             </div>
                         </div>
                         <div class="col-xs-1">
@@ -94,6 +94,7 @@
             <div id="button-tdp" style="margin-top:10px;">
                 <?php if (!empty($tdp['header'])){?>
                     <button id="tdp_edit" onclick="pba.edit_tdp()" class="btn btn-warning">Update TDP</button>
+                   
                 <?php } else { ?>
                     <button id="tdp-save" onclick="pba.save_tdp()" class="btn btn-primary">Simpan TDP</button>
                     <button  onclick="pba.batal_tdp()" class="btn btn-danger">Batal</button>
@@ -194,6 +195,7 @@
                 <div id="button-tdp" style="margin-top:10px;">
                     <?php if (!empty($tdp['header'])){?>
                         <button id="tdp_edit" onclick="pba.edit_tdp()" class="btn btn-warning">Update TDP</button>
+                        <button type="button" onclick="pba.hapus_tdp()" class="btn btn-danger"> Hapus </button>
                     <?php } else { ?>
                         <button id="tdp-save" onclick="pba.save_tdp()" class="btn btn-primary">Simpan TDP</button>
                     <?php } ?>

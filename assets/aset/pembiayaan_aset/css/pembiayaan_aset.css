@@ -170,3 +170,9 @@
     padding: 4px 10px;
     font-size: 12px;
 }
+
+
+.installment-summary-row:hover{
+    background-color: #f2f2f2;
+}
+

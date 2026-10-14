@@ -61,12 +61,12 @@
 
     <div class="installment-summary-row">
         <span>TDP pengurang pokok</span>
-        <span id="cicilan-tdp-pengurang">(<?php echo number_format($count_tdp, 0, ',', '.');?>)</span>
+        <span id="cicilan-tdp-pengurang"><?php echo number_format($count_tdp, 0, ',', '.');?></span>
     </div>
 
     <div class="installment-summary-row">
         <span>DP (uang muka)</span>
-        <span id="cicilan-dp-uang-muka">(<?php echo number_format($uang_muka, 0, ',', '.');?>)</span>
+        <span id="cicilan-dp-uang-muka"><?php echo number_format($uang_muka, 0, ',', '.');?></span>
     </div>
 
     <div class="installment-summary-row">
@@ -104,22 +104,20 @@
     <table class="table table-bordered installment-schedule">
         <thead>
             <tr>
-                <th style="background-color: #f5f5f5; width: 50px;">Ke</th>
-                <th style="background-color: #f5f5f5;">Jatuh tempo</th>
-                <th style="background-color: #f5f5f5; width: 100px;" class="text-center">Jenis</th> 
-                <th style="background-color: #f5f5f5; width: 120px;" class="text-right">Pokok</th>
-                <th style="background-color: #f5f5f5; width: 120px;" class="text-right">Bunga</th>
-                <th style="background-color: #f5f5f5; width: 120px;" class="text-right">Cicilan</th>
-                <th style="background-color: #f5f5f5; width: 120px;" class="text-right">Sisa Pokok</th>
-                <th style="background-color: #f5f5f5; width: 80px;" class="text-center">Status</th>
+                <th style=" background-color: #f5f5f5; width: 50px;">Ke</th>
+                <th style=" background-color: #f5f5f5; width: 150px;">Jatuh Tempo</th>
+                <th style=" background-color: #f5f5f5; width: 100px;" class="text-center">Jenis</th> 
+                <th style=" background-color: #f5f5f5; width: 120px;" class="text-right">Pokok</th>
+                <th style=" background-color: #f5f5f5; width: 120px;" class="text-right">Bunga</th>
+                <th style=" background-color: #f5f5f5; width: 120px;" class="text-right">Cicilan</th>
+                <th style=" background-color: #f5f5f5; width: 120px;" class="text-right">Sisa Pokok</th>
+                <th style=" background-color: #f5f5f5; width: 80px;" class="text-center">Status</th>
             </tr>
         </thead>
         <tbody id="jadwal-cicilan">
             <?php if (!empty($data_cicilan['detail'])) { ?>
                 <?php 
-                    // PERBAIKAN: Saldo berjalan dimulai dari POKOK HUTANG, bukan Total A/R
                     $saldoBerjalan = $pokok_hutang; 
-                    
                     $total_pokok = 0;
                     $total_bunga = 0;
                     $total_cicilan = 0;
@@ -139,21 +137,19 @@
                         $total_bunga += $bunga;
                         $total_cicilan += $nominal;
 
-                        // Kurangi saldo berjalan dengan POKOK (karena ini kolom Sisa Pokok Hutang)
                         $saldoBerjalan -= $pokok;
                         if ($saldoBerjalan < 0) $saldoBerjalan = 0;
                     ?>
                     <tr>
-                        <td class="text-center"><?php echo (int) $detail['angsuran_ke']; ?></td>
-                        <td><?php echo htmlspecialchars(tglIndonesia($detail['jatuh_tempo'], '-', ' ', true), ENT_QUOTES); ?></td>
-                        <td class="text-center">
-                            <span class="label <?php echo $labelJenis; ?>"><?php echo htmlspecialchars($jenis); ?></span>
-                        </td>
-                        <td class="text-right"><?php echo number_format($pokok, 0, ',', '.'); ?></td>
-                        <td class="text-right"><?php echo number_format($bunga, 0, ',', '.'); ?></td>
-                        <td class="text-right"><?php echo number_format($nominal, 0, ',', '.'); ?></td>
-                        <td class="text-right"><?php echo number_format($saldoBerjalan, 0, ',', '.'); ?></td>
-                        <td class="text-center">
+                        <!-- PERHATIAN: Atribut data-label ditambahkan di setiap td -->
+                        <td style="white-space:nowrap;" class="text-center" data-label="Angsuran Ke-"><?php echo (int) $detail['angsuran_ke']; ?></td>
+                        <td style="white-space:nowrap;" data-label="Jatuh Tempo"><?php echo htmlspecialchars(tglIndonesia($detail['jatuh_tempo'], '-', ' ', true), ENT_QUOTES); ?></td>
+                        <td style="white-space:nowrap;" class="text-center" data-label="Jenis"><span class="label <?php echo $labelJenis; ?>"><?php echo htmlspecialchars($jenis); ?></span></td>
+                        <td style="white-space:nowrap;" class="text-right" data-label="Pokok"><?php echo number_format($pokok, 0, ',', '.'); ?></td>
+                        <td style="white-space:nowrap;" class="text-right" data-label="Bunga"><?php echo number_format($bunga, 0, ',', '.'); ?></td>
+                        <td style="white-space:nowrap;" class="text-right" data-label="Cicilan"><b><?php echo number_format($nominal, 0, ',', '.'); ?></b></td>
+                        <td style="white-space:nowrap;" class="text-right" data-label="Sisa Pokok"><?php echo number_format($saldoBerjalan, 0, ',', '.'); ?></td>
+                        <td style="white-space:nowrap;" class="text-center" data-label="Status">
                             <span class="label <?php echo $detail['status'] ? 'label-success' : 'label-warning'; ?>">
                                 <?php echo htmlspecialchars($statusDp); ?>
                             </span>
@@ -161,17 +157,23 @@
                     </tr>
                 <?php endforeach; ?>
                 
+                <!-- Baris Total -->
                 <tr class="info">
-                    <td colspan="2"></td>
-                    <td class="text-center"><b>Total</b></td>
-                    <td class="text-right"><?php echo number_format($total_pokok, 0, ',' , '.') ?></td>
-                    <td class="text-right"><?php echo number_format($total_bunga, 0, ',' , '.') ?></td>
-                    <td class="text-right"><?php echo number_format($total_cicilan, 0, ',', '.'); ?></td>
-                    <td class="text-right">-</td>
-                    <td class="text-center">-</td>
+                    <td colspan="2" class="text-center" data-label="TOTAL"><b>TOTAL KESELURUHAN</b></td>
+                    <!-- Kita biarkan colspan 2 di desktop, di mobile CSS akan menanganinya -->
+                    <td class="text-center" data-label="Jenis">-</td>
+                    <td class="text-right" data-label="Total Pokok"><b><?php echo number_format($total_pokok, 0, ',' , '.') ?></b></td>
+                    <td class="text-right" data-label="Total Bunga"><b><?php echo number_format($total_bunga, 0, ',' , '.') ?></b></td>
+                    <td class="text-right" data-label="Total Cicilan"><b><?php echo number_format($total_cicilan, 0, ',', '.'); ?></b></td>
+                    <td class="text-right" data-label="-">-</td>
+                    <td class="text-center" data-label="-">-</td>
                 </tr>
             <?php } else { ?>
-                <tr><td colspan="8" class="text-center text-muted">Jadwal cicilan akan tampil setelah tenor dan bunga diisi.</td></tr>
+                <tr>
+                    <td colspan="8" class="text-center text-muted" style="padding: 20px;">
+                        Jadwal cicilan akan tampil setelah tenor dan bunga diisi.
+                    </td>
+                </tr>
             <?php } ?>
         </tbody>
     </table>

@@ -1,11 +1,9 @@
 <div class="panel panel-default" id="detail-tempo" data-harga-beli="<?php echo (int) ($aset['harga_beli'] ?? 0); ?>"
     data-tdp-total="<?php echo (int) ($tdp_total ?? 0); ?>">
 
-    <div class="panel-heading">
-        <div class="clearfix">
-            <label style="margin:0;"> Rencana tempo</label>
+    <div class="panel-heading" style="background-color:#fff;">
+            <label style="margin:0;"> Rencana Tempo</label>
             <span class="label <?php echo !empty($tempoHeader) ? 'label-success' : 'label-warning'; ?> pull-right"><?php echo !empty($tempoHeader) ? 'Tersimpan' : 'Belum disimpan'; ?></span>
-        </div>
     </div>
     <div class="panel-body">
         <div class="row" style="margin-bottom:15px;">
@@ -29,14 +27,14 @@
                         <label>Biaya lain (ongkir, instalasi)</label>
                         <div class="input-group">
                             <span class="input-group-addon">Rp</span>
-                            <input <?php echo !empty($tempo['header']) ? 'disbled' : '' ?> type="text" id="biaya_lain_tempo" oninput="pba.formatInputRupiah(this); pba.hitung_tempo();" class="form-control text-right" value="<?php echo number_format($tempo['header']['biaya_lain'], 0 , ',' , '.') ?? '' ?>" >
+                            <input <?php echo !empty($tempo['header']) ? 'disabled' : '' ?> type="text" id="biaya_lain_tempo" oninput="pba.formatInputRupiah(this); pba.hitung_tempo();" class="form-control text-right" value="<?php echo number_format($tempo['header']['biaya_lain'], 0 , ',' , '.') ?? '' ?>" >
                         </div>
                     </div>
                 </div>
                 <div class="col-sm-4">
                     <div class="form-group">
                         <label>Jumlah termin <span class="text-danger">*</span></label>
-                        <input <?php echo !empty($tempo['header']) ? 'disbled' : '' ?>  type="number" onchange="pba.generate_tempo_rows(this)" id="jumlah_termin" class="form-control" min="1" max="60" value="<?php echo $tempo['header']['jumlah_termin'] ?? '' ?>" placeholder="Contoh: 2" >
+                        <input <?php echo !empty($tempo['header']) ? 'disabled' : '' ?>  type="number" onchange="pba.generate_tempo_rows(this)" id="jumlah_termin" class="form-control" min="1" max="60" value="<?php echo $tempo['header']['jumlah_termin'] ?? '' ?>" placeholder="Contoh: 2" >
                     </div>
                 </div>
             </div>
@@ -99,7 +97,7 @@
             </div>
             <div class="row">
                 <div class="col-xs-8 text-left">Dikurangi TDP (pengurang pokok)</div>
-                <div class="col-xs-4 text-right" id="display_tdp">(<?php echo number_format(($tempo['header']['dikurangi_tanda_jadi'] ?? 0), 0, ',', '.'); ?>)</div>
+                <div class="col-xs-4 text-right" id="display_tdp"><?php echo number_format(($tempo['header']['dikurangi_tanda_jadi'] ?? 0), 0, ',', '.'); ?></div>
             </div>
             <div class="row" style="margin-top:10px;">
                 <div class="col-xs-8 text-left"><strong style="font-size:14px;">Sisa dijadwalkan di termin</strong></div>
@@ -117,9 +115,13 @@
             <div id="button-tempo" style="margin-top:15px;">
 
                 <?php if (!empty($tempo['header'])) { ?>
-                    <button type="button" id="btn_update_tempo" class="btn btn-warning btn-sm" onclick="pba.edit_tempo(this)">
+                    <button type="button" id="btn_update_tempo" class="btn btn-warning" onclick="pba.edit_tempo(this)">
                         <i class="fa fa-pencil"></i> Update Rencana Tempo
                     </button>
+
+                    <button type="button" onclick="pba.hapus_tempo()" class="btn btn-danger">
+                        Hapus
+                    </button>                    
                 <?php } else {?>
                     <button type="button" id="btn_simpan_tempo" onclick="pba.save_rencana_tempo();" class="btn btn-primary" disabled>
                         Simpan rencana tempo

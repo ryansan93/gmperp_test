@@ -45,7 +45,7 @@
                 </tr>
             <?php endforeach; ?>
         <?php else : ?>
-            <tr><td colspan="9" class="text-center">Belum ada data pembiayaan aset.</td></tr>
+            <tr><td colspan="10" class="text-center">Belum ada data pembiayaan aset.</td></tr>
         <?php endif; ?>
     </tbody>
 </table>
